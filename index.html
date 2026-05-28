@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -819,6 +819,46 @@ footer {
 }
 .footer-links a:hover { color: var(--text-muted); }
 
+/* ── COOKIE NOTICE ─────────────────────── */
+.cookie-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--row-border);
+  padding: 12px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  z-index: 600;
+  transition: transform 0.3s ease;
+}
+.cookie-bar.hidden { transform: translateY(100%); }
+.cookie-bar p {
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.cookie-bar button {
+  background: none;
+  border: 1px solid var(--gold-border);
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  padding: 5px 14px;
+  border-radius: 3px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+.cookie-bar button:hover { background: var(--gold-subtle); color: var(--text); }
+@media (max-width: 600px) {
+  .cookie-bar { padding: 12px 20px; flex-wrap: wrap; }
+}
+
 /* ── SCROLL PROGRESS ─────────────────────── */
 .scroll-progress {
   position: fixed;
@@ -869,6 +909,11 @@ footer {
 <body>
 
 <a class="skip-link" href="#main">Skip to content</a>
+
+<div class="cookie-bar" id="cookieBar" role="region" aria-label="Cookie notice">
+  <p>This site does not use cookies or collect any personal data.</p>
+  <button id="cookieDismiss" aria-label="Dismiss cookie notice">Got it</button>
+</div>
 <div class="scroll-progress" id="scrollProgress" role="presentation"></div>
 
 <!-- ── HEADER ─────────────────────────────────── -->
@@ -1046,7 +1091,7 @@ footer {
           <tr>
             <td class="codec-name">Video</td>
             <td class="codec-desc">φCoherent GOP (21 frames), golden-angle spiral motion estimation, φInterpolated sub-pixel compensation. Round-trip deterministic.</td>
-            <td class="codec-status"><span class="badge badge-active">In Progress</span></td>
+            <td class="codec-status"><span class="badge badge-done">Complete</span></td>
           </tr>
           <tr>
             <td class="codec-name">Base</td>
@@ -1239,6 +1284,14 @@ footer {
 (function () {
   'use strict';
 
+  /* ── COOKIE NOTICE ── */
+  const cookieBar = document.getElementById('cookieBar');
+  if (localStorage.getItem('phi-cookie-ok')) cookieBar.classList.add('hidden');
+  document.getElementById('cookieDismiss').addEventListener('click', () => {
+    cookieBar.classList.add('hidden');
+    localStorage.setItem('phi-cookie-ok', '1');
+  });
+
   /* ── SCROLL PROGRESS ── */
   const progressBar = document.getElementById('scrollProgress');
   function updateProgress() {
@@ -1252,7 +1305,6 @@ footer {
   const root    = document.documentElement;
   const saved   = localStorage.getItem('phi-theme');
   if (saved === 'dark') root.setAttribute('data-theme', 'dark');
-  else if (saved === 'light') root.removeAttribute('data-theme');
 
   document.getElementById('themeToggle').addEventListener('click', () => {
     const isDark = root.getAttribute('data-theme') === 'dark';
