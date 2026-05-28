@@ -1,0 +1,1320 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>φCoherent Inc. — Deep-Technology Research</title>
+<meta name="description" content="φCoherent Inc. builds quantum computing, AGI, compression, and cryptography systems derived from a single mathematical identity. Zero free parameters. Ontario, Canada.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://phicoherent.com/">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://phicoherent.com/">
+<meta property="og:title" content="φCoherent Inc. — Deep-Technology Research">
+<meta property="og:description" content="Quantum computing, compression, AGI, and cryptography. Every system derives from a single mathematical identity.">
+<meta property="og:image" content="https://phicoherent.com/assets/fibonacci_qubit_spiral_hero.svg">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="φCoherent Inc. — Deep-Technology Research">
+<meta name="twitter:description" content="Quantum computing, compression, AGI, and cryptography. Every system derives from a single mathematical identity.">
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,600;1,6..72,300;1,6..72,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ── RESET + GLOBALS ─────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:           #F3EDE2;
+  --surface:      #EBE4D6;
+  --card:         #E4DBCA;
+  --card-hover:   #DACFC0;
+  --gold:         #C9A830;
+  --gold-dim:     #A07818;
+  --gold-subtle:  rgba(180,138,20,0.10);
+  --gold-border:  rgba(160,118,18,0.28);
+  --text:         #1C1810;
+  --text-muted:   #5C5240;
+  --text-dim:     #A0907A;
+  --green:        #3a7838;
+  --green-bg:     rgba(58,120,56,0.10);
+  --row-border:   rgba(0,0,0,0.07);
+  --watermark:    rgba(160,110,0,0.055);
+  --nav-bg:       rgba(243,237,226,0.88);
+  --nav-border:   rgba(160,118,18,0.18);
+  --scroll-color: var(--gold);
+}
+
+html[data-theme="dark"] {
+  --bg:           #131210;
+  --surface:      #1c1b17;
+  --card:         #232118;
+  --card-hover:   #2a2720;
+  --gold-dim:     #8a6f20;
+  --gold-subtle:  rgba(201,168,48,0.10);
+  --gold-border:  rgba(201,168,48,0.22);
+  --text:         #EDE8DC;
+  --text-muted:   #97907e;
+  --text-dim:     #524d3f;
+  --green:        #7abf78;
+  --green-bg:     rgba(122,191,120,0.10);
+  --row-border:   rgba(255,255,255,0.04);
+  --watermark:    rgba(201,168,48,0.04);
+  --nav-bg:       rgba(19,18,16,0.90);
+  --nav-border:   rgba(201,168,48,0.14);
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  line-height: 1.6;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* ── SKIP LINK ─────────────────────────────── */
+.skip-link {
+  position: absolute;
+  top: -999px;
+  left: 16px;
+  background: var(--gold);
+  color: #000;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  z-index: 9999;
+  text-decoration: none;
+}
+.skip-link:focus { top: 16px; }
+
+/* ── TYPOGRAPHY ────────────────────────────── */
+.serif { font-family: 'Newsreader', Georgia, 'Times New Roman', serif; }
+.overline {
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--gold);
+  display: block;
+  margin-bottom: 12px;
+}
+.ruled {
+  width: 52px;
+  height: 1px;
+  background: var(--gold);
+  margin: 24px 0;
+}
+.ruled-center { margin: 24px auto; }
+.phi { color: var(--gold); }
+.phi-guard { text-transform: none; }
+
+/* ── HEADER / NAV ──────────────────────────── */
+header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 60px;
+  background: var(--nav-bg);
+  border-bottom: 1px solid var(--nav-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  height: 32px;
+}
+.nav-logo img { height: 100%; width: auto; display: block; }
+
+nav.primary {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+nav.primary a {
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  color: var(--text-muted);
+  transition: color 0.2s;
+}
+nav.primary a:hover { color: var(--text); }
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* ── THEME TOGGLE ──────────────────────────── */
+.theme-toggle {
+  background: none;
+  border: 1px solid var(--gold-border);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  transition: background 0.2s;
+}
+.theme-toggle:hover { background: var(--gold-subtle); }
+.toggle-icon { font-size: 11px; color: var(--text-dim); user-select: none; line-height: 1; }
+.toggle-track {
+  display: block;
+  width: 32px; height: 17px;
+  border-radius: 9px;
+  background: var(--card);
+  position: relative;
+  transition: background 0.25s;
+}
+.toggle-thumb {
+  position: absolute;
+  top: 2.5px; left: 2.5px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--gold);
+  transition: transform 0.25s ease;
+}
+html[data-theme="dark"] .toggle-thumb { transform: translateX(15px); }
+
+/* ── HAMBURGER ─────────────────────────────── */
+.nav-hamburger {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  flex-direction: column;
+  gap: 5px;
+}
+.nav-hamburger span {
+  display: block;
+  width: 22px; height: 1.5px;
+  background: var(--text-muted);
+  border-radius: 1px;
+  transition: all 0.3s;
+}
+.mobile-nav {
+  display: none;
+  position: fixed;
+  top: 60px; left: 0; right: 0;
+  background: var(--nav-bg);
+  border-bottom: 1px solid var(--nav-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 16px 24px 20px;
+  z-index: 499;
+  flex-direction: column;
+  gap: 0;
+}
+.mobile-nav.open { display: flex; }
+.mobile-nav a {
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  color: var(--text-muted);
+  padding: 11px 0;
+  border-bottom: 1px solid var(--row-border);
+  transition: color 0.2s;
+}
+.mobile-nav a:hover { color: var(--text); }
+.mobile-nav a:last-child { border-bottom: none; }
+
+/* ── LAYOUT PRIMITIVES ─────────────────────── */
+.container {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+
+section {
+  padding: 100px 0;
+}
+
+/* ── SCROLL REVEAL ─────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.65s ease, transform 0.65s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-delay-1 { transition-delay: 0.08s; }
+.reveal-delay-2 { transition-delay: 0.16s; }
+.reveal-delay-3 { transition-delay: 0.24s; }
+.reveal-delay-4 { transition-delay: 0.32s; }
+
+/* ════════════════════════════════════════════
+   HERO
+   ════════════════════════════════════════════ */
+#hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 55% 65% at 15% 60%, rgba(201,168,48,0.09) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 45% at 82% 28%, rgba(201,168,48,0.05) 0%, transparent 50%),
+    var(--bg);
+}
+.hero-watermark {
+  position: absolute;
+  right: -60px; top: 50%;
+  transform: translateY(-50%);
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: min(38vw, 560px);
+  line-height: 1;
+  color: var(--watermark);
+  pointer-events: none;
+  user-select: none;
+  transition: color 0.3s;
+}
+.hero-inner {
+  position: relative;
+  z-index: 1;
+  padding: 120px 40px 80px;
+  max-width: 1080px;
+  margin: 0 auto;
+  width: 100%;
+}
+.hero-overline {
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 18px;
+}
+.hero-h1 {
+  font-family: 'Newsreader', Georgia, serif;
+  font-weight: 300;
+  font-size: clamp(52px, 8vw, 96px);
+  letter-spacing: -0.025em;
+  line-height: 1.02;
+  color: var(--text);
+}
+.hero-tagline {
+  font-size: clamp(14px, 1.8vw, 18px);
+  font-weight: 300;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+  margin-top: 10px;
+}
+.hero-body {
+  max-width: 560px;
+  font-size: 17px;
+  font-weight: 300;
+  line-height: 1.78;
+  color: var(--text-muted);
+  margin-top: 32px;
+}
+.hero-body em { font-style: normal; color: var(--text); }
+.hero-cta {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 40px;
+}
+.btn-primary {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 13px 28px;
+  background: var(--gold);
+  color: #0c0b08;
+  border-radius: 4px;
+  transition: opacity 0.2s, transform 0.15s;
+}
+.btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+.btn-secondary {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 12px 28px;
+  border: 1px solid var(--gold-border);
+  color: var(--text-muted);
+  border-radius: 4px;
+  transition: background 0.2s, color 0.2s;
+}
+.btn-secondary:hover { background: var(--gold-subtle); color: var(--text); }
+.hero-meta {
+  margin-top: 64px;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* ════════════════════════════════════════════
+   FOUNDATION
+   ════════════════════════════════════════════ */
+#foundation {
+  background: var(--surface);
+  text-align: center;
+}
+.foundation-inner {
+  max-width: 680px;
+  margin: 0 auto;
+}
+.foundation-eq {
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: clamp(48px, 7vw, 80px);
+  font-weight: 300;
+  color: var(--gold);
+  line-height: 1;
+  margin: 8px 0 16px;
+}
+.foundation-sub {
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: clamp(20px, 2.5vw, 28px);
+  font-weight: 300;
+  color: var(--text-muted);
+  margin-bottom: 32px;
+}
+.foundation-body {
+  font-size: 18px;
+  font-weight: 300;
+  line-height: 1.82;
+  color: var(--text-muted);
+}
+.foundation-body em { font-style: normal; color: var(--text); }
+
+/* ════════════════════════════════════════════
+   PILLARS
+   ════════════════════════════════════════════ */
+#pillars {}
+.section-head {
+  margin-bottom: 48px;
+}
+.section-h2 {
+  font-family: 'Newsreader', Georgia, serif;
+  font-weight: 300;
+  font-size: clamp(34px, 4.5vw, 54px);
+  line-height: 1.1;
+  color: var(--text);
+}
+.pillar-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.card {
+  background: var(--card);
+  border: 1px solid var(--gold-border);
+  border-radius: 8px;
+  padding: 30px 32px;
+  transition: background 0.2s;
+}
+.card:hover { background: var(--card-hover); }
+.card-label {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 10px;
+  display: block;
+}
+.card h3 {
+  font-family: 'Newsreader', Georgia, serif;
+  font-weight: 400;
+  font-size: 24px;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+.card p {
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 1.72;
+  color: var(--text-muted);
+}
+
+/* ════════════════════════════════════════════
+   QUANTUM
+   ════════════════════════════════════════════ */
+#quantum { background: var(--surface); }
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 44px;
+}
+.stat-card {
+  background: var(--card);
+  border-left: 3px solid var(--gold);
+  border-radius: 0 7px 7px 0;
+  padding: 20px 24px;
+}
+.stat-num {
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 42px;
+  font-weight: 300;
+  color: var(--gold);
+  line-height: 1;
+}
+.stat-title {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text);
+  margin-top: 6px;
+}
+.stat-body {
+  font-size: 12.5px;
+  font-weight: 300;
+  color: var(--text-muted);
+  margin-top: 5px;
+  line-height: 1.55;
+}
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 26px;
+}
+.tag {
+  display: inline-block;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  padding: 5px 12px;
+  border: 1px solid var(--gold-border);
+  border-radius: 20px;
+  color: var(--text-muted);
+}
+
+/* ════════════════════════════════════════════
+   COMPRESSION
+   ════════════════════════════════════════════ */
+#compression {}
+.codec-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 44px;
+}
+.codec-table tr {
+  border-bottom: 1px solid var(--row-border);
+}
+.codec-table tr:last-child { border-bottom: none; }
+.codec-table td {
+  padding: 20px 0;
+  vertical-align: middle;
+}
+.codec-name {
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--text);
+  width: 160px;
+  min-width: 120px;
+}
+.codec-desc {
+  font-size: 14px;
+  font-weight: 300;
+  color: var(--text-muted);
+  padding: 0 28px;
+  line-height: 1.65;
+}
+.codec-status { text-align: right; white-space: nowrap; }
+.badge {
+  display: inline-block;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 3px;
+}
+.badge-done   { background: rgba(201,168,48,0.14); color: var(--gold); }
+.badge-active { background: var(--green-bg); color: var(--green); }
+.callout {
+  background: var(--gold-subtle);
+  border: 1px solid var(--gold-border);
+  border-radius: 6px;
+  padding: 20px 24px;
+  font-size: 14px;
+  font-weight: 300;
+  color: var(--text-muted);
+  line-height: 1.72;
+  margin-top: 24px;
+}
+.callout strong { color: var(--text); font-weight: 500; }
+
+/* ════════════════════════════════════════════
+   AGI
+   ════════════════════════════════════════════ */
+#agi { background: var(--surface); }
+.agi-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0;
+  margin-top: 44px;
+  border: 1px solid var(--gold-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.agi-col {
+  padding: 26px 26px 30px;
+  border-right: 1px solid var(--gold-border);
+}
+.agi-col:last-child { border-right: none; }
+.agi-col-label {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 18px;
+  display: block;
+}
+.agi-row {
+  font-size: 13.5px;
+  font-weight: 300;
+  color: var(--text-muted);
+  padding: 7px 0;
+  border-bottom: 1px solid var(--row-border);
+  line-height: 1.45;
+}
+.agi-row:last-child { border-bottom: none; }
+.agi-row strong { color: var(--text); font-weight: 400; }
+.agi-note {
+  margin-top: 22px;
+  font-size: 13.5px;
+  font-style: italic;
+  font-weight: 300;
+  color: var(--text-muted);
+  line-height: 1.72;
+}
+.agi-note em { font-style: normal; color: var(--text); }
+
+/* ════════════════════════════════════════════
+   IP PORTFOLIO
+   ════════════════════════════════════════════ */
+#ip {}
+.ip-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 52px;
+  margin-top: 44px;
+}
+.ip-col-label {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 18px;
+  display: block;
+}
+.dot-list { list-style: none; }
+.dot-list li {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 300;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+.dot-list li::before {
+  content: '';
+  display: block;
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--gold-dim);
+  margin-top: 7px;
+  flex-shrink: 0;
+}
+.ip-sub-label {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin: 22px 0 14px;
+  display: block;
+}
+
+/* ════════════════════════════════════════════
+   MARKET
+   ════════════════════════════════════════════ */
+#market { background: var(--surface); }
+.market-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 44px;
+}
+.market-card {
+  background: var(--card);
+  border: 1px solid var(--row-border);
+  border-radius: 8px;
+  padding: 28px 30px;
+  transition: background 0.2s;
+}
+.market-card:hover { background: var(--card-hover); }
+.market-num {
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: clamp(42px, 5vw, 58px);
+  font-weight: 300;
+  color: var(--gold);
+  line-height: 1;
+}
+.market-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  margin-top: 8px;
+}
+.market-note {
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--text-muted);
+  margin-top: 5px;
+  line-height: 1.55;
+}
+
+/* ════════════════════════════════════════════
+   INVESTMENT / CONTACT
+   ════════════════════════════════════════════ */
+#invest {}
+.ask-amount {
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: clamp(60px, 9vw, 100px);
+  font-weight: 300;
+  color: var(--gold);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin: 8px 0 40px;
+}
+.ask-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 52px;
+  margin-top: 8px;
+}
+.use-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 18px;
+  align-items: flex-start;
+}
+.use-num {
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 20px;
+  color: var(--gold);
+  min-width: 22px;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+.use-text {
+  font-size: 14px;
+  font-weight: 300;
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+.use-text strong { color: var(--text); font-weight: 400; }
+.gov-panel {
+  background: var(--card);
+  border: 1px solid var(--gold-border);
+  border-radius: 8px;
+  padding: 24px 26px;
+}
+.gov-panel h4 {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 16px;
+}
+.gov-row {
+  font-size: 13.5px;
+  font-weight: 300;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+.gov-row strong { color: var(--text); font-weight: 400; }
+.contact-block { margin-top: 28px; }
+.contact-label {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.contact-email {
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 24px;
+  font-weight: 300;
+  color: var(--text);
+  text-decoration: none;
+  display: inline-block;
+  border-bottom: 1px solid var(--gold-border);
+  transition: border-color 0.2s;
+}
+.contact-email:hover { border-color: var(--gold); }
+.contact-sub {
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--text-muted);
+  margin-top: 5px;
+}
+
+/* ════════════════════════════════════════════
+   FOOTER
+   ════════════════════════════════════════════ */
+footer {
+  background: var(--surface);
+  border-top: 1px solid var(--row-border);
+  padding: 36px 40px;
+}
+.footer-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.footer-copy {
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--text-dim);
+}
+.footer-links {
+  display: flex;
+  gap: 24px;
+}
+.footer-links a {
+  font-size: 12px;
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  color: var(--text-dim);
+  transition: color 0.2s;
+}
+.footer-links a:hover { color: var(--text-muted); }
+
+/* ── SCROLL PROGRESS ─────────────────────── */
+.scroll-progress {
+  position: fixed;
+  top: 60px; left: 0;
+  height: 2px;
+  width: 0%;
+  background: var(--gold);
+  z-index: 499;
+  transition: width 0.1s linear;
+}
+
+/* ── RESPONSIVE ──────────────────────────── */
+@media (max-width: 900px) {
+  header { padding: 0 24px; }
+  nav.primary { display: none; }
+  .nav-hamburger { display: flex; }
+
+  .container { padding: 0 24px; }
+  section { padding: 72px 0; }
+  .hero-inner { padding: 100px 24px 60px; }
+
+  .pillar-grid { grid-template-columns: 1fr; }
+  .stat-grid { grid-template-columns: 1fr; }
+  .agi-cols { grid-template-columns: 1fr; }
+  .agi-col { border-right: none; border-bottom: 1px solid var(--gold-border); }
+  .agi-col:last-child { border-bottom: none; }
+  .ip-cols { grid-template-columns: 1fr; gap: 28px; }
+  .market-grid { grid-template-columns: 1fr; }
+  .ask-grid { grid-template-columns: 1fr; gap: 32px; }
+
+  .codec-desc { padding: 0 16px; }
+  .footer-inner { flex-direction: column; align-items: flex-start; }
+}
+
+@media (max-width: 600px) {
+  .hero-h1 { font-size: clamp(40px, 11vw, 60px); }
+  .codec-table, .codec-table tbody, .codec-table tr, .codec-table td {
+    display: block;
+  }
+  .codec-table tr { padding: 16px 0; border-bottom: 1px solid var(--row-border); }
+  .codec-table td { padding: 4px 0; width: 100% !important; }
+  .codec-name { font-size: 20px; }
+  .codec-desc { padding: 0; }
+  .codec-status { text-align: left; padding-top: 8px; }
+}
+</style>
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="scroll-progress" id="scrollProgress" role="presentation"></div>
+
+<!-- ── HEADER ─────────────────────────────────── -->
+<header>
+  <a class="nav-logo" href="#hero" aria-label="φCoherent Inc. — home">
+    <img src="assets/coherent-logo-web.svg" alt="φCoherent Inc." width="176" height="40">
+  </a>
+
+  <nav class="primary" aria-label="Primary">
+    <a href="#foundation">Foundation</a>
+    <a href="#pillars">Technology</a>
+    <a href="#market">Market</a>
+    <a href="#invest">Invest</a>
+  </nav>
+
+  <div class="nav-right">
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark theme">
+      <span class="toggle-icon" aria-hidden="true">☀</span>
+      <span class="toggle-track"><span class="toggle-thumb"></span></span>
+      <span class="toggle-icon" aria-hidden="true">☾</span>
+    </button>
+    <button class="nav-hamburger" id="hamburger" aria-label="Open navigation menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<nav class="mobile-nav" id="mobileNav" aria-label="Mobile navigation">
+  <a href="#foundation" class="mobile-nav-link">Foundation</a>
+  <a href="#pillars" class="mobile-nav-link">Technology</a>
+  <a href="#quantum" class="mobile-nav-link">Quantum</a>
+  <a href="#compression" class="mobile-nav-link">Compression</a>
+  <a href="#agi" class="mobile-nav-link">Intelligence</a>
+  <a href="#market" class="mobile-nav-link">Market</a>
+  <a href="#invest" class="mobile-nav-link">Invest</a>
+</nav>
+
+<main id="main">
+
+  <!-- ── HERO ──────────────────────────────────── -->
+  <section id="hero" aria-label="Hero">
+    <div class="hero-watermark" aria-hidden="true">φ</div>
+    <div class="hero-inner">
+      <p class="hero-overline reveal">Deep-Technology Research &nbsp;·&nbsp; Ontario, Canada</p>
+      <h1 class="hero-h1 reveal reveal-delay-1">
+        <span class="phi">φ</span>Coherent Inc.
+      </h1>
+      <p class="hero-tagline reveal reveal-delay-2">Designs grounded in <span class="phi-guard">φ</span>Coherent mathematics.</p>
+      <div class="ruled reveal reveal-delay-2"></div>
+      <p class="hero-body reveal reveal-delay-3">
+        We build quantum computing systems, AGI architectures, compression codecs, and
+        cryptographic protocols — all derived from <em>a single mathematical identity</em>.
+        Zero free parameters. Every system composes.
+      </p>
+      <div class="hero-cta reveal reveal-delay-4">
+        <a class="btn-primary" href="#invest">Investment Overview</a>
+        <a class="btn-secondary" href="#pillars">Explore Technology</a>
+      </div>
+      <p class="hero-meta reveal reveal-delay-4">Pre-Seed Round &nbsp;·&nbsp; 2026</p>
+    </div>
+  </section>
+
+  <!-- ── FOUNDATION ─────────────────────────────── -->
+  <section id="foundation" aria-labelledby="foundation-h2">
+    <div class="container">
+      <div class="foundation-inner">
+        <span class="overline reveal">The Foundation</span>
+        <div class="foundation-eq reveal reveal-delay-1">One identity.</div>
+        <p class="foundation-sub reveal reveal-delay-1">Every system we build derives from it.</p>
+        <div class="ruled ruled-center reveal reveal-delay-2"></div>
+        <p class="foundation-body reveal reveal-delay-2">
+          Zero free parameters.<br>
+          When <em>every constant, every dimension, every transform</em>
+          is constrained by a single mathematical identity,
+          systems stop fighting themselves.
+          <em>They compose.</em>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FOUR PILLARS ───────────────────────────── -->
+  <section id="pillars" aria-labelledby="pillars-h2">
+    <div class="container">
+      <div class="section-head">
+        <span class="overline reveal">What We Build</span>
+        <h2 class="section-h2 reveal reveal-delay-1" id="pillars-h2">
+          Four disciplines.<br>One foundation.
+        </h2>
+      </div>
+      <div class="pillar-grid">
+        <div class="card reveal reveal-delay-1">
+          <span class="card-label">Pillar I</span>
+          <h3>Quantum Computing</h3>
+          <p>Production-grade quantum simulation and a novel family of quantum error correction codes. Benchmarked against real hardware noise profiles from IBM, Google, IonQ, and Quantinuum.</p>
+        </div>
+        <div class="card reveal reveal-delay-2">
+          <span class="card-label">Pillar II</span>
+          <h3>Compression</h3>
+          <p>A complete audio · image · video codec family. Lossless by default, deterministic across architectures. Already outperforms FLAC on all lossless metrics. Core to the AGI sensory pipeline.</p>
+        </div>
+        <div class="card reveal reveal-delay-3">
+          <span class="card-label">Pillar III</span>
+          <h3>Artificial General Intelligence</h3>
+          <p>A multi-sensory, multi-cognitive architecture derived entirely from first principles. Zero free parameters. Every instance born with a cryptographic quantum-resistant identity.</p>
+        </div>
+        <div class="card reveal reveal-delay-4">
+          <span class="card-label">Pillar IV</span>
+          <h3>Cryptography &amp; Currency</h3>
+          <p>A post-quantum cryptographic standard and φCurrency protocol. Hash-based throughout — no algebraic hardness assumptions. Quantum-resistant by construction, not by patch.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── QUANTUM ────────────────────────────────── -->
+  <section id="quantum" aria-labelledby="quantum-h2">
+    <div class="container">
+      <span class="overline reveal">Pillar I &nbsp;·&nbsp; Quantum Computing</span>
+      <h2 class="section-h2 reveal reveal-delay-1" id="quantum-h2">
+        Error correction<br>that outperforms<br>surface codes.
+      </h2>
+      <div class="stat-grid">
+        <div class="stat-card reveal reveal-delay-1">
+          <div class="stat-num">12 / 12</div>
+          <div class="stat-title">Our codes outperform surface codes</div>
+          <div class="stat-body">At ≤ 120 qubits across all tested noise rates. Advantage grows further under burst-noise conditions.</div>
+        </div>
+        <div class="stat-card reveal reveal-delay-2">
+          <div class="stat-num">≤ 1.6 mHa</div>
+          <div class="stat-title">VQE chemical accuracy on H₂</div>
+          <div class="stat-body">UCCSD ansatz, noiseless simulation. LiH error: 0.034 mHa vs FCI reference (−7.8825 Ha).</div>
+        </div>
+        <div class="stat-card reveal reveal-delay-3">
+          <div class="stat-num">4</div>
+          <div class="stat-title">Real-device hardware noise models</div>
+          <div class="stat-body">IBM Heron R2 · Google Willow · IonQ Forte · Quantinuum H2. Published Pauli noise parameters.</div>
+        </div>
+        <div class="stat-card reveal reveal-delay-4">
+          <div class="stat-num">66</div>
+          <div class="stat-title">Passing tests, fully reproducible</div>
+          <div class="stat-body">Snapshot-pinned results. Regenerated from source in minutes. Zero external simulator dependencies.</div>
+        </div>
+      </div>
+      <div class="tags reveal">
+        <span class="tag">Header-only C++</span>
+        <span class="tag">Density-matrix Kraus noise</span>
+        <span class="tag">Monte Carlo trajectories</span>
+        <span class="tag">DEJMPS entanglement distillation</span>
+        <span class="tag">Golden phase estimation</span>
+        <span class="tag">Shor N=15 validated</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── COMPRESSION ────────────────────────────── -->
+  <section id="compression" aria-labelledby="compression-h2">
+    <div class="container">
+      <span class="overline reveal">Pillar II &nbsp;·&nbsp; Compression</span>
+      <h2 class="section-h2 reveal reveal-delay-1" id="compression-h2">
+        A complete codec family.<br>Built to last.
+      </h2>
+      <table class="codec-table reveal" role="table" aria-label="Codec status table">
+        <tbody>
+          <tr>
+            <td class="codec-name">Audio</td>
+            <td class="codec-desc">Lossless: beats FLAC in compression ratio, encode speed, and decode speed across all tested material. Lossy levels in active development.</td>
+            <td class="codec-status"><span class="badge badge-done">Complete</span></td>
+          </tr>
+          <tr>
+            <td class="codec-name">Image</td>
+            <td class="codec-desc">21×34 golden-rectangle block geometry. Lossless by default. Cross-architecture byte-identical output. Full test coverage 1×1 to 2048×2048.</td>
+            <td class="codec-status"><span class="badge badge-done">Complete</span></td>
+          </tr>
+          <tr>
+            <td class="codec-name">Video</td>
+            <td class="codec-desc">φCoherent GOP (21 frames), golden-angle spiral motion estimation, φInterpolated sub-pixel compensation. Round-trip deterministic.</td>
+            <td class="codec-status"><span class="badge badge-active">In Progress</span></td>
+          </tr>
+          <tr>
+            <td class="codec-name">Base</td>
+            <td class="codec-desc">Lossless general-purpose codec. Beats zlib on all RPC payload classes. Blockchain-deterministic. ~45% bandwidth reduction on crypto sync traffic.</td>
+            <td class="codec-status"><span class="badge badge-done">Complete</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout reveal">
+        <strong>Why codecs are central:</strong> They are the sensory pipeline for the AGI architecture. Completion of the audio and video codecs directly enables the full HEAR and SEE perceptual front-end — gating the integrated φEngine deployment.
+      </div>
+    </div>
+  </section>
+
+  <!-- ── AGI ────────────────────────────────────── -->
+  <section id="agi" aria-labelledby="agi-h2">
+    <div class="container">
+      <span class="overline reveal">Pillar III &nbsp;·&nbsp; Artificial General Intelligence</span>
+      <h2 class="section-h2 reveal reveal-delay-1" id="agi-h2">
+        φEngine: a mind<br>derived, not designed.
+      </h2>
+      <div class="agi-cols reveal" role="table" aria-label="φEngine architecture">
+        <div class="agi-col" role="rowgroup">
+          <span class="agi-col-label">Sense &nbsp;·&nbsp; Perceive</span>
+          <div class="agi-row"><strong>Feel</strong> — somatic awareness</div>
+          <div class="agi-row"><strong>Smell</strong> — chemical signal</div>
+          <div class="agi-row"><strong>Taste</strong> — gustatory input</div>
+          <div class="agi-row"><strong>Hear</strong> — φAudio codec front-end</div>
+          <div class="agi-row"><strong>See</strong> — φVisual codec front-end</div>
+          <div class="agi-row"><strong>Fuse</strong> — multimodal integration</div>
+        </div>
+        <div class="agi-col" role="rowgroup">
+          <span class="agi-col-label">Think &nbsp;·&nbsp; Cognition</span>
+          <div class="agi-row"><strong>Language</strong> — text encoding</div>
+          <div class="agi-row"><strong>Reasoning</strong> — logical inference</div>
+          <div class="agi-row"><strong>Memory</strong> — episodic store</div>
+          <div class="agi-row"><strong>World Model</strong> — environment state</div>
+          <div class="agi-row"><strong>Metacognition</strong> — self-monitoring</div>
+          <div class="agi-row"><strong>Theory of Mind</strong></div>
+        </div>
+        <div class="agi-col" role="rowgroup">
+          <span class="agi-col-label">Properties</span>
+          <div class="agi-row"><strong>Zero</strong> free parameters</div>
+          <div class="agi-row"><strong>273-byte</strong> universal embedding</div>
+          <div class="agi-row"><strong>Post-quantum</strong> identity at birth</div>
+          <div class="agi-row"><strong>Signed</strong> checkpoints + outputs</div>
+          <div class="agi-row"><strong>GPU-accelerated</strong> (CUDA / Metal / Vulkan)</div>
+          <div class="agi-row"><strong>376 tests</strong> across all modules</div>
+        </div>
+      </div>
+      <p class="agi-note reveal">
+        Every weight, every dimension, every constant derives from a single mathematical identity.
+        No empirical tuning. No hyperparameter search. The architecture is not discovered —
+        it is <em>derived.</em>
+      </p>
+    </div>
+  </section>
+
+  <!-- ── IP PORTFOLIO ───────────────────────────── -->
+  <section id="ip" aria-labelledby="ip-h2">
+    <div class="container">
+      <span class="overline reveal">The Platform &nbsp;·&nbsp; 8 Methods &nbsp;·&nbsp; 10 Designs</span>
+      <h2 class="section-h2 reveal reveal-delay-1" id="ip-h2">
+        Deep IP.<br>Built in parallel.
+      </h2>
+      <div class="ip-cols">
+        <div class="reveal reveal-delay-1">
+          <span class="ip-col-label">Eight Methods</span>
+          <ul class="dot-list">
+            <li>φCrypt — unified cryptographic standard</li>
+            <li>Signal decomposition framework</li>
+            <li>Coherent AI architecture</li>
+            <li>Quantum computing framework</li>
+            <li>Cellular framework — mathematical substrate for all systems</li>
+            <li>Materials hierarchy — composition derived from atomic structure</li>
+            <li>Microstructure design</li>
+            <li>Impeller fluid dynamics</li>
+          </ul>
+        </div>
+        <div class="reveal reveal-delay-2">
+          <span class="ip-col-label">Four Software Designs</span>
+          <ul class="dot-list">
+            <li>φCoherent codec family — audio · image · video · base</li>
+            <li>φCrypt reference implementation + OpenSSL provider</li>
+            <li>Quantum computing stack — 23 packages, 7 functional layers</li>
+            <li>Coherent AI models — φEngine sensory + cognitive suite</li>
+          </ul>
+          <span class="ip-sub-label">Six Hardware Designs</span>
+          <ul class="dot-list">
+            <li>Bearings · Gyroscope · Impeller</li>
+            <li>Centrifugal pump · Ram pump · Nozzle</li>
+          </ul>
+          <div class="callout" style="margin-top: 20px;">
+            <strong>License structure:</strong> All IP owned by Phi-Coherent Inc. Published under AGPLv3 with commercial licensing available. Revenue flows to Phi-Coherent Inc.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── MARKET ─────────────────────────────────── -->
+  <section id="market" aria-labelledby="market-h2">
+    <div class="container">
+      <span class="overline reveal">The Opportunity</span>
+      <h2 class="section-h2 reveal reveal-delay-1" id="market-h2">
+        Four converging markets.<br>One coherent platform.
+      </h2>
+      <div class="market-grid">
+        <div class="market-card reveal reveal-delay-1">
+          <div class="market-num">$450B+</div>
+          <div class="market-title">Quantum Computing</div>
+          <div class="market-note">Global market by 2035 · Error correction is the critical unsolved bottleneck</div>
+        </div>
+        <div class="market-card reveal reveal-delay-2">
+          <div class="market-num">$1T+</div>
+          <div class="market-title">AI / AGI Infrastructure</div>
+          <div class="market-note">Projected by 2032 · Foundation model compute demands coherent, efficient architectures</div>
+        </div>
+        <div class="market-card reveal reveal-delay-3">
+          <div class="market-num">$15B+</div>
+          <div class="market-title">Codec Licensing</div>
+          <div class="market-note">Annual TAM · Streaming, broadcast, edge-AI, and satellite demand better compression</div>
+        </div>
+        <div class="market-card reveal reveal-delay-4">
+          <div class="market-num">$7B+</div>
+          <div class="market-title">Post-Quantum Cryptography</div>
+          <div class="market-note">By 2030 · NIST PQC transition underway · Hash-based standards gaining mandate</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── INVESTMENT ─────────────────────────────── -->
+  <section id="invest" aria-labelledby="invest-h2">
+    <div class="container">
+      <span class="overline reveal">Pre-Seed Raise &nbsp;·&nbsp; Ontario, Canada</span>
+      <div class="ask-amount reveal reveal-delay-1">$2M – $5M</div>
+      <div class="ask-grid">
+        <div>
+          <p style="font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--gold);margin-bottom:20px;" class="reveal">Use of Funds</p>
+          <div class="use-row reveal reveal-delay-1">
+            <div class="use-num">1</div>
+            <div class="use-text"><strong>Research team</strong> — 3 to 5 PhD researchers spanning electrical, mechanical, chemical, quantum, and applied mathematics to advance patents and experimental proof</div>
+          </div>
+          <div class="use-row reveal reveal-delay-2">
+            <div class="use-num">2</div>
+            <div class="use-text"><strong>Research acceleration</strong> — lossy codec completion, full AGI sensory integration, quantum hardware validation partnerships</div>
+          </div>
+          <div class="use-row reveal reveal-delay-3">
+            <div class="use-num">3</div>
+            <div class="use-text"><strong>Patent prosecution</strong> — full protection of the φCoherent method and design IP portfolio across key jurisdictions</div>
+          </div>
+          <div class="use-row reveal reveal-delay-4">
+            <div class="use-num">4</div>
+            <div class="use-text"><strong>Licensing go-to-market</strong> — commercial licensing across codec, cryptography, quantum, AI, and hardware verticals</div>
+          </div>
+        </div>
+        <div>
+          <div class="gov-panel reveal reveal-delay-1">
+            <h4>Canadian Government Pathway</h4>
+            <div class="gov-row"><strong>NRC-IRAP</strong> — Industrial R&amp;D funding eligible</div>
+            <div class="gov-row"><strong>NSERC Alliance</strong> — Academic partnership-ready</div>
+            <div class="gov-row"><strong>SR&amp;ED / Ontario ITC</strong> — Qualified R&amp;D expenditures</div>
+            <div class="gov-row"><strong>SDTC</strong> — Sustainable tech + advanced manufacturing tracks</div>
+          </div>
+          <div class="contact-block reveal reveal-delay-2">
+            <p class="contact-label">Reach out</p>
+            <a class="contact-email" href="mailto:jbadwal@phicoherent.com">jbadwal@phicoherent.com</a>
+            <p class="contact-sub">Ontario, Canada &nbsp;·&nbsp; phicoherent.com</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ── FOOTER ─────────────────────────────────── -->
+<footer>
+  <div class="footer-inner">
+    <p class="footer-copy">&copy; 2026 Phi-Coherent Inc. All rights reserved.</p>
+    <nav class="footer-links" aria-label="Footer">
+      <a href="mailto:jbadwal@phicoherent.com">Contact</a>
+      <a href="#hero">Back to top</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ── SCROLL PROGRESS ── */
+  const progressBar = document.getElementById('scrollProgress');
+  function updateProgress() {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    progressBar.style.width = docHeight > 0 ? (scrollTop / docHeight * 100) + '%' : '0%';
+  }
+  window.addEventListener('scroll', updateProgress, { passive: true });
+
+  /* ── THEME TOGGLE ── */
+  const root    = document.documentElement;
+  const saved   = localStorage.getItem('phi-theme');
+  if (saved === 'dark') root.setAttribute('data-theme', 'dark');
+  else if (saved === 'light') root.removeAttribute('data-theme');
+
+  document.getElementById('themeToggle').addEventListener('click', () => {
+    const isDark = root.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      root.removeAttribute('data-theme');
+      localStorage.setItem('phi-theme', 'light');
+    } else {
+      root.setAttribute('data-theme', 'dark');
+      localStorage.setItem('phi-theme', 'dark');
+    }
+  });
+
+  /* ── MOBILE NAV ── */
+  const hamburger = document.getElementById('hamburger');
+  const mobileNav = document.getElementById('mobileNav');
+  hamburger.addEventListener('click', () => {
+    const open = mobileNav.classList.toggle('open');
+    hamburger.setAttribute('aria-expanded', String(open));
+    hamburger.setAttribute('aria-label', open ? 'Close navigation menu' : 'Open navigation menu');
+  });
+  mobileNav.querySelectorAll('a').forEach(a => {
+    a.addEventListener('click', () => {
+      mobileNav.classList.remove('open');
+      hamburger.setAttribute('aria-expanded', 'false');
+      hamburger.setAttribute('aria-label', 'Open navigation menu');
+    });
+  });
+
+  /* ── SCROLL REVEAL ── */
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  } else {
+    document.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
+  }
+
+  /* ── ACTIVE NAV LINK ── */
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('nav.primary a[href^="#"]');
+  const ioNav = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.getAttribute('id');
+        navLinks.forEach(a => {
+          a.style.color = a.getAttribute('href') === '#' + id
+            ? 'var(--text)'
+            : '';
+        });
+      }
+    });
+  }, { threshold: 0.35 });
+  sections.forEach(s => ioNav.observe(s));
+
+})();
+</script>
+</body>
+</html>
