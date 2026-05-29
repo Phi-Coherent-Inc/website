@@ -1021,7 +1021,7 @@ footer {
         <div class="card reveal reveal-delay-3">
           <span class="card-label">Pillar III</span>
           <h3>Quantum Computing</h3>
-          <p>Production-grade quantum simulation and a novel family of quantum error correction codes. Benchmarked against real hardware noise profiles from IBM, Google, IonQ, and Quantinuum.</p>
+          <p>Production-grade quantum simulation and a novel family of quantum error correction codes. Benchmarked against published noise specifications for 5 devices: IBM Heron R2, IBM Eagle R3, Google Willow, IonQ Forte, and Quantinuum H2.</p>
         </div>
         <div class="card reveal reveal-delay-4">
           <span class="card-label">Pillar IV</span>
@@ -1114,28 +1114,28 @@ footer {
     <div class="container">
       <span class="overline reveal">Pillar III &nbsp;·&nbsp; Quantum Computing</span>
       <h2 class="section-h2 reveal reveal-delay-1" id="quantum-h2">
-        Error correction<br>that outperforms<br>surface codes.
+        Error correction<br>that wins where<br>surface codes fail.
       </h2>
       <div class="stat-grid">
         <div class="stat-card reveal reveal-delay-1">
           <div class="stat-num">12 / 12</div>
-          <div class="stat-title">Our codes outperform surface codes</div>
-          <div class="stat-body">At ≤ 120 qubits across all tested noise rates. Advantage grows further under burst-noise conditions.</div>
+          <div class="stat-title">N-nacci codes beat matched-distance baselines</div>
+          <div class="stat-body">Fibonacci, Tribonacci, and Lucas families at 4–7 strata each outperform same-distance repetition and matched surface code references at ≤ 120 qubits. Advantage grows under burst-noise conditions.</div>
         </div>
         <div class="stat-card reveal reveal-delay-2">
           <div class="stat-num">≤ 1.6 mHa</div>
           <div class="stat-title">VQE chemical accuracy on H₂</div>
-          <div class="stat-body">UCCSD ansatz, noiseless simulation. LiH error: 0.034 mHa vs FCI reference (−7.8825 Ha).</div>
+          <div class="stat-body">UCCSD ansatz, noise-free lower bound. LiH error: 0.034 mHa vs FCI reference (−7.8825 Ha).</div>
         </div>
         <div class="stat-card reveal reveal-delay-3">
-          <div class="stat-num">4</div>
-          <div class="stat-title">Real-device hardware noise models</div>
-          <div class="stat-body">IBM Heron R2 · Google Willow · IonQ Forte · Quantinuum H2. Published Pauli noise parameters.</div>
+          <div class="stat-num">5</div>
+          <div class="stat-title">Published hardware noise models</div>
+          <div class="stat-body">IBM Heron R2 · IBM Eagle R3 · Google Willow · IonQ Forte · Quantinuum H2. Published Pauli noise parameters — not real-device measurements.</div>
         </div>
         <div class="stat-card reveal reveal-delay-4">
-          <div class="stat-num">66</div>
+          <div class="stat-num">78</div>
           <div class="stat-title">Passing tests, fully reproducible</div>
-          <div class="stat-body">Snapshot-pinned results. Regenerated from source in minutes. Zero external simulator dependencies.</div>
+          <div class="stat-body">Snapshot-pinned results with Wilson 95% CI. Regenerated from source in minutes. Cross-validated against Stim v1.14.0.</div>
         </div>
       </div>
       <div class="tags reveal">
@@ -1145,6 +1145,7 @@ footer {
         <span class="tag">DEJMPS entanglement distillation</span>
         <span class="tag">Golden phase estimation</span>
         <span class="tag">Shor N=15 validated</span>
+        <span class="tag">Stim cross-validated</span>
       </div>
     </div>
   </section>
