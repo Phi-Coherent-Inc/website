@@ -466,6 +466,9 @@ section {
   gap: 14px;
   margin-top: 44px;
 }
+.stat-card--wide {
+  grid-column: 1 / -1;
+}
 .stat-card {
   background: var(--card);
   border-left: 3px solid var(--gold);
@@ -1118,9 +1121,9 @@ footer {
       </h2>
       <div class="stat-grid">
         <div class="stat-card reveal reveal-delay-1">
-          <div class="stat-num">12 / 12</div>
-          <div class="stat-title">N-nacci codes beat matched-distance baselines</div>
-          <div class="stat-body">Multi-stratum N-nacci families at 4–7 strata each outperform same-distance repetition and matched surface code references at ≤ 120 qubits. Advantage grows under burst-noise conditions.</div>
+          <div class="stat-num">p &gt; 1%</div>
+          <div class="stat-title">Functional above the surface-code threshold</div>
+          <div class="stat-body">Surface codes fail above ~1% physical error rate — logical error rate rises toward 50%. N-nacci multi-stratum codes remain operational at p = 30%, achieving p_L ≈ 0.087 with 4 strata (30,000 trajectories, Wilson CI-separated).</div>
         </div>
         <div class="stat-card reveal reveal-delay-2">
           <div class="stat-num">≤ 1.6 mHa</div>
@@ -1137,11 +1140,17 @@ footer {
           <div class="stat-title">Passing tests, fully reproducible</div>
           <div class="stat-body">Snapshot-pinned results with Wilson 95% CI. Regenerated from source in minutes. Cross-validated against Stim v1.14.0.</div>
         </div>
+        <div class="stat-card stat-card--wide reveal reveal-delay-4">
+          <div class="stat-num">94×</div>
+          <div class="stat-title">Lower logical error rate at matched qubit budget — 2D ensemble result</div>
+          <div class="stat-body">At 530 physical qubits, a 4-level multi-stratum surface code ensemble achieves 94× lower logical error rate than the best single surface code fitting the same budget (d ≤ 16, 511 qubits) at p = 0.001. Full 2D stabilizer simulation under circuit-level depolarizing noise — no analytical shortcuts. 15,000 trajectories per configuration.</div>
+        </div>
       </div>
       <div class="tags reveal">
         <span class="tag">Header-only C++</span>
         <span class="tag">Density-matrix Kraus noise</span>
         <span class="tag">Monte Carlo trajectories</span>
+        <span class="tag">Cross-stratum veto</span>
         <span class="tag">DEJMPS entanglement distillation</span>
         <span class="tag">φ-spaced phase estimation</span>
         <span class="tag">Shor N=15 validated</span>
