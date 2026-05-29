@@ -511,7 +511,8 @@ section {
 /* ════════════════════════════════════════════
    COMPRESSION
    ════════════════════════════════════════════ */
-#compression { background: var(--surface); }
+#compression {}
+#cryptography { background: var(--surface); }
 .codec-table {
   width: 100%;
   border-collapse: collapse;
@@ -925,6 +926,7 @@ footer {
   <nav class="primary" aria-label="Primary">
     <a href="#foundation">Foundation</a>
     <a href="#pillars">Technology</a>
+    <a href="#cryptography">Cryptography</a>
     <a href="#market">Market</a>
     <a href="#invest">Invest</a>
   </nav>
@@ -944,8 +946,9 @@ footer {
 <nav class="mobile-nav" id="mobileNav" aria-label="Mobile navigation">
   <a href="#foundation" class="mobile-nav-link">Foundation</a>
   <a href="#pillars" class="mobile-nav-link">Technology</a>
-  <a href="#quantum" class="mobile-nav-link">Quantum</a>
   <a href="#compression" class="mobile-nav-link">Compression</a>
+  <a href="#cryptography" class="mobile-nav-link">Cryptography</a>
+  <a href="#quantum" class="mobile-nav-link">Quantum</a>
   <a href="#agi" class="mobile-nav-link">Intelligence</a>
   <a href="#market" class="mobile-nav-link">Market</a>
   <a href="#invest" class="mobile-nav-link">Invest</a>
@@ -1062,6 +1065,46 @@ footer {
       </table>
       <div class="callout reveal">
         <strong>Why codecs are central:</strong> They are the sensory pipeline for the AGI architecture. Completion of the audio and video codecs directly enables the full HEAR and SEE perceptual front-end — gating the integrated φAGI deployment.
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CRYPTOGRAPHY ──────────────────────────── -->
+  <section id="cryptography" aria-labelledby="cryptography-h2">
+    <div class="container">
+      <span class="overline reveal">Pillar II &nbsp;·&nbsp; Cryptography</span>
+      <h2 class="section-h2 reveal reveal-delay-1" id="cryptography-h2">
+        Post-quantum by construction,<br>not by patch.
+      </h2>
+      <div class="stat-grid">
+        <div class="stat-card reveal reveal-delay-1">
+          <div class="stat-num">0</div>
+          <div class="stat-title">Algebraic hardness assumptions</div>
+          <div class="stat-body">No lattice problems. No elliptic curves. No factoring. Security rests on hash collision resistance alone.</div>
+        </div>
+        <div class="stat-card reveal reveal-delay-2">
+          <div class="stat-num">φCrypt</div>
+          <div class="stat-title">Unified cryptographic standard</div>
+          <div class="stat-body">A single coherent primitive family covering signing, key exchange, and authenticated encryption. Derived, not assembled.</div>
+        </div>
+        <div class="stat-card reveal reveal-delay-3">
+          <div class="stat-num">Drop-in</div>
+          <div class="stat-title">OpenSSL provider</div>
+          <div class="stat-body">A native φCrypt provider for OpenSSL. Existing applications gain post-quantum cryptography without code changes.</div>
+        </div>
+        <div class="stat-card reveal reveal-delay-4">
+          <div class="stat-num">φ₡</div>
+          <div class="stat-title">φCurrency protocol</div>
+          <div class="stat-body">A native currency protocol built on the cryptographic foundation. Hash-based throughout. Blockchain-deterministic.</div>
+        </div>
+      </div>
+      <div class="tags reveal">
+        <span class="tag">Hash-based signatures</span>
+        <span class="tag">OpenSSL provider</span>
+        <span class="tag">φCurrency protocol</span>
+        <span class="tag">Quantum-resistant by construction</span>
+        <span class="tag">No algebraic assumptions</span>
+        <span class="tag">AGPL + commercial license</span>
       </div>
     </div>
   </section>
