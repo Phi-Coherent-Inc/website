@@ -459,7 +459,7 @@ section {
 /* ════════════════════════════════════════════
    QUANTUM
    ════════════════════════════════════════════ */
-#quantum { background: var(--surface); }
+#quantum {}
 .stat-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -511,7 +511,7 @@ section {
 /* ════════════════════════════════════════════
    COMPRESSION
    ════════════════════════════════════════════ */
-#compression {}
+#compression { background: var(--surface); }
 .codec-table {
   width: 100%;
   border-collapse: collapse;
@@ -1029,6 +1029,43 @@ footer {
     </div>
   </section>
 
+  <!-- ── COMPRESSION ────────────────────────────── -->
+  <section id="compression" aria-labelledby="compression-h2">
+    <div class="container">
+      <span class="overline reveal">Pillar I &nbsp;·&nbsp; Compression</span>
+      <h2 class="section-h2 reveal reveal-delay-1" id="compression-h2">
+        A complete codec family.<br>Built to last.
+      </h2>
+      <table class="codec-table reveal" role="table" aria-label="Codec status table">
+        <tbody>
+          <tr>
+            <td class="codec-name">Audio</td>
+            <td class="codec-desc">Lossless: beats FLAC in compression ratio, encode speed, and decode speed across all tested material. Lossy levels in active development.</td>
+            <td class="codec-status"><span class="badge badge-done">Complete</span></td>
+          </tr>
+          <tr>
+            <td class="codec-name">Image</td>
+            <td class="codec-desc">21×34 golden-rectangle block geometry. Lossless by default. Cross-architecture byte-identical output. Full test coverage 1×1 to 2048×2048.</td>
+            <td class="codec-status"><span class="badge badge-done">Complete</span></td>
+          </tr>
+          <tr>
+            <td class="codec-name">Video</td>
+            <td class="codec-desc">φCoherent GOP (21 frames), golden-angle spiral motion estimation, φInterpolated sub-pixel compensation. Round-trip deterministic.</td>
+            <td class="codec-status"><span class="badge badge-done">Complete</span></td>
+          </tr>
+          <tr>
+            <td class="codec-name">Base</td>
+            <td class="codec-desc">Lossless general-purpose codec. Beats zlib on all RPC payload classes. Blockchain-deterministic. ~45% bandwidth reduction on crypto sync traffic.</td>
+            <td class="codec-status"><span class="badge badge-done">Complete</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout reveal">
+        <strong>Why codecs are central:</strong> They are the sensory pipeline for the AGI architecture. Completion of the audio and video codecs directly enables the full HEAR and SEE perceptual front-end — gating the integrated φAGI deployment.
+      </div>
+    </div>
+  </section>
+
   <!-- ── QUANTUM ────────────────────────────────── -->
   <section id="quantum" aria-labelledby="quantum-h2">
     <div class="container">
@@ -1065,43 +1102,6 @@ footer {
         <span class="tag">DEJMPS entanglement distillation</span>
         <span class="tag">Golden phase estimation</span>
         <span class="tag">Shor N=15 validated</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- ── COMPRESSION ────────────────────────────── -->
-  <section id="compression" aria-labelledby="compression-h2">
-    <div class="container">
-      <span class="overline reveal">Pillar I &nbsp;·&nbsp; Compression</span>
-      <h2 class="section-h2 reveal reveal-delay-1" id="compression-h2">
-        A complete codec family.<br>Built to last.
-      </h2>
-      <table class="codec-table reveal" role="table" aria-label="Codec status table">
-        <tbody>
-          <tr>
-            <td class="codec-name">Audio</td>
-            <td class="codec-desc">Lossless: beats FLAC in compression ratio, encode speed, and decode speed across all tested material. Lossy levels in active development.</td>
-            <td class="codec-status"><span class="badge badge-done">Complete</span></td>
-          </tr>
-          <tr>
-            <td class="codec-name">Image</td>
-            <td class="codec-desc">21×34 golden-rectangle block geometry. Lossless by default. Cross-architecture byte-identical output. Full test coverage 1×1 to 2048×2048.</td>
-            <td class="codec-status"><span class="badge badge-done">Complete</span></td>
-          </tr>
-          <tr>
-            <td class="codec-name">Video</td>
-            <td class="codec-desc">φCoherent GOP (21 frames), golden-angle spiral motion estimation, φInterpolated sub-pixel compensation. Round-trip deterministic.</td>
-            <td class="codec-status"><span class="badge badge-done">Complete</span></td>
-          </tr>
-          <tr>
-            <td class="codec-name">Base</td>
-            <td class="codec-desc">Lossless general-purpose codec. Beats zlib on all RPC payload classes. Blockchain-deterministic. ~45% bandwidth reduction on crypto sync traffic.</td>
-            <td class="codec-status"><span class="badge badge-done">Complete</span></td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="callout reveal">
-        <strong>Why codecs are central:</strong> They are the sensory pipeline for the AGI architecture. Completion of the audio and video codecs directly enables the full HEAR and SEE perceptual front-end — gating the integrated φAGI deployment.
       </div>
     </div>
   </section>
