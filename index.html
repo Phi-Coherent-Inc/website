@@ -1032,7 +1032,7 @@ footer {
         <div class="card reveal reveal-delay-3">
           <span class="card-label">Pillar III</span>
           <h3>Quantum Computing</h3>
-          <p>Production-grade quantum simulation — spanning discrete-variable statevector, stabilizer, and MPS simulation, plus continuous-variable photonic (Gaussian Boson Sampling) — together with a novel family of multi-stratum hierarchical quantum error correction codes. Benchmarked against published noise specifications for 5 devices: IBM Heron R2, IBM Eagle R3, Google Willow, IonQ Forte, and Quantinuum H2.</p>
+          <p>Production-grade quantum simulation — spanning discrete-variable statevector, stabilizer, and MPS simulation, plus continuous-variable photonic (Gaussian Boson Sampling) — together with a novel family of multi-stratum hierarchical quantum error correction codes and antimatter-derived quantum primitives (CPT symmetry verification, self-dual code locus). Benchmarked against published noise specifications for 5 devices: IBM Heron R2, IBM Eagle R3, Google Willow, IonQ Forte, and Quantinuum H2.</p>
         </div>
         <div class="card reveal reveal-delay-4">
           <span class="card-label">Pillar IV</span>
@@ -1166,6 +1166,11 @@ footer {
           <div class="stat-title">Lower logical error rate at matched qubit budget — 2D ensemble result</div>
           <div class="stat-body">At 530 physical qubits, a 4-level multi-stratum surface code ensemble achieves 94× lower logical error rate than the best single surface code fitting the same budget (d ≤ 16, 511 qubits) at p = 0.001. Full 2D stabilizer simulation under circuit-level depolarizing noise — no analytical shortcuts. 15,000 trajectories per configuration.</div>
         </div>
+        <div class="stat-card stat-card--wide reveal reveal-delay-4">
+          <div class="stat-num" style="font-size:1rem; letter-spacing:.08em; color: var(--accent, #c8a95a);">Self-Dual Code Locus</div>
+          <div class="stat-title">Structural symmetry guarantee by construction</div>
+          <div class="stat-body">A surface code of distance d is self-dual (H<sub>X</sub> = H<sub>Z</sub><sup>T</sup>, equal X/Z stabilizer counts) if and only if d is odd. <code>SelfDualFibonacciSurfaceQEC</code> filters N-nacci distances to odd values only, guaranteeing this property for every level in the ensemble. Fibonacci parity period: 3 (pattern [1,1,0], 2/3 of distances self-dual). At order 2, 4 levels: distances {3,5,13,21}, 1,284 qubits — 2.4× overhead vs the standard 530-qubit ensemble, in exchange for a structural symmetry invariant. CPT symmetry verification (<code>CPTVerifier</code>) independently audits all 7 non-trivial {C,P,T} check combinations for any circuit unitary.</div>
+        </div>
       </div>
       <div class="tags reveal">
         <span class="tag">Header-only C++</span>
@@ -1179,6 +1184,8 @@ footer {
         <span class="tag">Gaussian Boson Sampling</span>
         <span class="tag">CV photonic simulation</span>
         <span class="tag">DV dual-rail bridge</span>
+        <span class="tag">CPT symmetry verification</span>
+        <span class="tag">Self-dual code locus</span>
       </div>
     </div>
   </section>
