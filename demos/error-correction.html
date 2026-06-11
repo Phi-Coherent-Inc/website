@@ -35,8 +35,8 @@
     <div class="control-group">
       <label>Concatenation Levels (K)</label>
       <div class="slider-row">
-        <input type="range" id="levels" min="3" max="6" step="1" value="4">
-        <span class="slider-value" id="levelsVal">4</span>
+        <input type="range" id="levels" min="4" max="7" step="1" value="5">
+        <span class="slider-value" id="levelsVal">5</span>
       </div>
     </div>
 
@@ -93,9 +93,9 @@
         <span class="panel-title">Logical Error Rate vs Physical Error Rate</span>
         <div class="legend">
           <div class="legend-item"><div class="legend-dot" id="dotSurface"></div> Single surface</div>
-          <div class="legend-item"><div class="legend-dot" id="dotK3"></div> φ K=3</div>
           <div class="legend-item"><div class="legend-dot" id="dotK4"></div> φ K=4</div>
-          <div class="legend-item"><div class="legend-dot" id="dotK6"></div> φ K=6</div>
+          <div class="legend-item"><div class="legend-dot" id="dotK5"></div> φ K=5</div>
+          <div class="legend-item"><div class="legend-dot" id="dotK7"></div> φ K=7</div>
         </div>
       </div>
       <canvas id="chartCanvas"></canvas>
@@ -141,9 +141,9 @@ trialsSlider.oninput = () => {
 function legendColors() {
   const p = P();
   document.getElementById('dotSurface').style.background = p.red;
-  document.getElementById('dotK3').style.background = p.green;
-  document.getElementById('dotK4').style.background = p.gold;
-  document.getElementById('dotK6').style.background = p.blue;
+  document.getElementById('dotK4').style.background = p.green;
+  document.getElementById('dotK5').style.background = p.gold;
+  document.getElementById('dotK7').style.background = p.blue;
 }
 
 // ── cosmetic qubit grid seeded by the real logical error rate ──────────────
@@ -253,9 +253,9 @@ function drawChart(selectedK, selectedPpct) {
   }
   // single-surface baseline (matched to the selected K's qubit budget)
   line(byK(selectedK), 'singlePL', pal.red, 2);
-  line(byK(3), 'fibPL', pal.green, selectedK === 3 ? 2.4 : 1.2);
-  line(byK(4), 'fibPL', pal.gold, selectedK === 4 ? 2.4 : 1.4);
-  line(byK(6), 'fibPL', pal.blue, selectedK === 6 ? 2.4 : 1.4);
+  line(byK(4), 'fibPL', pal.green, selectedK === 4 ? 2.4 : 1.2);
+  line(byK(5), 'fibPL', pal.gold, selectedK === 5 ? 2.4 : 1.4);
+  line(byK(7), 'fibPL', pal.blue, selectedK === 7 ? 2.4 : 1.4);
 
   ctx.fillStyle = pal.textDim; ctx.font = '11px Inter'; ctx.textAlign = 'center';
   ctx.fillText('Physical Error Rate', w / 2, h - 3);
