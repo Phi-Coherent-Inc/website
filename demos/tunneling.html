@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>φCoherent — Quantum Tunneling: Order ⊗ Flow</title>
+<meta name="description" content="Interactive demo: the two principles of quantum tunneling — the golden-ratio Cantor band structure (order) and dissipative tunneling dynamics (flow) — joined at the Wick rotation, computed live from phi-quantum-tunnel-cpp via WebAssembly.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://phicoherent.com/demos/tunneling.html">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#C9A830">
+<script>try{if(localStorage.getItem('phi-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/demo.css">
+</head>
+<body>
+
+<header class="demo-header" data-demo="tunneling"
+        data-title="Quantum Tunneling — Order ⊗ Flow (φ ⊗ e)"></header>
+
+<p id="duality" style="max-width:1100px;margin:6px auto 0;padding:0 24px;color:var(--text-muted);font-size:13px;line-height:1.6;text-align:center;">
+  Tunneling has <strong>two principles</strong>, joined at the Wick rotation
+  <em>t ↔ iτ</em> — the two axes of the complex exponential e<sup>z</sup>:
+  the reversible golden-ratio <strong>spectrum</strong> (order, in space) and the
+  irreversible <strong>dynamics</strong> (flow, in time).
+</p>
+
+<div class="main main--triple">
+  <div class="controls">
+    <div class="control-group">
+      <label style="color:var(--gold)">Order — φ spatial spectrum (reversible)</label>
+      <label>Generation (cells = F<sub>n</sub>)</label>
+      <div class="slider-row">
+        <input type="range" id="gen" min="2" max="18" step="1" value="12">
+        <span class="slider-value" id="genVal">12</span>
+      </div>
+      <label>On-site contrast (V = ε<sub>A</sub> − ε<sub>B</sub>)</label>
+      <div class="slider-row">
+        <input type="range" id="contrast" min="0.2" max="1.5" step="0.1" value="1.0">
+        <span class="slider-value" id="contrastVal">1.0</span>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label style="color:var(--demo-cyan,#1f8aa0)">Flow — dissipative dynamics (irreversible)</label>
+      <label>Tunnel splitting Δ</label>
+      <div class="slider-row">
+        <input type="range" id="delta" min="0.5" max="2.0" step="0.1" value="1.0">
+        <span class="slider-value" id="deltaVal">1.0</span>
+      </div>
+      <label>Bath coupling γ<sub>φ</sub> (dephasing)</label>
+      <div class="slider-row">
+        <input type="range" id="gphi" min="0.0" max="1.0" step="0.05" value="0.30">
+        <span class="slider-value" id="gphiVal">0.30</span>
+      </div>
+    </div>
+
+    <div class="demo-status" id="status">Loading…</div>
+
+    <div class="stat-card stat-gold">
+      <div class="stat-label">Lattice size · O(log N) reach</div>
+      <div class="stat-value" id="reach">—</div>
+      <div class="stat-sub">trace-map scan to gen 35</div>
+    </div>
+    <div class="stat-card stat-gold">
+      <div class="stat-label">Allowed band measure</div>
+      <div class="stat-value" id="frac">—</div>
+      <div class="stat-sub">grid-sampled · → Cantor set</div>
+    </div>
+    <div class="stat-card stat-cyan">
+      <div class="stat-label">Tunneling coherence</div>
+      <div class="stat-value" id="coh">—</div>
+      <div class="stat-sub">late ⟨Z⟩ envelope · γ<sub>φ</sub>→0 recurs</div>
+    </div>
+    <div class="stat-card stat-green">
+      <div class="stat-label">Linear entropy S (readout)</div>
+      <div class="stat-value" id="ent">—</div>
+      <div class="stat-sub">e washes · the dissipator is the engine</div>
+    </div>
+  </div>
+
+  <!-- Order (φ): Cantor band structure (reversible spatial spectrum) -->
+  <div class="canvas-panel">
+    <div class="panel-header">
+      <span class="panel-title">Golden-ratio Cantor spectrum · reversible (gen 2 → n)</span>
+      <span class="panel-tag tag-phi">φ load-bearing</span>
+    </div>
+    <canvas id="bandCanvas"></canvas>
+  </div>
+
+  <!-- Flow (e-register): dissipative tunneling dynamics (irreversible) -->
+  <div class="canvas-panel">
+    <div class="panel-header">
+      <span class="panel-title">Dissipative tunneling ⟨Z⟩(t) · irreversible</span>
+      <span class="panel-tag tag-phi">operator · e is notation</span>
+    </div>
+    <canvas id="dynCanvas"></canvas>
+  </div>
+</div>
+
+<p id="explainer" style="max-width:1100px;margin:8px auto 40px;padding:0 24px;color:var(--text-muted);font-size:13.5px;line-height:1.7;">
+  <strong>Left — Order (φ · spatial · reversible).</strong> The Kohmoto–Kadanoff–Tang trace
+  map (1983) computes the Cantor band-membership of a Fibonacci golden-ratio
+  superlattice in <strong>O(log N)</strong> — a gen-35 ≈ 9.2-million-cell lattice in
+  milliseconds. Here φ is genuinely load-bearing: the golden ratio <em>is</em> the
+  recurrence (the silver-ratio word breaks the invariant). The allowed-fraction shown
+  is a grid-sampled estimate of the shrinking Cantor measure.
+  <br><br>
+  <strong>Right — Flow (irreversible dynamics · time).</strong> The same two wells, now in
+  time: H = −(Δ/2)X drives <em>coherent tunneling</em> between them, while a bath
+  (rate γ<sub>φ</sub>) dephases it. With γ<sub>φ</sub>=0 the population ⟨Z⟩ oscillates
+  and <em>recurs</em> forever — reversible, no decay. Turn the bath on and the
+  oscillation <em>irreversibly damps to localization</em>: the dissipator (the
+  OPERATOR) is the engine. The constant <em>e</em> washes (it's notation); the rising
+  entropy is a readout, not the cause.
+  <br><br>
+  The two are <strong>orthogonal registers</strong> joined only at the Wick rotation —
+  φ orders the spatial spectrum, the operator drives the irreversible flow. They
+  compose; there is no φ×e fusion. We do <strong>not</strong> claim φ governs the
+  dynamics, nor that e governs the spectrum, nor any speed-up over diagonalization.
+</p>
+
+<script src="assets/demo-header.js"></script>
+<script type="module">
+import { ready, PhiTunnel } from './assets/js/phi-quantum.js';
+
+const EMIN = -2.5, EMAX = 2.5, NRES = 520, DT = 0.05;
+const pal = () => window.PhiTheme.palette();
+
+function setup(id) {
+  const canvas = document.getElementById(id);
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const w = Math.max(200, rect.width), h = Math.max(180, rect.height - 44);
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, w, h };
+}
+
+// ── Order (φ): Cantor band rows (gen 2..G) ──────────────────────────────────
+const specCache = new Map();
+function spectrum(gen, epsA, epsB) {
+  const key = gen + '|' + epsA.toFixed(3);
+  let s = specCache.get(key);
+  if (!s) { s = PhiTunnel.superlatticeSpectrum(gen, epsA, epsB, NRES); specCache.set(key, s); }
+  return s;
+}
+function drawBands(G, epsA, epsB) {
+  const { ctx, w, h } = setup('bandCanvas');
+  const p = pal();
+  ctx.fillStyle = p.canvas; ctx.fillRect(0, 0, w, h);
+  const rows = G - 1, padL = 6, padR = 6, padT = 6, padB = 18;
+  const plotW = w - padL - padR, rowH = (h - padT - padB) / rows;
+  for (let gen = 2; gen <= G; gen++) {
+    const spec = spectrum(gen, epsA, epsB);
+    const y = padT + (gen - 2) * rowH;
+    ctx.fillStyle = p.isDark ? 'rgba(255,255,255,0.025)' : 'rgba(0,0,0,0.03)';
+    ctx.fillRect(padL, y, plotW, Math.max(1, rowH - 1));
+    ctx.fillStyle = p.gold;
+    ctx.globalAlpha = 0.45 + 0.5 * (gen - 2) / Math.max(1, G - 2);
+    const dx = plotW / spec.length;
+    for (let i = 0; i < spec.length; i++)
+      if (spec[i].allowed > 0.5) ctx.fillRect(padL + i * dx, y, dx + 0.6, Math.max(1, rowH - 1));
+    ctx.globalAlpha = 1;
+  }
+  ctx.fillStyle = p.textDim; ctx.font = '11px Inter, sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('energy  →  (each row = one generation; gold = allowed band)', w / 2, h - 5);
+}
+
+// ── Flow (e-register): dissipative tunneling ⟨Z⟩(t) ─────────────────────────
+function drawDynamics(delta, gphi) {
+  const { ctx, w, h } = setup('dynCanvas');
+  const p = pal();
+  ctx.fillStyle = p.canvas; ctx.fillRect(0, 0, w, h);
+  const period = 2 * Math.PI / delta, T = 4 * period;
+  const steps = Math.min(700, Math.round(T / DT));
+  const ref = PhiTunnel.dissipativeTunnel(delta, 0.0, DT, steps);   // reversible reference
+  const act = PhiTunnel.dissipativeTunnel(delta, gphi, DT, steps);  // active (bath on)
+
+  const padL = 30, padR = 10, padT = 12, padB = 22;
+  const plotW = w - padL - padR, plotH = h - padT - padB;
+  const tmax = act[act.length - 1].t;
+  const xOf = (t) => padL + (t / tmax) * plotW;
+  const yZ  = (z) => padT + (1 - (z + 1) / 2) * plotH;          // ⟨Z⟩ ∈ [−1,1]
+  const yS  = (s) => padT + (1 - s / 0.5) * plotH;             // entropy ∈ [0,0.5]
+
+  // grid + zero line
+  ctx.strokeStyle = p.grid; ctx.lineWidth = 1;
+  for (const z of [-1, 0, 1]) { ctx.beginPath(); ctx.moveTo(padL, yZ(z)); ctx.lineTo(w - padR, yZ(z)); ctx.stroke(); }
+  ctx.fillStyle = p.textDim; ctx.font = '11px Inter, sans-serif';
+  ctx.textAlign = 'right'; ctx.fillText('+1', padL - 4, yZ(1) + 4); ctx.fillText('0', padL - 4, yZ(0) + 4); ctx.fillText('−1', padL - 4, yZ(-1) + 4);
+  ctx.textAlign = 'center'; ctx.fillText('time  →', w / 2, h - 6);
+
+  const line = (data, accessor, yfn, color, width, dash) => {
+    ctx.strokeStyle = color; ctx.lineWidth = width; ctx.setLineDash(dash || []);
+    ctx.beginPath();
+    for (let i = 0; i < data.length; i++) {
+      const x = xOf(data[i].t), y = yfn(accessor(data[i]));
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.stroke(); ctx.setLineDash([]);
+  };
+  // reference coherent ⟨Z⟩ (γφ=0): faint, recurs forever
+  line(ref, d => d.imbalance, yZ, p.gold, 1.2, [4, 4]);
+  // active ⟨Z⟩ (bath on): bold, damps
+  line(act, d => d.imbalance, yZ, p.cyan, 1.8);
+  // active entropy (rising readout)
+  line(act, d => d.entropy, yS, p.green, 1.2);
+
+  ctx.textAlign = 'left'; ctx.font = '10px Inter, sans-serif';
+  ctx.fillStyle = p.gold;  ctx.fillText('⟨Z⟩ coherent (γφ=0, recurs)', padL + 4, padT + 10);
+  ctx.fillStyle = p.cyan;  ctx.fillText('⟨Z⟩ with bath (damps → localize)', padL + 4, padT + 24);
+  ctx.fillStyle = p.green; ctx.fillText('linear entropy S(t)', padL + 4, padT + 38);
+
+  // e-stats: late-time ⟨Z⟩ envelope (coherence) + final entropy
+  let env = 0; for (let i = Math.floor(act.length * 0.75); i < act.length; i++) env = Math.max(env, Math.abs(act[i].imbalance));
+  document.getElementById('coh').textContent = env.toFixed(3);
+  document.getElementById('ent').textContent = act[act.length - 1].entropy.toFixed(3);
+}
+
+// ── orchestration ───────────────────────────────────────────────────────────
+let staircase = null;
+const eps = () => { const V = parseFloat(document.getElementById('contrast').value); return { epsA: V / 2, epsB: -V / 2 }; };
+const fmtCells = (n) => n >= 1e6 ? (n / 1e6).toFixed(2) + 'M' : Math.round(n).toLocaleString();
+
+function refreshReach() {
+  const { epsA, epsB } = eps();
+  const t0 = performance.now();
+  staircase = PhiTunnel.cantorStaircase(epsA, epsB, 35, 1500);
+  const ms = performance.now() - t0;
+  const last = staircase[staircase.length - 1];
+  document.getElementById('reach').textContent = fmtCells(last.cells) + ' · ' + ms.toFixed(1) + ' ms';
+}
+function renderPhi() {
+  const G = parseInt(document.getElementById('gen').value, 10);
+  const { epsA, epsB } = eps();
+  drawBands(G, epsA, epsB);
+  const row = staircase ? staircase.find(r => r.gen === G) : null;
+  document.getElementById('frac').textContent = row ? row.allowedFraction.toFixed(4) : '—';
+}
+function renderE() {
+  drawDynamics(parseFloat(document.getElementById('delta').value),
+               parseFloat(document.getElementById('gphi').value));
+}
+function render() { renderPhi(); renderE(); }
+
+document.getElementById('gen').oninput = function () { document.getElementById('genVal').textContent = this.value; renderPhi(); };
+document.getElementById('contrast').oninput = function () { document.getElementById('contrastVal').textContent = parseFloat(this.value).toFixed(1); specCache.clear(); refreshReach(); renderPhi(); };
+document.getElementById('delta').oninput = function () { document.getElementById('deltaVal').textContent = parseFloat(this.value).toFixed(1); renderE(); };
+document.getElementById('gphi').oninput = function () { document.getElementById('gphiVal').textContent = parseFloat(this.value).toFixed(2); renderE(); };
+window.addEventListener('resize', render);
+window.PhiTheme && window.PhiTheme.onChange(render);
+
+await ready();
+document.getElementById('status').textContent = 'Real computation · φ trace-map + e dissipator (Wick-joined)';
+refreshReach();
+render();
+</script>
+</body>
+</html>

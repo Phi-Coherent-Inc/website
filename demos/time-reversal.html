@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>φCoherent — Time-Reversal Recovery Demo</title>
+<meta name="description" content="Interactive demo: exact time-reversal recovery of a characterized error, with PTM-eigenvalue contraction computed live from phi-quantum-sim-cpp via WebAssembly.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://phicoherent.com/demos/time-reversal.html">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#C9A830">
+<script>try{if(localStorage.getItem('phi-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/demo.css">
+</head>
+<body>
+
+<header class="demo-header" data-demo="time-reversal"
+        data-title="Exact Time-Reversal Recovery"></header>
+
+<div class="main main--triple">
+  <div class="controls">
+    <div class="control-group">
+      <label>Error Angle (θ)</label>
+      <div class="slider-row">
+        <input type="range" id="errorAngle" min="0" max="180" step="1" value="90">
+        <span class="slider-value" id="errorAngleVal">90°</span>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>Error Type (visualization)</label>
+      <div class="slider-row">
+        <select id="errorType" class="demo-select">
+          <option value="X">Pauli-X (Bit Flip)</option>
+          <option value="Y">Pauli-Y (Bit+Phase)</option>
+          <option value="Z" selected>Pauli-Z (Phase Flip)</option>
+          <option value="mixed">Mixed Channel</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>N-nacci Order (2 = Fib · 3 = Trib)</label>
+      <div class="slider-row">
+        <input type="range" id="nnacciOrder" min="2" max="3" step="1" value="3">
+        <span class="slider-value" id="nnacciOrderVal">3</span>
+      </div>
+    </div>
+
+    <button class="btn-run" id="btnRun">Run Recovery Sequence</button>
+    <div class="demo-status" id="status">Loading…</div>
+
+    <div class="control-group">
+      <label>Phase</label>
+      <div class="phase-indicators">
+        <div class="phase-item active" id="phase0">
+          <div class="phase-dot" id="phaseDot0"></div>
+          <span class="phase-label">Initial State</span>
+        </div>
+        <div class="phase-item" id="phase1">
+          <div class="phase-dot" id="phaseDot1"></div>
+          <span class="phase-label">Error Applied</span>
+        </div>
+        <div class="phase-item" id="phase2">
+          <div class="phase-dot" id="phaseDot2"></div>
+          <span class="phase-label">Recovery</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-gold">
+      <div class="stat-label">Error Contraction</div>
+      <div class="stat-value" id="contraction">—</div>
+      <div class="stat-sub">PTM eigenvalue theorem · 2p(k−1)</div>
+    </div>
+
+    <div class="stat-card stat-green">
+      <div class="stat-label">Recovery Fidelity</div>
+      <div class="stat-value" id="finalFidelity">—</div>
+      <div class="stat-sub">circuit_adjoint · post-recovery</div>
+    </div>
+  </div>
+
+  <!-- Left Bloch Sphere: Error -->
+  <div class="scene-panel">
+    <div class="panel-header">
+      <span class="panel-title">Qubit State Under Error</span>
+      <span class="panel-tag tag-error">Degraded</span>
+    </div>
+    <canvas id="errorCanvas"></canvas>
+    <div class="fidelity-bar-container">
+      <div class="fidelity-label">State Fidelity</div>
+      <div class="fidelity-bar"><div class="fidelity-fill" id="errorFill" style="width:100%"></div></div>
+      <div class="fidelity-number" id="errorFidelity">1.000</div>
+    </div>
+  </div>
+
+  <!-- Right Bloch Sphere: Recovery -->
+  <div class="scene-panel">
+    <div class="panel-header">
+      <span class="panel-title">After φ Time-Reversal Recovery</span>
+      <span class="panel-tag tag-recover">φ-Recovered</span>
+    </div>
+    <canvas id="recoveryCanvas"></canvas>
+    <div class="fidelity-bar-container">
+      <div class="fidelity-label">Recovered Fidelity</div>
+      <div class="fidelity-bar"><div class="fidelity-fill" id="recoveryFill" style="width:100%"></div></div>
+      <div class="fidelity-number" id="recoveryFidelity">1.000</div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="assets/demo-header.js"></script>
+<script type="module">
+import { ready, PhiRecovery } from './assets/js/phi-quantum.js';
+
+// computeFidelity, applyRecoveryFidelity and contractionFactor are REAL
+// (phi-quantum-sim-cpp via WASM). The Bloch-sphere arrow rotation (applyError)
+// is a cosmetic visualization of where the error pushes the state.
+function applyError(initialTheta, initialPhi, errorAngleDeg, errorType) {
+  const angle = errorAngleDeg * Math.PI / 180;
+  let theta = initialTheta, phi = initialPhi;
+  switch (errorType) {
+    case 'X': theta = initialTheta + angle; break;
+    case 'Y': theta = initialTheta + angle * 0.7; phi = initialPhi + angle * 0.7; break;
+    case 'Z': phi = initialPhi + angle; break;
+    case 'mixed': theta = initialTheta + angle * 0.5; phi = initialPhi + angle * 0.8; break;
+  }
+  return { theta, phi };
+}
+
+const pal = () => window.PhiTheme.palette();
+const C = (hex) => new THREE.Color(hex);
+
+let webglFailed = false;
+function showVizNotice() {
+  if (document.getElementById('vizNotice')) return;
+  const host = document.querySelector('.scene-panel');
+  if (!host) return;
+  const d = document.createElement('div');
+  d.id = 'vizNotice';
+  d.style.cssText = 'position:absolute;inset:44px 0 0 0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;color:var(--text-muted);font-size:14px;';
+  d.textContent = 'Bloch-sphere view needs WebGL (unavailable here) — the fidelity and contraction results are still computed.';
+  host.appendChild(d);
+}
+
+// ── Bloch scene ─────────────────────────────────────────────────────────────
+function createBlochScene(canvasId) {
+  const p = pal();
+  const canvas = document.getElementById(canvasId);
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setClearColor(C(p.canvas), 1);
+  } catch (e) {
+    webglFailed = true;
+    return { renderer: { setSize() {}, render() {} }, scene: null, camera: null, canvas,
+             initialArrow: { setDirection() {}, setColor() {} }, stateArrow: { setDirection() {}, setColor() {} },
+             trail: null, trailPoints: [], trailGeo: { setFromPoints() {} },
+             glow: { position: { copy() {} } }, glowMat: { color: { set() {} } },
+             sphereMat: { color: { set() {} } }, ringMat: { color: { set() {} } },
+             axisMat: { color: { set() {} } }, poleMat: { color: { set() {} } }, stub: true };
+  }
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+  camera.position.set(2.5, 1.8, 2.5);
+  camera.lookAt(0, 0, 0);
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+  const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+  dirLight.position.set(3, 5, 3);
+  scene.add(dirLight);
+
+  const sphereMat = new THREE.MeshBasicMaterial({ color: C(p.gold), wireframe: true, transparent: true, opacity: 0.10 });
+  scene.add(new THREE.Mesh(new THREE.SphereGeometry(1, 32, 24), sphereMat));
+
+  const ringMat = new THREE.MeshBasicMaterial({ color: C(p.gold), transparent: true, opacity: 0.35 });
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(1, 0.005, 8, 64), ringMat);
+  ring.rotation.x = Math.PI / 2;
+  scene.add(ring);
+
+  const axisMat = new THREE.LineBasicMaterial({ color: C(p.axis), transparent: true, opacity: 0.5 });
+  const axisLen = 1.3;
+  function addAxis(from, to) {
+    const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...from), new THREE.Vector3(...to)]);
+    scene.add(new THREE.Line(geo, axisMat));
+  }
+  addAxis([-axisLen, 0, 0], [axisLen, 0, 0]);
+  addAxis([0, -axisLen, 0], [0, axisLen, 0]);
+  addAxis([0, 0, -axisLen], [0, 0, axisLen]);
+
+  const poleMat = new THREE.MeshBasicMaterial({ color: C(p.gold) });
+  const pole0 = new THREE.Mesh(new THREE.SphereGeometry(0.04, 12, 12), poleMat); pole0.position.set(0, 1, 0); scene.add(pole0);
+  const pole1 = new THREE.Mesh(new THREE.SphereGeometry(0.04, 12, 12), poleMat); pole1.position.set(0, -1, 0); scene.add(pole1);
+
+  const initialArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0), 0.95, C(p.cyan), 0.08, 0.05);
+  scene.add(initialArrow);
+  const stateArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0), 0.95, C(p.red), 0.08, 0.05);
+  scene.add(stateArrow);
+
+  const trailPoints = [];
+  const trailGeo = new THREE.BufferGeometry();
+  const trail = new THREE.Line(trailGeo, new THREE.LineBasicMaterial({ color: C(p.red), transparent: true, opacity: 0.5 }));
+  scene.add(trail);
+
+  const glowMat = new THREE.MeshBasicMaterial({ color: C(p.red) });
+  const glow = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 12), glowMat);
+  glow.position.set(0, 0.95, 0);
+  scene.add(glow);
+
+  return { renderer, scene, camera, canvas, initialArrow, stateArrow, trail, trailPoints, trailGeo, glow, glowMat,
+           sphereMat, ringMat, axisMat, poleMat };
+}
+
+function recolor(s) {
+  const p = pal();
+  s.renderer.setClearColor(C(p.canvas), 1);
+  s.sphereMat.color.set(C(p.gold));
+  s.ringMat.color.set(C(p.gold));
+  s.axisMat.color.set(C(p.axis));
+  s.poleMat.color.set(C(p.gold));
+  s.initialArrow.setColor(C(p.cyan));
+}
+
+function blochCoords(theta, phi) {
+  return new THREE.Vector3(Math.sin(theta) * Math.cos(phi), Math.cos(theta), Math.sin(theta) * Math.sin(phi));
+}
+function resizeScene(s) {
+  if (s.stub) return;
+  const rect = s.canvas.parentElement.getBoundingClientRect();
+  const w = rect.width, h = Math.max(120, rect.height - 44 - 80);
+  s.renderer.setSize(w, h);
+  s.camera.aspect = w / h;
+  s.camera.updateProjectionMatrix();
+}
+function renderScene(s, time) {
+  if (s.stub) return;
+  s.camera.position.x = 2.5 * Math.cos(time * 0.15);
+  s.camera.position.z = 2.5 * Math.sin(time * 0.15);
+  s.camera.lookAt(0, 0, 0);
+  s.renderer.render(s.scene, s.camera);
+}
+function updateArrow(arrow, dir, color) { arrow.setDirection(dir.normalize()); arrow.setColor(C(color)); }
+
+// ── State ─────────────────────────────────────────────────────────────────
+const errorScene = createBlochScene('errorCanvas');
+const recoveryScene = createBlochScene('recoveryCanvas');
+if (webglFailed) showVizNotice();
+let animPhase = 'idle', animDuration = 2, startTime = 0, isRunning = false;
+let initialState = { theta: 0.4, phi: 0.3 }, erroredState = { theta: 0, phi: 0 };
+
+function setPhaseUI(phase) {
+  document.querySelectorAll('.phase-item').forEach((el) => el.classList.remove('active'));
+  document.getElementById(phase === 'idle' ? 'phase0' : phase === 'error' ? 'phase1' : 'phase2').classList.add('active');
+}
+function fidColor(f) { const p = pal(); return f > 0.9 ? p.cyan : f > 0.5 ? p.gold : p.red; }
+
+function runRecovery() {
+  if (isRunning || !window.PhiQuantumReady) return;
+  isRunning = true;
+  const btn = document.getElementById('btnRun');
+  btn.classList.add('running'); btn.textContent = 'Running…';
+
+  const errorAngle = parseFloat(document.getElementById('errorAngle').value);
+  const errorType = document.getElementById('errorType').value;
+  const order = parseInt(document.getElementById('nnacciOrder').value);
+
+  erroredState = applyError(initialState.theta, initialState.phi, errorAngle, errorType);
+  const errorFidelity = PhiRecovery.computeFidelity(errorAngle);            // real
+  const recoveredFidelity = PhiRecovery.applyRecoveryFidelity(errorAngle);  // real ≈ 1.0
+  const contraction = PhiRecovery.contractionFactor(errorAngle, order);     // real PTM
+
+  document.getElementById('contraction').textContent = contraction.toFixed(3);
+  document.getElementById('finalFidelity').textContent = recoveredFidelity.toFixed(3);
+
+  errorScene.trailPoints.length = 0;
+  recoveryScene.trailPoints.length = 0;
+  animPhase = 'error';
+  startTime = performance.now() / 1000;
+  setPhaseUI('error');
+
+  function animate() {
+    const now = performance.now() / 1000;
+    const t = Math.min(1, (now - startTime) / animDuration);
+    const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    const p = pal();
+
+    if (animPhase === 'error') {
+      const theta = initialState.theta + (erroredState.theta - initialState.theta) * eased;
+      const phi = initialState.phi + (erroredState.phi - initialState.phi) * eased;
+      const pos = blochCoords(theta, phi);
+      updateArrow(errorScene.stateArrow, pos.clone(), p.red);
+      errorScene.glow.position.copy(pos.clone().multiplyScalar(0.95));
+      errorScene.glowMat.color.set(C(p.red));
+      errorScene.trailPoints.push(pos.clone().multiplyScalar(0.95));
+      if (errorScene.trailPoints.length > 1) errorScene.trailGeo.setFromPoints(errorScene.trailPoints);
+
+      const fid = 1 - (1 - errorFidelity) * eased;
+      document.getElementById('errorFill').style.width = (fid * 100) + '%';
+      document.getElementById('errorFill').style.background = fidColor(fid);
+      document.getElementById('errorFidelity').textContent = fid.toFixed(3);
+      document.getElementById('errorFidelity').style.color = fidColor(fid);
+
+      const initPos = blochCoords(initialState.theta, initialState.phi);
+      updateArrow(recoveryScene.stateArrow, initPos.clone(), p.cyan);
+      recoveryScene.glow.position.copy(initPos.clone().multiplyScalar(0.95));
+      recoveryScene.glowMat.color.set(C(p.cyan));
+      document.getElementById('recoveryFill').style.width = '100%';
+      document.getElementById('recoveryFill').style.background = p.cyan;
+      document.getElementById('recoveryFidelity').textContent = '—';
+
+      if (t >= 1) { animPhase = 'recover'; startTime = now; setPhaseUI('recover'); }
+    } else if (animPhase === 'recover') {
+      const errPos = blochCoords(erroredState.theta, erroredState.phi);
+      updateArrow(errorScene.stateArrow, errPos.clone(), p.red);
+
+      const theta = erroredState.theta + (initialState.theta - erroredState.theta) * eased;
+      const phi = erroredState.phi + (initialState.phi - erroredState.phi) * eased;
+      const pos = blochCoords(theta, phi);
+      const col = eased > 0.9 ? p.green : p.gold;
+      updateArrow(recoveryScene.stateArrow, pos.clone(), col);
+      recoveryScene.glow.position.copy(pos.clone().multiplyScalar(0.95));
+      recoveryScene.glowMat.color.set(C(col));
+      recoveryScene.trailPoints.push(pos.clone().multiplyScalar(0.95));
+      if (recoveryScene.trailPoints.length > 1) recoveryScene.trailGeo.setFromPoints(recoveryScene.trailPoints);
+
+      const fid = errorFidelity + (recoveredFidelity - errorFidelity) * eased;
+      document.getElementById('recoveryFill').style.width = (fid * 100) + '%';
+      document.getElementById('recoveryFill').style.background = fid > 0.95 ? p.green : p.gold;
+      document.getElementById('recoveryFidelity').textContent = fid.toFixed(3);
+      document.getElementById('recoveryFidelity').style.color = fid > 0.95 ? p.green : p.gold;
+
+      if (t >= 1) {
+        animPhase = 'done'; isRunning = false;
+        btn.classList.remove('running'); btn.textContent = 'Run Recovery Sequence';
+      }
+    }
+
+    resizeScene(errorScene); resizeScene(recoveryScene);
+    renderScene(errorScene, now); renderScene(recoveryScene, now);
+    if (animPhase === 'error' || animPhase === 'recover') requestAnimationFrame(animate);
+    else idleLoop();
+  }
+  animate();
+}
+
+let idleRunning = false;
+function idleLoop() {
+  if (idleRunning) return;
+  idleRunning = true;
+  (function loop() {
+    if (animPhase === 'error' || animPhase === 'recover') { idleRunning = false; return; }
+    const now = performance.now() / 1000;
+    resizeScene(errorScene); resizeScene(recoveryScene);
+    renderScene(errorScene, now); renderScene(recoveryScene, now);
+    requestAnimationFrame(loop);
+  })();
+}
+
+function paintInitial() {
+  const p = pal();
+  const initPos = blochCoords(initialState.theta, initialState.phi);
+  [errorScene, recoveryScene].forEach((s) => {
+    updateArrow(s.stateArrow, initPos.clone(), p.cyan);
+    updateArrow(s.initialArrow, initPos.clone(), p.cyan);
+    s.glow.position.copy(initPos.clone().multiplyScalar(0.95));
+    s.glowMat.color.set(C(p.cyan));
+  });
+}
+
+// slider listeners
+document.getElementById('errorAngle').oninput = function () { document.getElementById('errorAngleVal').textContent = this.value + '°'; };
+document.getElementById('nnacciOrder').oninput = function () { document.getElementById('nnacciOrderVal').textContent = this.value; };
+document.getElementById('btnRun').addEventListener('click', runRecovery);
+window.addEventListener('resize', () => { resizeScene(errorScene); resizeScene(recoveryScene); });
+window.PhiTheme && window.PhiTheme.onChange(() => { recolor(errorScene); recolor(recoveryScene); paintInitial(); });
+
+paintInitial();
+idleLoop();
+
+await ready();
+window.PhiQuantumReady = true;
+document.getElementById('status').textContent = 'Real computation · circuit_adjoint + PTM theorem';
+runRecovery();
+</script>
+</body>
+</html>

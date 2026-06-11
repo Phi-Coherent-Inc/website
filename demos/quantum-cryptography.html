@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>φCoherent — Quantum Cryptography Demo</title>
+<meta name="description" content="Interactive demo: φCrypt's post-quantum security audit, BB84 quantum key distribution, and quantum RNG quality — computed live in your browser from phi-quantum-crypt-cpp via WebAssembly.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://phicoherent.com/demos/quantum-cryptography.html">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#C9A830">
+<script>try{if(localStorage.getItem('phi-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/demo.css">
+<style>
+  .qc-main {
+    max-width: 1180px; margin: 0 auto;
+    padding: calc(var(--demo-header-h, 56px) + 32px) 24px 80px;
+  }
+  .qc-lead {
+    font-size: 15px; font-weight: 300; line-height: 1.72;
+    color: var(--text-muted); max-width: 760px; margin-bottom: 14px;
+  }
+  .qc-status { font-size: 13px; color: var(--text-dim); margin-bottom: 30px; }
+  .qc-grid { display: grid; grid-template-columns: 1fr; gap: 22px; }
+  .qc-panel {
+    background: var(--surface); border: 1px solid var(--gold-border);
+    border-radius: 12px; padding: 24px 26px;
+  }
+  .qc-panel h2 {
+    font-family: 'Newsreader', serif; font-weight: 400;
+    font-size: 22px; color: var(--text); margin: 0 0 4px;
+  }
+  .qc-panel .sub { font-size: 13px; color: var(--text-dim); margin-bottom: 20px; }
+  .qc-panel .tag {
+    float: right; font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--gold-dim); font-weight: 500; margin-top: 6px;
+  }
+
+  /* Security-audit table */
+  table.qc-audit { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.qc-audit th, table.qc-audit td {
+    text-align: left; padding: 11px 12px; border-bottom: 1px solid var(--row-border);
+  }
+  table.qc-audit th {
+    font-size: 11px; letter-spacing: .07em; text-transform: uppercase;
+    color: var(--text-dim); font-weight: 600;
+  }
+  table.qc-audit td { color: var(--text); }
+  table.qc-audit td.num { font-variant-numeric: tabular-nums; color: var(--text-muted); }
+  .pill { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .pill-green { color: var(--demo-green); background: var(--demo-green-bg); }
+  .pill-amber { color: #c8941f; background: rgba(200,160,40,.14); }
+  .qc-callout {
+    margin-top: 18px; padding: 13px 16px; border-radius: 9px; font-size: 13.5px;
+    line-height: 1.6; color: var(--text-muted);
+    background: rgba(200,160,40,.10); border: 1px solid rgba(200,160,40,.30);
+  }
+  .qc-callout strong { color: var(--text); }
+
+  /* Controls */
+  .qc-controls { display: flex; flex-wrap: wrap; gap: 26px; align-items: flex-end; margin-bottom: 20px; }
+  .qc-control { display: flex; flex-direction: column; gap: 8px; }
+  .qc-control label { font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--text-dim); font-weight: 600; }
+  .qc-control input[type=range] { width: 190px; }
+  .qc-control .slider-row { display: flex; align-items: center; gap: 12px; }
+  .qc-control .slider-value { font-variant-numeric: tabular-nums; color: var(--text); font-size: 14px; min-width: 42px; }
+  .qc-toggle { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+  .qc-toggle input { display: none; }
+  .qc-toggle .track {
+    width: 44px; height: 24px; border-radius: 14px; background: var(--card-hover, #2a2a2a);
+    border: 1px solid var(--gold-border); position: relative; transition: background .2s;
+  }
+  .qc-toggle .thumb {
+    position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%;
+    background: var(--text-dim); transition: transform .2s, background .2s;
+  }
+  .qc-toggle input:checked + .track { background: rgba(214,77,77,.30); border-color: var(--demo-red); }
+  .qc-toggle input:checked + .track .thumb { transform: translateX(20px); background: var(--demo-red); }
+  .qc-toggle .lbl { font-size: 14px; color: var(--text); }
+  button.qc-run {
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; letter-spacing: .04em;
+    color: var(--bg); background: var(--gold); border: none; border-radius: 8px;
+    padding: 11px 22px; cursor: pointer; transition: opacity .15s;
+  }
+  button.qc-run:hover { opacity: .88; }
+  button.qc-run:disabled { opacity: .5; cursor: default; }
+
+  /* Result blocks */
+  .qc-results { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; }
+  .qc-stat { background: var(--card, rgba(255,255,255,.02)); border: 1px solid var(--row-border); border-radius: 9px; padding: 15px 16px; }
+  .qc-stat .k { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-dim); font-weight: 600; margin-bottom: 7px; }
+  .qc-stat .v { font-size: 24px; font-variant-numeric: tabular-nums; color: var(--text); font-weight: 300; }
+  .qc-stat .v.good { color: var(--demo-green); }
+  .qc-stat .v.bad  { color: var(--demo-red); }
+  .qc-stat .u { font-size: 12px; color: var(--text-dim); margin-top: 3px; }
+  .qc-badge { display: inline-block; padding: 3px 11px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .qc-badge.pass { color: var(--demo-green); background: var(--demo-green-bg); }
+  .qc-badge.fail { color: var(--demo-red); background: var(--demo-red-bg); }
+  .qc-key {
+    margin-top: 16px; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 12.5px;
+    line-height: 1.7; word-break: break-all; color: var(--demo-cyan, #4aa);
+    background: var(--card, rgba(255,255,255,.02)); border: 1px solid var(--row-border);
+    border-radius: 8px; padding: 13px 15px;
+  }
+  .qc-key.aborted { color: var(--demo-red); }
+  .qc-bar-wrap { margin-top: 4px; }
+  .qc-bar { height: 9px; border-radius: 5px; background: var(--card-hover, #2a2a2a); position: relative; overflow: hidden; }
+  .qc-bar .fill { position: absolute; top: 0; bottom: 0; background: var(--gold); transition: left .3s, width .3s; }
+  .qc-bar .mid { position: absolute; top: -3px; bottom: -3px; left: 50%; width: 1px; background: var(--text-dim); }
+  @media (min-width: 920px) { .qc-grid { grid-template-columns: 1fr 1fr; } .qc-panel.span2 { grid-column: 1 / -1; } }
+</style>
+</head>
+<body>
+
+<header class="demo-header" data-demo="quantum-cryptography"
+        data-title="Quantum Cryptography — φCrypt under quantum attack"></header>
+
+<main class="qc-main">
+  <p class="qc-lead">
+    φCrypt's quantum resistance, computed live in your browser. The post-quantum security
+    audit, a BB84 quantum key-distribution session, and the quantum RNG's statistical quality
+    all run on the real <em>phi-quantum-crypt-cpp</em> library compiled to WebAssembly — no
+    server, no pre-baked numbers.
+  </p>
+  <div class="qc-status" id="status">Loading WebAssembly module…</div>
+
+  <div class="qc-grid">
+
+    <!-- Panel 1: Security Audit -->
+    <section class="qc-panel span2">
+      <span class="tag">phi-quantum-crypt · security_audit</span>
+      <h2>Post-Quantum Security Audit</h2>
+      <div class="sub">φHash tiers vs the NIST PQC categories, with the fault-tolerant Grover-attack cost.</div>
+      <table class="qc-audit">
+        <thead>
+          <tr><th>Tier (chandas)</th><th>Digest</th><th>Post-Grover</th><th>NIST PQC</th><th>Fault-tolerant qubits</th><th>Attack runtime</th></tr>
+        </thead>
+        <tbody id="auditBody">
+          <tr><td colspan="6" style="color:var(--text-dim)">—</td></tr>
+        </tbody>
+      </table>
+      <div class="qc-callout" id="auditCallout"></div>
+    </section>
+
+    <!-- Panel 2: BB84 QKD -->
+    <section class="qc-panel">
+      <span class="tag">qkd_bb84</span>
+      <h2>BB84 Key Distribution</h2>
+      <div class="sub">Establish a shared key over a simulated quantum channel. Toggle an eavesdropper to watch detection fire.</div>
+      <div class="qc-controls">
+        <div class="qc-control">
+          <label>Raw qubits</label>
+          <div class="slider-row">
+            <input type="range" id="rawBits" min="128" max="1024" step="64" value="512">
+            <span class="slider-value" id="rawBitsVal">512</span>
+          </div>
+        </div>
+        <label class="qc-toggle">
+          <input type="checkbox" id="eveToggle">
+          <span class="track"><span class="thumb"></span></span>
+          <span class="lbl">Eavesdropper (Eve)</span>
+        </label>
+        <button class="qc-run" id="bb84Run" disabled>Run session</button>
+      </div>
+      <div class="qc-results">
+        <div class="qc-stat"><div class="k">QBER</div><div class="v" id="bb84Qber">—</div><div class="u">abort ≥ 11%</div></div>
+        <div class="qc-stat"><div class="k">Sifted bits</div><div class="v" id="bb84Sifted">—</div><div class="u">matching bases</div></div>
+        <div class="qc-stat"><div class="k">Status</div><div class="v" id="bb84Status" style="font-size:18px">—</div><div class="u" id="bb84StatusSub">&nbsp;</div></div>
+      </div>
+      <div class="qc-key" id="bb84Key" style="display:none"></div>
+    </section>
+
+    <!-- Panel 3: QRNG Quality -->
+    <section class="qc-panel">
+      <span class="tag">qrng</span>
+      <h2>Quantum RNG Quality</h2>
+      <div class="sub">Bell-pair entropy → von Neumann extraction → φHash whitening. Tested for bias and uniformity.</div>
+      <div class="qc-controls">
+        <div class="qc-control">
+          <label>Bytes generated</label>
+          <div class="slider-row">
+            <input type="range" id="qrngBytes" min="256" max="4096" step="256" value="2560">
+            <span class="slider-value" id="qrngBytesVal">2560</span>
+          </div>
+        </div>
+        <button class="qc-run" id="qrngRun" disabled>Generate &amp; test</button>
+      </div>
+      <div class="qc-results">
+        <div class="qc-stat">
+          <div class="k">Bit balance</div><div class="v" id="qrngBalance">—</div>
+          <div class="qc-bar-wrap"><div class="qc-bar"><span class="fill" id="qrngBar" style="left:50%;width:0"></span><span class="mid"></span></div></div>
+        </div>
+        <div class="qc-stat"><div class="k">Byte χ²</div><div class="v" id="qrngChi">—</div><div class="u">255 df · pass &lt; 330</div></div>
+        <div class="qc-stat"><div class="k">Verdict</div><div class="v" id="qrngVerdict" style="font-size:15px">—</div><div class="u">&nbsp;</div></div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<script src="assets/demo-header.js"></script>
+<script type="module">
+import { ready, PhiCrypto } from './assets/js/phi-quantum.js';
+
+const $ = (id) => document.getElementById(id);
+const fmtQubits = (q) => q >= 1e6 ? (q / 1e6).toFixed(2) + 'M' : Math.round(q).toLocaleString();
+let seedCounter = 1;
+const nextSeed = () => (seedCounter = (seedCounter * 1103515245 + 12345) >>> 0) || 1;
+
+(async () => {
+  let api;
+  try {
+    api = await ready();
+  } catch (e) {
+    $('status').textContent = 'Failed to load the WebAssembly module: ' + e;
+    return;
+  }
+  $('status').textContent = 'Live — computed from phi-quantum-crypt-cpp (WebAssembly).';
+
+  // ── Panel 1: Security Audit (static) ──
+  const rows = PhiCrypto.securityAudit();
+  const names = ['Fast (0)', 'Balanced (1)', 'Sovereign (2)'];
+  $('auditBody').innerHTML = rows.map((r) => {
+    const pill = r.cat5 ? '<span class="pill pill-green">' + r.nist.replace('NIST ', '') + '</span>'
+                        : '<span class="pill pill-amber">' + r.nist.replace('NIST ', '') + '</span>';
+    return '<tr>' +
+      '<td>' + (names[r.chandas] || r.chandas) + '</td>' +
+      '<td class="num">' + r.outputBytes + ' B</td>' +
+      '<td class="num">' + r.postGroverBits + '-bit</td>' +
+      '<td>' + pill + '</td>' +
+      '<td class="num">' + fmtQubits(r.physicalQubits) + '</td>' +
+      '<td class="num">' + r.runtime + '</td>' +
+      '</tr>';
+  }).join('');
+  const c0 = rows.find((r) => r.chandas === 0);
+  $('auditCallout').innerHTML =
+    '<strong>The fast tier (' + (c0 ? c0.postGroverBits : 116) + '-bit post-Grover) is NIST Category 3, not Category 5.</strong> ' +
+    'Use the balanced tier or higher for quantum-threat deployments. The strongest tier needs ~' +
+    (rows[2] ? fmtQubits(rows[2].physicalQubits) : '1.05M') + ' fault-tolerant qubits and ' +
+    (rows[2] ? rows[2].runtime : '~10^85 years') + ' to break by Grover search.';
+
+  // ── Panel 2: BB84 ──
+  $('rawBits').addEventListener('input', (e) => { $('rawBitsVal').textContent = e.target.value; });
+  function runBB84() {
+    const raw = parseInt($('rawBits').value, 10);
+    const eve = $('eveToggle').checked;
+    const r = PhiCrypto.bb84(eve, raw, nextSeed());
+    const qberPct = (r.qber * 100).toFixed(1);
+    const qberEl = $('bb84Qber');
+    qberEl.textContent = qberPct + '%';
+    qberEl.className = 'v ' + (r.qber >= 0.11 ? 'bad' : 'good');
+    $('bb84Sifted').textContent = r.siftedBits;
+    const statusEl = $('bb84Status'), subEl = $('bb84StatusSub'), keyEl = $('bb84Key');
+    if (r.sessionValid) {
+      statusEl.textContent = 'Key established';
+      statusEl.className = 'v good';
+      subEl.textContent = 'no eavesdropper';
+      keyEl.style.display = '';
+      keyEl.className = 'qc-key';
+      keyEl.textContent = 'Derived 47-byte φCipher key:  ' + r.keyHex;
+    } else {
+      statusEl.textContent = 'Aborted';
+      statusEl.className = 'v bad';
+      subEl.textContent = 'eavesdropper detected';
+      keyEl.style.display = '';
+      keyEl.className = 'qc-key aborted';
+      keyEl.textContent = 'SESSION ABORTED — QBER ' + qberPct + '% exceeds the 11% threshold. No key delivered.';
+    }
+  }
+  $('bb84Run').addEventListener('click', runBB84);
+  $('bb84Run').disabled = false;
+
+  // ── Panel 3: QRNG ──
+  $('qrngBytes').addEventListener('input', (e) => { $('qrngBytesVal').textContent = e.target.value; });
+  function runQRNG() {
+    const n = parseInt($('qrngBytes').value, 10);
+    const r = PhiCrypto.qrngStats(n, nextSeed());
+    $('qrngBalance').textContent = r.bitBalance.toFixed(4);
+    // bar: center 0.5, deviation scaled (±0.05 full-width each side)
+    const dev = Math.max(-0.05, Math.min(0.05, r.bitBalance - 0.5));
+    const bar = $('qrngBar');
+    if (dev >= 0) { bar.style.left = '50%'; bar.style.width = (dev / 0.05 * 50) + '%'; }
+    else { bar.style.left = (50 + dev / 0.05 * 50) + '%'; bar.style.width = (-dev / 0.05 * 50) + '%'; }
+    bar.style.background = r.passesMonobit ? 'var(--demo-green)' : 'var(--demo-red)';
+    $('qrngChi').textContent = r.chiSquared.toFixed(1);
+    $('qrngChi').className = 'v ' + (r.passesChi2 ? 'good' : 'bad');
+    const ok = r.passesMonobit && r.passesChi2;
+    $('qrngVerdict').innerHTML = ok
+      ? '<span class="qc-badge pass">Indistinguishable from uniform</span>'
+      : '<span class="qc-badge fail">Bias detected</span>';
+  }
+  $('qrngRun').addEventListener('click', runQRNG);
+  $('qrngRun').disabled = false;
+
+  // Auto-run an initial session/test so the panels aren't empty.
+  runBB84();
+  runQRNG();
+})();
+</script>
+</body>
+</html>

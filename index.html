@@ -465,6 +465,40 @@ section {
 }
 
 /* ════════════════════════════════════════════
+   DEMOS
+   ════════════════════════════════════════════ */
+.demos-intro {
+  font-size: 15px;
+  font-weight: 300;
+  line-height: 1.72;
+  color: var(--text-muted);
+  max-width: 720px;
+  margin-bottom: 40px;
+}
+.demo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(258px, 1fr));
+  gap: 18px;
+}
+.demo-card {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+}
+.demo-card h3, .demo-card p { color: var(--text); }
+.demo-card p { color: var(--text-muted); flex: 1; }
+.demo-launch {
+  margin-top: 18px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+  transition: transform 0.2s;
+}
+.demo-card:hover .demo-launch { transform: translateX(3px); }
+
+/* ════════════════════════════════════════════
    QUANTUM
    ════════════════════════════════════════════ */
 #quantum {}
@@ -882,6 +916,24 @@ footer {
   transition: width 0.1s linear;
 }
 
+/* ════════════════════════════════════════════
+   QUANTUM COMPUTER (HARDWARE)
+   ════════════════════════════════════════════ */
+.machine-lead {
+  font-size: 15px;
+  font-weight: 300;
+  line-height: 1.78;
+  color: var(--text-muted);
+  max-width: 780px;
+  margin-bottom: 42px;
+}
+.machine-lead em { font-style: normal; color: var(--text); }
+.machine-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(258px, 1fr));
+  gap: 18px;
+}
+
 /* ── RESPONSIVE ──────────────────────────── */
 @media (max-width: 900px) {
   header { padding: 0 24px; }
@@ -893,6 +945,8 @@ footer {
   .hero-inner { padding: 100px 24px 60px; }
 
   .pillar-grid { grid-template-columns: 1fr; }
+  .demo-grid { grid-template-columns: 1fr; }
+  .machine-grid { grid-template-columns: 1fr; }
   .stat-grid { grid-template-columns: 1fr; }
   .agi-cols { grid-template-columns: 1fr; }
   .agi-col { border-right: none; border-bottom: 1px solid var(--gold-border); }
@@ -938,6 +992,8 @@ footer {
     <a href="#foundation">Foundation</a>
     <a href="#pillars">Technology</a>
     <a href="#cryptography">Cryptography</a>
+    <a href="#demos">Demos</a>
+    <a href="#machine">Machine</a>
     <a href="#market">Market</a>
     <a href="#invest">Invest</a>
   </nav>
@@ -960,6 +1016,8 @@ footer {
   <a href="#compression" class="mobile-nav-link">Compression</a>
   <a href="#cryptography" class="mobile-nav-link">Cryptography</a>
   <a href="#quantum" class="mobile-nav-link">Quantum</a>
+  <a href="#demos" class="mobile-nav-link">Demos</a>
+  <a href="#machine" class="mobile-nav-link">Machine</a>
   <a href="#agi" class="mobile-nav-link">Intelligence</a>
   <a href="#market" class="mobile-nav-link">Market</a>
   <a href="#invest" class="mobile-nav-link">Invest</a>
@@ -1032,7 +1090,7 @@ footer {
         <div class="card reveal reveal-delay-3">
           <span class="card-label">Pillar III</span>
           <h3>Quantum Computing</h3>
-          <p>Production-grade quantum simulation — statevector, stabilizer, MPS, and photonic — together with a novel family of N-nacci multi-stratum error correction codes, exact time-reversal recovery for characterized errors, proved closed-form channel analytics, and structural symmetry guarantees built into every ensemble level. Benchmarked against published noise specifications for 5 devices: IBM Heron R2, IBM Eagle R3, Google Willow, IonQ Forte, and Quantinuum H2.</p>
+          <p>Production-grade quantum simulation — statevector, stabilizer, MPS, and photonic — together with a novel family of N-nacci multi-stratum error correction codes, exact time-reversal recovery for characterized errors, proved closed-form channel analytics, and structural symmetry guarantees built into every ensemble level. Benchmarked against published noise specifications for 5 devices: IBM Heron R2, IBM Eagle R3, Google Willow, IonQ Forte, and Quantinuum H2. And a complete, patent-pending design for the physical machine itself — from the qubit chip to the cryogenic cooling pump.</p>
         </div>
         <div class="card reveal reveal-delay-4">
           <span class="card-label">Pillar IV</span>
@@ -1110,13 +1168,14 @@ footer {
         </div>
         <div class="stat-card reveal reveal-delay-1" style="grid-column: 1 / -1;">
           <div class="stat-num" style="font-size:1.1rem; letter-spacing:.08em; color: var(--accent, #c8a95a);">Quantum Cryptography Validated</div>
-          <div class="stat-title">Simulation-proven quantum resistance across the full attack surface</div>
+          <div class="stat-title">Simulation-proven quantum resistance across the attack surface</div>
           <div class="stat-body">
-            Our quantum simulation suite stress-tested φCrypt against every known quantum attack vector.
-            The strongest hash level achieves <strong>304-bit post-Grover security</strong> — NIST Category 5 (equivalent to AES-256 against a quantum adversary).
-            Quantum Fourier analysis found no exploitable period structure in hash outputs.
-            A full-scale quantum preimage attack would require <strong>~1 million physical qubits</strong> and an estimated <strong>10<sup>85</sup> years</strong> on the most capable available hardware.
-            End-to-end quantum key distribution integrated with φCrypt: verified 0% bit error on a clean channel and reliable eavesdropper detection.
+            Our quantum simulation suite stress-tested φCrypt against the principal known quantum attack vectors.
+            The strongest hash level achieves <strong>304-bit post-Grover security</strong> — NIST Category 5 (equivalent to AES-256 against a quantum adversary). The fastest tier reaches 116-bit post-Grover (NIST Category 3), so Category 5 deployments use the balanced tier or higher.
+            Simon's algorithm and quantum period-finding (noiseless simulation) found no exploitable algebraic structure in hash outputs.
+            A full-scale quantum preimage attack on the strongest tier would require <strong>~1 million physical qubits</strong> and an estimated <strong>10<sup>85</sup> years</strong> on the most capable available hardware.
+            End-to-end quantum key distribution integrated with φCrypt: verified 0% QBER on a noiseless simulated channel, with reliable eavesdropper detection above the 11% QBER error threshold.
+            <a href="demos/quantum-cryptography.html" style="display:inline-block; margin-top:14px; color:var(--accent,#c8a95a); font-weight:500; text-decoration:none;">Verify it yourself — interactive demo <span aria-hidden="true">→</span></a>
           </div>
         </div>
       </div>
@@ -1127,7 +1186,7 @@ footer {
         <span class="tag">Quantum-resistant by construction</span>
         <span class="tag">No algebraic assumptions</span>
         <span class="tag">Quantum cryptography validated</span>
-        <span class="tag">NIST Category 5 (Tier 1+)</span>
+        <span class="tag">NIST Category 5 (balanced tier+)</span>
         <span class="tag">AGPL + commercial license</span>
       </div>
     </div>
@@ -1138,13 +1197,13 @@ footer {
     <div class="container">
       <span class="overline reveal">Pillar III &nbsp;·&nbsp; Quantum Computing</span>
       <h2 class="section-h2 reveal reveal-delay-1" id="quantum-h2">
-        Error correction<br>that wins where<br>surface codes fail.
+        Error correction,<br>cross-validated<br>against Stim.
       </h2>
       <div class="stat-grid">
         <div class="stat-card reveal reveal-delay-1">
-          <div class="stat-num">p &gt; 1%</div>
-          <div class="stat-title">Functional above the surface-code threshold</div>
-          <div class="stat-body">Surface codes — the industry standard — stop working above ~1% physical error rate. Our N-nacci multi-stratum codes remain operational at 30%, achieving a measured logical error rate of 0.087 with 4 layers and 30,000 Monte Carlo trials. Confidence intervals do not overlap with the single-stratum baseline.</div>
+          <div class="stat-num">16 / 16</div>
+          <div class="stat-title">Cross-validated against Stim v1.14.0</div>
+          <div class="stat-body">Our Clifford/stabilizer simulator reproduces Stim — the standard QEC simulator — on all 16 reference checks: Bell and GHZ stabilizers, CNOT propagation, mid-circuit measurement and reset, and repetition-code syndrome extraction. The surface-code union-find decoder corrects every weight-1 error and drives the logical error rate down with code distance (code-capacity threshold ~10%).</div>
         </div>
         <div class="stat-card reveal reveal-delay-2">
           <div class="stat-num">0.002 mHa</div>
@@ -1181,7 +1240,7 @@ footer {
       </div>
       <div class="tags reveal">
         <span class="tag">N-nacci multi-stratum error correction</span>
-        <span class="tag">Functional above 1% error rate</span>
+        <span class="tag">Cross-validated against Stim v1.14.0</span>
         <span class="tag">Chemical-accuracy variational simulation</span>
         <span class="tag">Entanglement distillation</span>
         <span class="tag">φ-spaced phase estimation</span>
@@ -1192,6 +1251,133 @@ footer {
         <span class="tag">5 hardware noise models</span>
         <span class="tag">Shor-resistant validated</span>
         <span class="tag">AGPL + commercial license</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── INTERACTIVE DEMOS ──────────────────────── -->
+  <section id="demos" aria-labelledby="demos-h2">
+    <div class="container">
+      <span class="overline reveal">Pillar III &nbsp;·&nbsp; Interactive</span>
+      <h2 class="section-h2 reveal reveal-delay-1" id="demos-h2">
+        Run the simulations<br>in your browser.
+      </h2>
+      <div class="ruled reveal reveal-delay-1"></div>
+      <p class="demos-intro reveal reveal-delay-1">
+        Each demo runs the actual <span class="phi-guard">φ</span>Coherent C++ engine,
+        compiled to WebAssembly — real surface-code decoding, real time-reversal recovery,
+        and a real variational eigensolver, computed live as you adjust the controls.
+      </p>
+      <div class="demo-grid">
+        <a class="card demo-card reveal reveal-delay-1" href="demos/error-correction.html">
+          <span class="card-label">N-nacci QEC</span>
+          <h3>Error Correction</h3>
+          <p>Sweep the physical error rate and concatenation depth and compare the Fibonacci-concatenated ensemble against a matched single surface code at equal qubit budget — both decoded live by the same union-find decoder.</p>
+          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card demo-card reveal reveal-delay-2" href="demos/anyon-braiding.html">
+          <span class="card-label">Topological · d_τ = φ</span>
+          <h3>Fibonacci-Anyon Braiding</h3>
+          <p>Where the golden ratio is genuinely load-bearing: a Fibonacci anyon's quantum dimension is exactly φ, making it universal by braiding alone — no magic-state distillation. Braid the worldlines, watch the fusion space evolve, and measure a live threshold, with the honest off-φ Ising comparator alongside.</p>
+          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card demo-card reveal reveal-delay-2" href="demos/time-reversal.html">
+          <span class="card-label">Exact Recovery</span>
+          <h3>Time-Reversal Recovery</h3>
+          <p>Drive an error on the Bloch sphere and apply the constructed inverse — fidelity returns to 1.000, with the PTM-eigenvalue contraction computed in real time.</p>
+          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card demo-card reveal reveal-delay-3" href="demos/vqe-landscape.html">
+          <span class="card-label">VQE</span>
+          <h3>Energy Landscape</h3>
+          <p>Explore the variational energy surface for H₂ and LiH and watch the optimizer descend to chemical accuracy against the exact ground state.</p>
+          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card demo-card reveal reveal-delay-3" href="demos/tunneling.html">
+          <span class="card-label">Quasiperiodic</span>
+          <h3>Golden-Ratio Tunneling</h3>
+          <p>Watch the Cantor band structure of a Fibonacci superlattice form generation by generation — the O(log N) Kohmoto trace map scans a 9.2-million-cell golden lattice in milliseconds.</p>
+          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card demo-card reveal reveal-delay-4" href="demos/quantum-cryptography.html">
+          <span class="card-label">Post-Quantum</span>
+          <h3>Quantum Cryptography</h3>
+          <p>Audit φCrypt's tiers against the NIST PQC categories, run a BB84 key-distribution session and catch an eavesdropper in the act, and stress-test the quantum RNG — computed live from phi-quantum-crypt-cpp.</p>
+          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── QUANTUM COMPUTER (HARDWARE) ────────────── -->
+  <section id="machine" aria-labelledby="machine-h2">
+    <div class="container">
+      <span class="overline reveal">Pillar III &nbsp;·&nbsp; The Machine</span>
+      <h2 class="section-h2 reveal reveal-delay-1" id="machine-h2">
+        We didn't just simulate it.<br>We designed the computer.
+      </h2>
+      <div class="ruled reveal reveal-delay-1"></div>
+      <p class="machine-lead reveal reveal-delay-1">
+        Beyond the simulation stack, we have produced a complete design for a
+        <em>physical quantum computer</em> — a topological, fault-tolerant machine built to run at
+        15 millikelvin, colder than deep space. Its distinction is the one that runs through
+        everything we build: <em>every dimension, frequency, material, and mass ratio is fixed by the
+        single identity φ² = φ + 1</em>. From the qubit chip to the cooling pump, nothing is tuned
+        by hand. Zero free parameters — at the scale of an entire machine.
+      </p>
+
+      <div class="machine-grid">
+        <div class="card reveal reveal-delay-1">
+          <span class="card-label">Quantum Processor</span>
+          <h3>The Fibonacci-Spiral Chip</h3>
+          <p>The qubit chip lays its error-correcting code out as a golden spiral, so the fragile core sits at the centre — physically wrapped and shielded by the most robust outer ring. It is a layout strategy: the geometry places the highest-distance code on the protected outer ring, organising the lattice rather than changing the underlying error-correction scaling.</p>
+        </div>
+        <div class="card reveal reveal-delay-2">
+          <span class="card-label">Real-Time Control</span>
+          <h3>Error Correction in Silicon</h3>
+          <p>Most designs decode quantum errors in software, which is too slow to keep qubits alive at scale. Ours burns the decoder directly into a dedicated control chip — correcting errors in nanoseconds, with no software to drift, crash, or fall behind.</p>
+        </div>
+        <div class="card reveal reveal-delay-3">
+          <span class="card-label">Master Clock</span>
+          <h3>Tuned to Silence</h3>
+          <p>An atomic caesium clock is divided down by the golden ratio itself, so no electronic frequency anywhere in the machine ever lands on a qubit's frequency. The qubits live in a band of guaranteed quiet — silence engineered by mathematics.</p>
+        </div>
+        <div class="card reveal reveal-delay-1">
+          <span class="card-label">Shielding &amp; Cooling</span>
+          <h3>A Magnetically-Invisible Backplane</h3>
+          <p>A custom three-metal alloy — copper, silver, and osmium in golden proportion — is magnetically invisible to the qubits while acting as a superb cold-temperature heat sink, drawing control heat away before it can disturb the quantum core.</p>
+        </div>
+        <div class="card reveal reveal-delay-2">
+          <span class="card-label">Interconnect</span>
+          <h3>Chips That Talk in Light</h3>
+          <p>Instead of fibre-optic cables — which crack and leak heat at cryogenic temperatures — the chips communicate through free-space beams of light across an optical network built into the structure itself.</p>
+        </div>
+        <div class="card reveal reveal-delay-3">
+          <span class="card-label">Cryogenics</span>
+          <h3>A Pump the Qubits Can't Feel</h3>
+          <p>A golden-ratio-shaped dilution pump cools the machine to 15 millikelvin while shaping its own vibrations into a single harmonic the qubits are blind to — solving the mechanical-noise problem that plagues conventional refrigeration.</p>
+        </div>
+        <div class="card reveal reveal-delay-4">
+          <span class="card-label">Outer Shell</span>
+          <h3>The Magnetic Horizon</h3>
+          <p>The entire stack is sealed inside a bismuth boundary — the last stable element on the periodic table — forming an absolute magnetic horizon that closes the machine off from the outside world.</p>
+        </div>
+      </div>
+
+      <div class="callout reveal">
+        <strong>Where it stands:</strong> This is a complete architectural blueprint — a family of eight patent-pending designs, specified end to end from the qubit chip to the cooling pump. No prototype has yet been fabricated; the design is ready for fabrication and validation partnerships.
+      </div>
+
+      <div class="tags reveal">
+        <span class="tag">Topological fault-tolerance</span>
+        <span class="tag">15 millikelvin</span>
+        <span class="tag">Fibonacci-spiral QPU</span>
+        <span class="tag">Hardware error-correction ASIC</span>
+        <span class="tag">φ-divided atomic clock</span>
+        <span class="tag">Diamagnetic Lucas-cermet backplane</span>
+        <span class="tag">Fibre-free optical interconnect</span>
+        <span class="tag">Zero free parameters</span>
+        <span class="tag">8 patent-pending designs</span>
       </div>
     </div>
   </section>
@@ -1243,7 +1429,7 @@ footer {
   <!-- ── IP PORTFOLIO ───────────────────────────── -->
   <section id="ip" aria-labelledby="ip-h2">
     <div class="container">
-      <span class="overline reveal">The Platform &nbsp;·&nbsp; 8 Methods &nbsp;·&nbsp; 10 Designs</span>
+      <span class="overline reveal">The Platform &nbsp;·&nbsp; 8 Methods &nbsp;·&nbsp; 18 Designs</span>
       <h2 class="section-h2 reveal reveal-delay-1" id="ip-h2">
         Deep IP.<br>Built in parallel.
       </h2>
@@ -1273,6 +1459,13 @@ footer {
           <ul class="dot-list">
             <li>Bearings · Gyroscope · Impeller</li>
             <li>Centrifugal pump · Ram pump · Nozzle</li>
+          </ul>
+          <span class="ip-sub-label">Quantum Computer &nbsp;·&nbsp; Eight-Patent Family</span>
+          <ul class="dot-list">
+            <li>Integrated φCoherent quantum computer — full-system design</li>
+            <li>Fibonacci-spiral QPU · hardware error-correction ASIC</li>
+            <li>φ-divided atomic timing · diamagnetic backplane</li>
+            <li>Free-space optical interposer · optomagnetic drive · cryogenic pump</li>
           </ul>
           <div class="callout" style="margin-top: 20px;">
             <strong>License structure:</strong> All IP owned by Phi-Coherent Inc. Published under AGPLv3 with commercial licensing available. Revenue flows to Phi-Coherent Inc.

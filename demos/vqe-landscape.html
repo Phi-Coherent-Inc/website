@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>φCoherent — VQE Energy Landscape Demo</title>
+<meta name="description" content="Interactive demo: a real variational energy landscape and optimizer convergence for H₂ and LiH, computed live from phi-quantum-sim-cpp via WebAssembly.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://phicoherent.com/demos/vqe-landscape.html">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#C9A830">
+<script>try{if(localStorage.getItem('phi-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/demo.css">
+</head>
+<body>
+
+<header class="demo-header" data-demo="vqe-landscape"
+        data-title="VQE Energy Landscape"></header>
+
+<div class="main">
+  <div class="controls">
+    <div class="control-group">
+      <label>Molecule</label>
+      <div class="molecule-selector">
+        <div class="mol-btn active" id="molH2" data-mol="H2">H₂</div>
+        <div class="mol-btn" id="molLiH" data-mol="LiH">LiH</div>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>VQE Iterations</label>
+      <div class="slider-row">
+        <input type="range" id="iterations" min="10" max="200" step="10" value="60">
+        <span class="slider-value" id="iterationsVal">60</span>
+      </div>
+    </div>
+
+    <button class="btn-run" id="btnRun">Run VQE Optimization</button>
+    <div class="demo-status" id="status">Loading…</div>
+
+    <div class="stat-card stat-green">
+      <div class="stat-label">Ground State Energy</div>
+      <div class="stat-value" id="groundEnergy">—</div>
+      <div class="stat-sub">Hartree</div>
+    </div>
+
+    <div class="stat-card stat-gold">
+      <div class="stat-label">Error vs Exact</div>
+      <div class="stat-value" id="energyError">—</div>
+      <div class="stat-sub">milliHartree</div>
+    </div>
+
+    <div class="stat-card stat-cyan">
+      <div class="stat-label">Chemical Accuracy</div>
+      <div class="stat-value" id="chemAccuracy">—</div>
+      <div class="stat-sub">threshold: 1.6 mHa</div>
+    </div>
+
+    <div class="control-group">
+      <label>Energy Color Map</label>
+      <div class="color-bar"></div>
+      <div class="color-bar-labels"><span>Low E</span><span>High E</span></div>
+    </div>
+  </div>
+
+  <div class="scene-container">
+    <div class="scene-header">
+      <span class="panel-title">Potential Energy Surface — 2-angle ansatz</span>
+      <span class="panel-tag">φCoherent VQE</span>
+    </div>
+    <canvas id="sceneCanvas"></canvas>
+
+    <div class="convergence-panel">
+      <div class="cp-title">Convergence</div>
+      <canvas id="convergenceCanvas"></canvas>
+    </div>
+
+    <div class="overlay-stats">
+      <div class="overlay-card"><div class="oc-label">VQE Energy</div><div class="oc-value" id="ovVqe">—</div></div>
+      <div class="overlay-card"><div class="oc-label">Exact Energy</div><div class="oc-value" id="ovExact">—</div></div>
+      <div class="overlay-card"><div class="oc-label">Factor Inside Threshold</div><div class="oc-value" id="ovFactor">—</div></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="assets/demo-header.js"></script>
+<script type="module">
+import { ready, PhiVQE } from './assets/js/phi-quantum.js';
+
+// Energy surface = ⟨ψ(θ,φ)|H|ψ(θ,φ)⟩ over the real 2-angle ansatz (batched WASM
+// call). Convergence trace + final energy + error come from the real
+// QuantumExplorer optimizer. Mouse-drag rotates the surface.
+const pal = () => window.PhiTheme.palette();
+const C = (hex) => new THREE.Color(hex);
+
+let currentMolecule = 'H2';
+let isRunning = false;
+let convergenceData = [];
+let optimizerDot = null, surfaceMesh = null, wireMesh = null, wireMat = null, dotMat = null;
+let lastExact = 0;
+const gridRes = 64;
+
+function showVizNotice(msg) {
+  const host = document.querySelector('.scene-container');
+  if (!host || document.getElementById('vizNotice')) return;
+  const d = document.createElement('div');
+  d.id = 'vizNotice';
+  d.style.cssText = 'position:absolute;inset:44px 0 0 0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;color:var(--text-muted);font-size:14px;';
+  d.textContent = msg;
+  host.appendChild(d);
+}
+
+const canvas = document.getElementById('sceneCanvas');
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setClearColor(C(pal().canvas), 1);
+} catch (e) {
+  renderer = { setSize() {}, setPixelRatio() {}, setClearColor() {}, render() {} };
+  showVizNotice('3D surface needs WebGL (unavailable here) — the numeric results below are still computed.');
+}
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+camera.position.set(4, 3, 4);
+camera.lookAt(0, 0, 0);
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
+dirLight.position.set(5, 8, 5);
+scene.add(dirLight);
+
+let mouseDown = false, mouseX = 0, mouseY = 0, rotY = 0.8, rotX = 0.5;
+canvas.addEventListener('mousedown', (e) => { mouseDown = true; mouseX = e.clientX; mouseY = e.clientY; });
+canvas.addEventListener('mouseup', () => { mouseDown = false; });
+canvas.addEventListener('mousemove', (e) => {
+  if (!mouseDown) return;
+  rotY += (e.clientX - mouseX) * 0.005;
+  rotX = Math.max(-1.2, Math.min(1.2, rotX + (e.clientY - mouseY) * 0.005));
+  mouseX = e.clientX; mouseY = e.clientY;
+});
+
+function energyColor(t) {
+  // blue → cyan → green → gold → red (data colormap, theme-independent)
+  let r, g, b;
+  if (t < 0.25) { const s = t / 0.25; r = 0.25; g = 0.53 + 0.29 * s; b = 0.91; }
+  else if (t < 0.5) { const s = (t - 0.25) / 0.25; r = 0.25; g = 0.82 - 0.04 * s; b = 0.91 - 0.35 * s; }
+  else if (t < 0.75) { const s = (t - 0.5) / 0.25; r = 0.25 + 0.54 * s; g = 0.78 - 0.12 * s; b = 0.56 - 0.37 * s; }
+  else { const s = (t - 0.75) / 0.25; r = 0.79 + 0.12 * s; g = 0.66 - 0.41 * s; b = 0.19 + 0.06 * s; }
+  return new THREE.Color(r, g, b);
+}
+
+function buildSurface(molecule) {
+  if (surfaceMesh) { scene.remove(surfaceMesh); scene.remove(wireMesh); }
+
+  // Real landscape: one batched WASM call → flat row-major [n*n], θ∈[0,π], φ∈[0,2π].
+  const land = PhiVQE.energyLandscape(molecule, gridRes, Math.PI, 2 * Math.PI);
+  const n = gridRes;
+  let eMin = Infinity, eMax = -Infinity;
+  for (const e of land) { if (e < eMin) eMin = e; if (e > eMax) eMax = e; }
+  const span = (eMax - eMin) || 1;
+
+  const geometry = new THREE.PlaneGeometry(4, 4, n - 1, n - 1);
+  const positions = geometry.attributes.position;
+  const colors = new Float32Array(positions.count * 3);
+  for (let k = 0; k < positions.count; k++) {
+    const x = positions.getX(k), z = positions.getZ(k);
+    const i = Math.round((x / 4 + 0.5) * (n - 1));
+    const j = Math.round((z / 4 + 0.5) * (n - 1));
+    const e = land[Math.min(n - 1, Math.max(0, i)) * n + Math.min(n - 1, Math.max(0, j))];
+    const t = (e - eMin) / span;
+    positions.setY(k, t * 2 - 0.5);
+    const col = energyColor(t);
+    colors[k * 3] = col.r; colors[k * 3 + 1] = col.g; colors[k * 3 + 2] = col.b;
+  }
+  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  geometry.computeVertexNormals();
+
+  surfaceMesh = new THREE.Mesh(geometry, new THREE.MeshPhongMaterial({
+    vertexColors: true, side: THREE.DoubleSide, shininess: 40, transparent: true, opacity: 0.92,
+  }));
+  surfaceMesh.rotation.x = -Math.PI / 2;
+  scene.add(surfaceMesh);
+
+  wireMat = new THREE.MeshBasicMaterial({ color: C(pal().gold), wireframe: true, transparent: true, opacity: pal().isDark ? 0.05 : 0.08 });
+  wireMesh = new THREE.Mesh(geometry.clone(), wireMat);
+  wireMesh.rotation.x = -Math.PI / 2;
+  scene.add(wireMesh);
+
+  if (optimizerDot) scene.remove(optimizerDot);
+  dotMat = new THREE.MeshBasicMaterial({ color: C(pal().green) });
+  optimizerDot = new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 16), dotMat);
+  optimizerDot.visible = false;
+  scene.add(optimizerDot);
+}
+
+function drawConvergence(data, exactEnergy) {
+  const p = pal();
+  const cvs = document.getElementById('convergenceCanvas');
+  cvs.width = 232 * 2; cvs.height = 120 * 2;
+  const ctx = cvs.getContext('2d');
+  ctx.setTransform(2, 0, 0, 2, 0, 0);
+  const w = 232, h = 120;
+  ctx.clearRect(0, 0, w, h);
+  if (!data.length) return;
+
+  const pad = { top: 8, right: 8, bottom: 20, left: 46 };
+  const cw = w - pad.left - pad.right, ch = h - pad.top - pad.bottom;
+  const eMin = exactEnergy - 0.01, eMax = data[0].energy + 0.02, xMax = Math.max(1, data.length);
+  const toX = (i) => pad.left + (i / xMax) * cw;
+  const toY = (e) => pad.top + (1 - (e - eMin) / (eMax - eMin)) * ch;
+
+  ctx.strokeStyle = p.cyan; ctx.globalAlpha = 0.6; ctx.setLineDash([3, 3]); ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad.left, toY(exactEnergy)); ctx.lineTo(w - pad.right, toY(exactEnergy)); ctx.stroke();
+  ctx.setLineDash([]); ctx.globalAlpha = 1;
+  ctx.fillStyle = p.cyan; ctx.font = '8px Inter'; ctx.textAlign = 'left';
+  ctx.fillText('exact', pad.left + 2, toY(exactEnergy) - 3);
+
+  ctx.strokeStyle = p.green; ctx.lineWidth = 1.5; ctx.beginPath();
+  data.forEach((d, i) => { const x = toX(i), y = toY(d.energy); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+  ctx.stroke();
+
+  ctx.fillStyle = p.textDim; ctx.font = '8px Inter'; ctx.textAlign = 'center';
+  ctx.fillText('iteration', w / 2, h - 2);
+  ctx.textAlign = 'right';
+  ctx.fillText(eMax.toFixed(2), pad.left - 4, pad.top + 8);
+  ctx.fillText(eMin.toFixed(2), pad.left - 4, h - pad.bottom);
+}
+
+function selectMolecule(mol) {
+  currentMolecule = mol;
+  document.querySelectorAll('.mol-btn').forEach((b) => b.classList.remove('active'));
+  document.getElementById('mol' + mol).classList.add('active');
+  buildSurface(mol);
+  lastExact = PhiVQE.exactEnergy(mol);
+}
+
+function runVQE() {
+  if (isRunning || !window.PhiQuantumReady) return;
+  isRunning = true;
+  const btn = document.getElementById('btnRun');
+  btn.classList.add('running'); btn.textContent = 'Optimizing…';
+
+  const iterations = parseInt(document.getElementById('iterations').value);
+  const result = PhiVQE.runOptimization(currentMolecule, iterations);  // real optimizer
+  convergenceData = result.trace;
+  const factor = 1.6 / Math.max(0.001, result.errorMHa);
+
+  document.getElementById('groundEnergy').textContent = result.finalEnergy.toFixed(6);
+  document.getElementById('energyError').textContent = result.errorMHa.toFixed(3);
+  document.getElementById('chemAccuracy').textContent = factor.toFixed(0) + '× inside';
+  document.getElementById('ovVqe').textContent = result.finalEnergy.toFixed(4);
+  document.getElementById('ovExact').textContent = result.exactEnergy.toFixed(4);
+  document.getElementById('ovFactor').textContent = factor.toFixed(0) + '×';
+
+  let step = 0;
+  const stepsPerFrame = Math.max(1, Math.floor(convergenceData.length / 120));
+  (function animateVQE() {
+    step = Math.min(convergenceData.length, step + stepsPerFrame);
+    drawConvergence(convergenceData.slice(0, step), result.exactEnergy);
+    if (optimizerDot && surfaceMesh && step > 0) {
+      const t = step / convergenceData.length;
+      const angle = t * Math.PI * 4, radius = (1 - t) * 1.5;
+      const eNorm = (convergenceData[step - 1].energy - result.exactEnergy) / 0.5;
+      optimizerDot.position.set(radius * Math.cos(angle), Math.max(-0.3, eNorm * 2 - 0.5) + 0.1, radius * Math.sin(angle));
+      optimizerDot.visible = true;
+    }
+    if (step < convergenceData.length) requestAnimationFrame(animateVQE);
+    else { isRunning = false; btn.classList.remove('running'); btn.textContent = 'Run VQE Optimization'; }
+  })();
+}
+
+function resize() {
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const w = rect.width, h = Math.max(160, rect.height - 44);
+  renderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+function render() {
+  resize();
+  const dist = 5.5;
+  camera.position.x = dist * Math.sin(rotY) * Math.cos(rotX);
+  camera.position.y = dist * Math.sin(rotX) + 1;
+  camera.position.z = dist * Math.cos(rotY) * Math.cos(rotX);
+  camera.lookAt(0, 0, 0);
+  if (!mouseDown) rotY += 0.002;
+  renderer.render(scene, camera);
+  requestAnimationFrame(render);
+}
+
+function applyTheme() {
+  const p = pal();
+  renderer.setClearColor(C(p.canvas), 1);
+  if (wireMat) { wireMat.color.set(C(p.gold)); wireMat.opacity = p.isDark ? 0.05 : 0.08; }
+  if (dotMat) dotMat.color.set(C(p.green));
+  if (convergenceData.length) drawConvergence(convergenceData, lastExact);
+}
+
+document.getElementById('iterations').oninput = function () { document.getElementById('iterationsVal').textContent = this.value; };
+document.querySelectorAll('.mol-btn').forEach((b) => b.addEventListener('click', () => selectMolecule(b.getAttribute('data-mol'))));
+document.getElementById('btnRun').addEventListener('click', runVQE);
+window.addEventListener('resize', resize);
+window.PhiTheme && window.PhiTheme.onChange(applyTheme);
+
+render();
+
+await ready();
+window.PhiQuantumReady = true;
+document.getElementById('status').textContent = 'Real statevector landscape + QuantumExplorer optimizer';
+buildSurface('H2');
+lastExact = PhiVQE.exactEnergy('H2');
+runVQE();
+</script>
+</body>
+</html>
