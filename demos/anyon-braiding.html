@@ -52,7 +52,7 @@
       </div>
     </div>
 
-    <button class="btn-run" id="btnRun" onclick="runThreshold()">Run Threshold Sweep</button>
+    <button class="btn-run" id="btnRun">Run Threshold Sweep</button>
     <div class="demo-status" id="status">Loading…</div>
 
     <div class="stat-card stat-gold axis-card">
@@ -178,6 +178,9 @@ braidNSlider.oninput = () => {
   if (PhiTopo && window._ready) { trace = PhiTopo.braidTrace(parseInt(braidNSlider.value)); drawBraid(); drawFusion(); }
 };
 trialsSlider.oninput = () => { document.getElementById('trialsVal').textContent = trialsSlider.value; };
+// runThreshold is module-scoped, so the button must be wired here (an inline
+// onclick="" attribute resolves against global scope and cannot see it).
+document.getElementById('btnRun').addEventListener('click', runThreshold);
 
 function legendColors() {
   const p = P();
