@@ -172,9 +172,20 @@ export const PhiTopo = {
     return _module.interferometryReadout();
   },
   // Braid fidelity decay vs length under a superconducting noise model (Track B).
-  // n = 1..maxN at fixed per-gate error pPhys. Returns [{ n, gates, pPhys, fidelity }].
-  braidFidelitySweep(maxN = 12, pPhys = 0.001) {
-    return vecToArray(_module.runBraidFidelitySweep(maxN >>> 0, pPhys));
+  // n = 1..maxN at fixed per-gate error pPhys. gatesPerExchange models the real
+  // string-net cost of one anyon braid (tens of physical gates, not one): at the
+  // idealized 1 the curve is flatteringly shallow; at ~20 it collapses toward the
+  // maximally-mixed floor 0.5. Returns [{ n, gates, pPhys, fidelity }].
+  braidFidelitySweep(maxN = 12, pPhys = 0.001, gatesPerExchange = 1) {
+    return vecToArray(
+      _module.runBraidFidelitySweep(maxN >>> 0, pPhys, gatesPerExchange >>> 0));
+  },
+  // Per-logical-gate feasibility budget at 15 mK (the "does it fit in the car"
+  // layer). Honest negative result: the budget does NOT close. Returns
+  // { perGateBudget, thermal, poisoning, leakage, readout, total, requiredRatio,
+  //   closingGapK15mK, closingGapK1mK, candidateGapK }.
+  feasibilityBudget() {
+    return _module.feasibilityBudget();
   },
 };
 
