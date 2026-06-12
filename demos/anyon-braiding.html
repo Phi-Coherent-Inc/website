@@ -78,6 +78,12 @@
       <div class="stat-value" id="threshVal">—</div>
       <div class="stat-sub">code-capacity, small-instance</div>
     </div>
+
+    <div class="stat-card stat-gold axis-card">
+      <div class="stat-label">Interferometric read-out</div>
+      <div class="stat-value" id="readoutCard">—</div>
+      <div class="stat-sub">φ in the measured signal</div>
+    </div>
   </div>
 
   <div class="canvas-area">
@@ -95,6 +101,23 @@
           <span class="panel-tag tag-phi">dim = F(3) = 2</span>
         </div>
         <canvas id="fusionCanvas"></canvas>
+      </div>
+    </div>
+
+    <div class="canvas-row">
+      <div class="canvas-panel">
+        <div class="panel-header">
+          <span class="panel-title">Interferometric Read-Out — fringe visibility</span>
+          <span class="panel-tag tag-phi">suppression = 1/φ²</span>
+        </div>
+        <canvas id="interfCanvas"></canvas>
+      </div>
+      <div class="canvas-panel">
+        <div class="panel-header">
+          <span class="panel-title">Synthetic Braid Fidelity vs Length (Track B, noisy)</span>
+          <span class="panel-tag tag-phi">IBM Heron p = 0.001</span>
+        </div>
+        <canvas id="fidelityCanvas"></canvas>
       </div>
     </div>
 
@@ -137,6 +160,8 @@ const statusEl = document.getElementById('status');
 
 let trace = null;     // braidTrace rows
 let curve = null;     // threshold points [{distance, physical, pL, low, high}]
+let readout = null;   // interferometric read-out { vacuumVisibility, tauVisibility, suppressionRatio, contrast, phiInv2, phiInv }
+let fidRows = null;   // braid fidelity sweep [{ n, gates, pPhys, fidelity }]
 let worker = null, isRunning = false;
 
 braidNSlider.oninput = () => {
@@ -242,6 +267,76 @@ function drawFusion() {
   ctx.fillText('|amp(τ-channel)|²', 0, 0); ctx.restore();
 }
 
+// ── interferometric read-out: two fringe patterns, vacuum (full) vs τ (1/φ²) ──
+function drawInterferometer() {
+  if (!readout) return;
+  const pal = P();
+  const canvas = document.getElementById('interfCanvas');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * 2; canvas.height = (rect.height - 44) * 2;
+  const ctx = canvas.getContext('2d'); ctx.setTransform(2,0,0,2,0,0);
+  const w = rect.width, h = rect.height - 44;
+  ctx.fillStyle = pal.canvas; ctx.fillRect(0, 0, w, h);
+
+  const pad = 20, bandH = (h - 3*pad) / 2, x0 = pad + 96, x1 = w - pad;
+  const cycles = 7, k = 2*Math.PI*cycles/(x1-x0);
+  // one fringe band: intensity I(x) = 0.5(1 + vis·cos(kx)), drawn as gold stripes
+  function band(yTop, vis, label, sub) {
+    for (let x = x0; x < x1; x++) {
+      const I = 0.5*(1 + vis*Math.cos(k*(x-x0)));
+      ctx.fillStyle = pal.gold; ctx.globalAlpha = 0.12 + 0.85*I;
+      ctx.fillRect(x, yTop, 1, bandH);
+    }
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = pal.border || pal.grid; ctx.lineWidth = 1;
+    ctx.strokeRect(x0, yTop, x1-x0, bandH);
+    ctx.fillStyle = pal.text; ctx.font = '600 12px Inter'; ctx.textAlign = 'left';
+    ctx.fillText(label, pad, yTop + bandH/2 - 2);
+    ctx.fillStyle = pal.textDim; ctx.font = '10px Inter';
+    ctx.fillText(sub, pad, yTop + bandH/2 + 13);
+  }
+  band(pad, readout.vacuumVisibility, 'fuse → 1', 'vacuum · visibility ' + readout.vacuumVisibility.toFixed(3));
+  band(pad*2 + bandH, readout.tauVisibility, 'fuse → τ', 'τ · visibility ' + readout.tauVisibility.toFixed(3) + ' = 1/φ²');
+  ctx.fillStyle = pal.textDim; ctx.font = '10px Inter'; ctx.textAlign = 'center';
+  ctx.fillText('monodromy R² suppresses τ-fringes by exactly 1/φ² ≈ ' + readout.phiInv2.toFixed(3)
+    + ' · contrast 1/φ ≈ ' + readout.phiInv.toFixed(3), w/2, h - 4);
+}
+
+// ── synthetic braid fidelity vs braid length under depolarizing noise ─────────
+function drawFidelity() {
+  if (!fidRows || !fidRows.length) return;
+  const pal = P();
+  const canvas = document.getElementById('fidelityCanvas');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * 2; canvas.height = (rect.height - 44) * 2;
+  const ctx = canvas.getContext('2d'); ctx.setTransform(2,0,0,2,0,0);
+  const w = rect.width, h = rect.height - 44;
+  ctx.fillStyle = pal.panel; ctx.fillRect(0, 0, w, h);
+
+  const pad = { top: 16, right: 18, bottom: 30, left: 46 };
+  const cw = w - pad.left - pad.right, ch = h - pad.top - pad.bottom;
+  const nMax = fidRows[fidRows.length-1].n;
+  const yMin = Math.min(0.9, ...fidRows.map(r=>r.fidelity)) - 0.01, yMax = 1.0;
+  const toX = (n)=>pad.left + (nMax<=1?0.5:(n-1)/(nMax-1))*cw;
+  const toY = (v)=>pad.top + (1-(v-yMin)/(yMax-yMin))*ch;
+  ctx.strokeStyle = pal.grid; ctx.lineWidth=0.5; ctx.fillStyle=pal.textDim; ctx.font='10px Inter';
+  for (let i=0;i<=4;i++){ const yv=yMin+(yMax-yMin)*i/4, y=toY(yv); ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(w-pad.right,y); ctx.stroke(); ctx.textAlign='right'; ctx.fillText(yv.toFixed(2), pad.left-6, y+3); }
+  ctx.strokeStyle = pal.green; ctx.lineWidth=2.2; ctx.beginPath();
+  fidRows.forEach((r,i)=>{ const x=toX(r.n),y=toY(r.fidelity); i?ctx.lineTo(x,y):ctx.moveTo(x,y); }); ctx.stroke();
+  ctx.fillStyle = pal.green;
+  fidRows.forEach(r=>{ ctx.beginPath(); ctx.arc(toX(r.n),toY(r.fidelity),2.8,0,2*Math.PI); ctx.fill(); });
+  ctx.fillStyle=pal.textDim; ctx.font='11px Inter'; ctx.textAlign='center';
+  ctx.fillText('braid length n  (gates = 2n)', w/2, h-3);
+  ctx.save(); ctx.translate(12,h/2); ctx.rotate(-Math.PI/2); ctx.fillText('logical fidelity', 0, 0); ctx.restore();
+}
+
+function renderReadout() {
+  if (!readout) return;
+  document.getElementById('readoutCard').innerHTML =
+    'τ-fringe visibility = <b>' + readout.suppressionRatio.toFixed(3) + '</b> = 1/φ²'
+    + '<br><span style="opacity:.7">contrast ' + readout.contrast.toFixed(3) + ' = 1/φ</span>';
+}
+
 // ── threshold chart: p_L vs p_phys for d ∈ {3,5,7}, crossing near 0.5 ─────────
 function drawChart() {
   if (!curve) return;
@@ -332,8 +427,8 @@ function initWorker() {
   worker.onerror = (e) => { isRunning = false; statusEl.textContent = 'Worker error: ' + (e.message || 'failed to load WASM'); };
 }
 
-window.addEventListener('resize', () => { drawBraid(); drawFusion(); drawChart(); });
-window.PhiTheme && window.PhiTheme.onChange(() => { legendColors(); drawBraid(); drawFusion(); drawChart(); });
+window.addEventListener('resize', () => { drawBraid(); drawFusion(); drawInterferometer(); drawFidelity(); drawChart(); });
+window.PhiTheme && window.PhiTheme.onChange(() => { legendColors(); drawBraid(); drawFusion(); drawInterferometer(); drawFidelity(); drawChart(); });
 
 (async function init() {
   legendColors();
@@ -341,8 +436,11 @@ window.PhiTheme && window.PhiTheme.onChange(() => { legendColors(); drawBraid();
     await ready();
     window._ready = true;
     trace = PhiTopo.braidTrace(parseInt(braidNSlider.value));
+    readout = PhiTopo.interferometryReadout();
+    fidRows = PhiTopo.braidFidelitySweep(12, 0.001);
     renderNodeWin();
-    drawBraid(); drawFusion();
+    renderReadout();
+    drawBraid(); drawFusion(); drawInterferometer(); drawFidelity();
     statusEl.textContent = 'Fibonacci anyons (d_τ = φ) — braiding is universal, no distillation.';
     initWorker();
     setTimeout(runThreshold, 400);

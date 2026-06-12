@@ -166,6 +166,16 @@ export const PhiTopo = {
   runFibAnyonThreshold(trajectories = 3000) {
     return vecToArray(_module.runFibAnyonThreshold(trajectories >>> 0));
   },
+  // Anyonic interferometric read-out. Returns { vacuumVisibility, tauVisibility,
+  // suppressionRatio (== 1/φ²), contrast (== 1/φ), phiInv2, phiInv }.
+  interferometryReadout() {
+    return _module.interferometryReadout();
+  },
+  // Braid fidelity decay vs length under a superconducting noise model (Track B).
+  // n = 1..maxN at fixed per-gate error pPhys. Returns [{ n, gates, pPhys, fidelity }].
+  braidFidelitySweep(maxN = 12, pPhys = 0.001) {
+    return vecToArray(_module.runBraidFidelitySweep(maxN >>> 0, pPhys));
+  },
 };
 
 const api = { ready, isReady, PhiCoherent, PhiRecovery, PhiVQE, PhiTunnel, PhiCrypto, PhiTopo };
