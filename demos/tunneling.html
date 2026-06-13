@@ -29,7 +29,7 @@
   irreversible <strong>dynamics</strong> (flow, in time).
 </p>
 
-<div class="main main--triple">
+<div class="main">
   <div class="controls">
     <div class="control-group">
       <label style="color:var(--gold)">Order — φ spatial spectrum (reversible)</label>
@@ -83,32 +83,36 @@
     </div>
   </div>
 
-  <!-- Order (φ): Cantor band structure (reversible spatial spectrum) -->
-  <div class="canvas-panel">
-    <div class="panel-header">
-      <span class="panel-title">Golden-ratio Cantor spectrum · reversible (gen 2 → n)</span>
-      <span class="panel-tag tag-phi">φ load-bearing</span>
-    </div>
-    <canvas id="bandCanvas"></canvas>
-  </div>
+  <div class="canvas-area">
+    <div class="canvas-row">
+      <!-- Order (φ): Cantor band structure (reversible spatial spectrum) -->
+      <div class="canvas-panel">
+        <div class="panel-header">
+          <span class="panel-title">Golden-ratio Cantor spectrum · reversible (gen 2 → n)</span>
+          <span class="panel-tag tag-phi">φ load-bearing</span>
+        </div>
+        <canvas id="bandCanvas"></canvas>
+      </div>
 
-  <!-- Flow (e-register): dissipative tunneling dynamics (irreversible) -->
-  <div class="canvas-panel">
-    <div class="panel-header">
-      <span class="panel-title">Dissipative tunneling ⟨Z⟩(t) · irreversible</span>
-      <span class="panel-tag tag-phi">operator · e is notation</span>
+      <!-- Flow (e-register): dissipative tunneling dynamics (irreversible) -->
+      <div class="canvas-panel">
+        <div class="panel-header">
+          <span class="panel-title">Dissipative tunneling ⟨Z⟩(t) · irreversible</span>
+          <span class="panel-tag tag-phi">operator · e is notation</span>
+        </div>
+        <canvas id="dynCanvas"></canvas>
+      </div>
     </div>
-    <canvas id="dynCanvas"></canvas>
-  </div>
-</div>
 
-<!-- Real-world payoff (φ · order): photonic Fibonacci mirror transmission -->
-<div class="canvas-panel" style="max-width:1100px;margin:0 auto 8px;">
-  <div class="panel-header">
-    <span class="panel-title">Photonic Fibonacci mirror · transmission T(λ) — a fabricable device</span>
-    <span class="panel-tag tag-phi">φ load-bearing · real optics</span>
+    <!-- Real-world payoff (φ · order): photonic Fibonacci mirror transmission -->
+    <div class="canvas-panel" style="flex:0 0 260px;">
+      <div class="panel-header">
+        <span class="panel-title">Photonic Fibonacci mirror · transmission T(λ) — a fabricable device</span>
+        <span class="panel-tag tag-phi">φ load-bearing · real optics</span>
+      </div>
+      <canvas id="photonicCanvas"></canvas>
+    </div>
   </div>
-  <canvas id="photonicCanvas"></canvas>
 </div>
 
 <p id="explainer" style="max-width:1100px;margin:8px auto 40px;padding:0 24px;color:var(--text-muted);font-size:13.5px;line-height:1.7;">

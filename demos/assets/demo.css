@@ -344,11 +344,31 @@ input[type="range"]::-moz-range-thumb {
 
 /* ── Responsive ─────────────────────────────────────────────────────────── */
 @media (max-width: 860px) {
-  .main, .main--triple { grid-template-columns: 1fr; }
+  /* Stack to a single column; drop the desktop 100vh floor so the page is
+     content-height rather than leaving a tall empty gap. */
+  .main, .main--triple { grid-template-columns: 1fr; min-height: 0; }
   .controls { border-right: none; border-bottom: 1px solid var(--gold-border); }
+  .canvas-area { padding: 14px; }
   .canvas-row { grid-template-columns: 1fr; }
+  /* When panels stack they become content-height, so a flex:1 canvas would
+     collapse to its 150px default — give every panel a usable minimum so the
+     visualizations stay legible on phones. */
+  .canvas-panel, .scene-panel { min-height: 340px; }
+  .chart-panel { min-height: 220px; }
   .overlay-stats { grid-template-columns: 1fr; }
   .convergence-panel { position: static; width: auto; margin: 12px; }
   .demo-title { font-size: 14px; }
   .demo-nav-link { display: none; }
+}
+
+@media (max-width: 520px) {
+  .demo-header { padding: 0 14px; gap: 12px; }
+  .controls { padding: 18px; gap: 18px; }
+  .canvas-area { padding: 12px; gap: 12px; }
+  .canvas-panel, .scene-panel { min-height: 300px; }
+  .stat-card .stat-value { font-size: 24px; }
+  .panel-header { padding: 10px 12px; }
+  .panel-title { font-size: 12px; }
+  .panel-tag { font-size: 9px; padding: 2px 6px; }
+  .demo-switch { gap: 10px; }
 }
