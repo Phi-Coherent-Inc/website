@@ -113,6 +113,15 @@ export const PhiTunnel = {
   },
   // Kohmoto invariant of the on-site Fibonacci model (closed form ((εA−εB)/2)²).
   kohmotoInvariant(epsA = 0.5, epsB = -0.5) { return _module.kohmotoInvariant(epsA, epsB); },
+  // Real-world photonic Fibonacci mirror: transmission spectrum T(λ) of a
+  // quarter-wave dielectric multilayer stacked in the Fibonacci word (same
+  // Kohmoto trace map, now classical optics). Returns
+  // [{ wavelength, transmission, halfTrace, allowed }] over [lmin,lmax] nm.
+  photonicSpectrum(gen, nA = 2.30, nB = 1.45, lambda0 = 600,
+                   lmin = 400, lmax = 1200, nLambda = 600) {
+    return vecToArray(_module.runPhotonicSpectrum(
+      gen >>> 0, nA, nB, lambda0, lmin, lmax, nLambda >>> 0));
+  },
   // e-register dynamics: dissipative tunneling ⟨Z⟩(t) under a dephasing bath.
   // γφ=0 → coherent oscillation (reversible, recurs); γφ>0 → irreversible damping
   // (localization). Returns [{ t, imbalance, entropy }].

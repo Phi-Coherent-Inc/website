@@ -102,6 +102,15 @@
   </div>
 </div>
 
+<!-- Real-world payoff (φ · order): photonic Fibonacci mirror transmission -->
+<div class="canvas-panel" style="max-width:1100px;margin:0 auto 8px;">
+  <div class="panel-header">
+    <span class="panel-title">Photonic Fibonacci mirror · transmission T(λ) — a fabricable device</span>
+    <span class="panel-tag tag-phi">φ load-bearing · real optics</span>
+  </div>
+  <canvas id="photonicCanvas"></canvas>
+</div>
+
 <p id="explainer" style="max-width:1100px;margin:8px auto 40px;padding:0 24px;color:var(--text-muted);font-size:13.5px;line-height:1.7;">
   <strong>Left — Order (φ · spatial · reversible).</strong> The Kohmoto–Kadanoff–Tang trace
   map (1983) computes the Cantor band-membership of a Fibonacci golden-ratio
@@ -109,6 +118,15 @@
   milliseconds. Here φ is genuinely load-bearing: the golden ratio <em>is</em> the
   recurrence (the silver-ratio word breaks the invariant). The allowed-fraction shown
   is a grid-sampled estimate of the shrinking Cantor measure.
+  <br><br>
+  <strong>Bottom — the real-world payoff (φ · optics).</strong> The exact same Kohmoto
+  trace map drives a <em>fabricable device</em>: a quarter-wave TiO₂/SiO₂ dielectric
+  multilayer stacked in the Fibonacci word — a photonic quasicrystal mirror. Its
+  transmission spectrum T(λ) carries the φ signature as <em>fractal (Cantor) band
+  gaps</em> (gold), where a periodic Bragg stack has only simple, evenly-spaced gaps.
+  The optical layer matrices are unimodular, so their half-traces obey the identical
+  golden trace map with a conserved Kohmoto invariant — φ is load-bearing here by the
+  same mechanism, now in classical optics you could build on a bench.
   <br><br>
   <strong>Right — Flow (irreversible dynamics · time).</strong> The same two wells, now in
   time: H = −(Δ/2)X drives <em>coherent tunneling</em> between them, while a bath
@@ -224,6 +242,45 @@ function drawDynamics(delta, gphi) {
   document.getElementById('ent').textContent = act[act.length - 1].entropy.toFixed(3);
 }
 
+// ── Real-world (φ): photonic Fibonacci mirror transmission T(λ) ──────────────
+const photCache = new Map();
+function photonicSpec(G) {
+  let s = photCache.get(G);
+  if (!s) { s = PhiTunnel.photonicSpectrum(Math.min(G, 18)); photCache.set(G, s); }
+  return s;
+}
+function drawPhotonic(G) {
+  const { ctx, w, h } = setup('photonicCanvas');
+  const p = pal();
+  ctx.fillStyle = p.canvas; ctx.fillRect(0, 0, w, h);
+  const spec = photonicSpec(G);
+  if (!spec || !spec.length) return;
+  const padL = 34, padR = 12, padT = 14, padB = 22;
+  const plotW = w - padL - padR, plotH = h - padT - padB;
+  const lmin = spec[0].wavelength, lmax = spec[spec.length - 1].wavelength;
+  const xOf = (lam) => padL + (lam - lmin) / (lmax - lmin) * plotW;
+  const yOf = (T) => padT + (1 - T) * plotH;
+  // shade reflection gaps (allowed = 0 → |½TrM| > 1)
+  ctx.fillStyle = p.isDark ? 'rgba(212,160,23,0.12)' : 'rgba(212,160,23,0.14)';
+  const dx = plotW / spec.length;
+  for (let i = 0; i < spec.length; i++)
+    if (spec[i].allowed < 0.5) ctx.fillRect(xOf(spec[i].wavelength), padT, dx + 0.6, plotH);
+  // grid + T axis
+  ctx.strokeStyle = p.grid; ctx.lineWidth = 1;
+  for (const T of [0, 0.5, 1]) { ctx.beginPath(); ctx.moveTo(padL, yOf(T)); ctx.lineTo(w - padR, yOf(T)); ctx.stroke(); }
+  ctx.fillStyle = p.textDim; ctx.font = '11px Inter, sans-serif'; ctx.textAlign = 'right';
+  ctx.fillText('1', padL - 4, yOf(1) + 4); ctx.fillText('0.5', padL - 4, yOf(0.5) + 4); ctx.fillText('0', padL - 4, yOf(0) + 4);
+  ctx.textAlign = 'center'; ctx.fillText('wavelength λ (nm)  →  (gold = reflection gap; curve = transmission)', w / 2, h - 5);
+  // T(λ) curve
+  ctx.strokeStyle = p.cyan; ctx.lineWidth = 1.8; ctx.beginPath();
+  for (let i = 0; i < spec.length; i++) { const x = xOf(spec[i].wavelength), y = yOf(spec[i].transmission); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+  ctx.stroke();
+  let tmin = 1; for (const r of spec) tmin = Math.min(tmin, r.transmission);
+  let gaps = 0, prev = false; for (const r of spec) { const g = r.allowed < 0.5; if (g && !prev) gaps++; prev = g; }
+  ctx.textAlign = 'left'; ctx.font = '10px Inter, sans-serif'; ctx.fillStyle = p.cyan;
+  ctx.fillText('TiO₂/SiO₂ · λ0=600 nm · ' + gaps + ' fractal gaps · deepest T=' + tmin.toFixed(3), padL + 4, padT + 10);
+}
+
 // ── orchestration ───────────────────────────────────────────────────────────
 let staircase = null;
 const eps = () => { const V = parseFloat(document.getElementById('contrast').value); return { epsA: V / 2, epsB: -V / 2 }; };
@@ -241,6 +298,7 @@ function renderPhi() {
   const G = parseInt(document.getElementById('gen').value, 10);
   const { epsA, epsB } = eps();
   drawBands(G, epsA, epsB);
+  drawPhotonic(G);
   const row = staircase ? staircase.find(r => r.gen === G) : null;
   document.getElementById('frac').textContent = row ? row.allowedFraction.toFixed(4) : '—';
 }
