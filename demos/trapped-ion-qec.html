@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>φCoherent — Trapped-Ion QEC Companion</title>
+<meta name="description" content="Companion code to Microsoft's trapped-ion error correction: an abelian surface-equivalent code and our non-abelian Fibonacci string-net (d=φ) run on identical machinery under real Quantinuum H2 / IonQ Aria noise, surfacing the distillation-free universality trade. Computed live in your browser via WebAssembly.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://phicoherent.com/demos/trapped-ion-qec.html">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#C9A830">
+<script>try{if(localStorage.getItem('phi-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/demo.css">
+</head>
+<body>
+
+<header class="demo-header" data-demo="trapped-ion-qec"
+        data-title="Trapped-Ion QEC Companion"></header>
+
+<div class="main">
+  <div class="controls">
+    <div class="control-group">
+      <label>Trapped-Ion Device</label>
+      <div class="slider-row">
+        <select id="device" style="flex:1;padding:6px 8px;font:500 13px Inter,sans-serif;">
+          <option value="quantinuum_h2" selected>Quantinuum H2 (Moses 2023, PRX)</option>
+          <option value="ionq_aria">IonQ Aria (Azure Quantum specs)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>Monte Carlo Trials / point</label>
+      <div class="slider-row">
+        <input type="range" id="trials" min="400" max="3000" step="200" value="1200">
+        <span class="slider-value" id="trialsVal">1200</span>
+      </div>
+    </div>
+
+    <button class="btn-run" id="btnRun" onclick="runSimulation()">Run Simulation</button>
+    <div class="demo-status" id="status">Loading…</div>
+
+    <div class="stat-card stat-gold">
+      <div class="stat-label">Universality cost / logical T-gate</div>
+      <div class="stat-value" id="distill">—</div>
+      <div class="stat-sub" id="distillSub">abelian distills magic states · Fibonacci braids (0)</div>
+    </div>
+
+    <div class="stat-card stat-green">
+      <div class="stat-label">Device error floor (code-capacity · sourced)</div>
+      <div class="stat-value" id="peff">—</div>
+      <div class="stat-sub" id="peffSub">2-qubit gate error · idle adds a schedule-dependent term</div>
+    </div>
+
+    <div class="stat-card stat-red">
+      <div class="stat-label">Microsoft + Quantinuum (hardware)</div>
+      <div class="stat-value">11×–800×</div>
+      <div class="stat-sub">measured suppression (correction &amp; detection) · Nature: "Improved quantum processor logical error rates via correction and detection" · external anchor, verbatim from the blog</div>
+    </div>
+  </div>
+
+  <div class="canvas-area">
+    <div class="chart-panel">
+      <div class="panel-header">
+        <span class="panel-title">Logical Error Rate vs Physical Error Rate (code-capacity)</span>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" id="dotFib"></div> Fibonacci string-net (d=φ, distillation-free)</div>
+          <div class="legend-item"><div class="legend-dot" id="dotZ2"></div> Abelian / surface-equivalent (Z₂ toric)</div>
+          <div class="legend-item"><div class="legend-dot" id="dotSurf"></div> SurfaceQEC (anchor — different metric)</div>
+        </div>
+      </div>
+      <canvas id="chartCanvas"></canvas>
+    </div>
+
+    <div class="chart-panel" style="margin-top:14px;">
+      <div class="panel-header"><span class="panel-title">Companion to Microsoft's trapped-ion QEC — what this shows</span></div>
+      <div style="padding:14px 18px;font:400 13.5px/1.62 Inter,sans-serif;color:var(--text-dim,#555);">
+        <p style="margin:0 0 10px;">Microsoft + Quantinuum reported (Nature, blog linked below) logical
+        <b>error correction and detection</b> on <b>Quantinuum's trapped-ion hardware</b> with two
+        <b>abelian</b> stabilizer codes — verbatim, <i>"a 12-qubit code encoding two logical qubits and a
+        16-qubit tesseract color code"</i> — and <i>"logical error-rate improvements ranging from 11x to
+        800x over corresponding physical circuit baselines."</i> Those are <b>their</b> measured figures,
+        on different codes; <b>we do not reproduce them</b>. We are <b>not a hardware competitor</b> — a
+        <b>companion sandbox</b> that runs an abelian code (Z₂ toric, the surface code's topological
+        order) and our <b>non-abelian Fibonacci string-net (d<sub>τ</sub> = φ)</b> on <b>identical</b>
+        machinery under representative trapped-ion noise, to explore a frontier their abelian work
+        doesn't.</p>
+        <p style="margin:0 0 10px;"><b>The frontier: the road to a universal gate set.</b> The blog's
+        demonstrated circuits (Bell and cat states) are <b>Clifford</b> — they need no magic states, and
+        the blog does not claim any. But <b>any</b> universal fault-tolerant machine built on abelian
+        codes eventually needs the non-Clifford T-gate, which abelian codes supply through
+        <b>magic-state distillation</b> (a general, well-established architectural cost — not something
+        attributed to their specific demo). <b>Fibonacci anyons are braiding-universal</b>: the T-gate
+        comes from braiding, so that distillation overhead is <b>zero</b> (gold card). The honest trade —
+        Fibonacci instead pays an expensive non-abelian decoder. The demo lets you <i>see</i> that trade.</p>
+        <p style="margin:0 0 10px;"><b>Anti-wash control.</b> The gold and red curves differ only by the
+        F-symbol that makes the code Fibonacci — same lattice, noise, projective syndrome, decoder, and
+        entanglement-fidelity metric. If φ washed, the curves would coincide. So the interesting
+        question is the universality cost, not the logical-error rate.</p>
+        <p style="margin:0 0 10px;"><b>Where real ion devices sit (green band).</b> The solid green line
+        is each device's <b>sourced gate-error floor</b> (Quantinuum H2 <b>0.156%</b>; IonQ Aria
+        <b>0.40%</b>, both 2-qubit gate errors); the dashed line adds a schedule-dependent idle-dephasing
+        estimate. With the <b>real, Microsoft-published coherence times — T₂ ≈ 1 s for IonQ Aria, ≈ 10⁶ µs
+        for H2</b> — idle dephasing over a gate is only ~0.02–0.06%, so the band is a <b>hair's width</b>
+        and the operating point is essentially the gate error. Both ion devices sit <b>well below</b> the
+        ~10% code-capacity threshold: trapped ions' long coherence is exactly why they're a clean QEC
+        substrate. (An earlier draft used a 10 ms T₂ that made dephasing look material — Microsoft's
+        published 1 s figure corrects that.)</p>
+        <p style="margin:0;"><b>Honest scope (no overclaiming).</b> This is <b>code-capacity</b> noise
+        at a single distance, <b>not</b> a circuit-level fault-tolerance threshold; the device spec is
+        reduced to an effective per-edge error = gate error + a <b>model-dependent</b> idle-dephasing
+        term (a conservative single-MS-gate window; a fuller syndrome-round schedule would raise it for
+        slow-gate devices). The blue dashed line is the literal <code>SurfaceQEC</code> in its own binary
+        metric (heights not directly comparable). No "we beat Microsoft" — a companion design sandbox.
+        <b>Vedic lens:</b> QEC restores <i>Ṛta</i> (order) against error as <i>Asat</i> (entropy); the
+        decoder is <i>Varuṇa</i> (Book 7) who sees every violation; distillation is the <i>Soma</i>
+        pipeline (Book 9). Computed live from <code>phi-quantum-sim-cpp</code> via WebAssembly.</p>
+        <p style="margin:12px 0 0;font-size:12px;color:var(--text-dim,#777);"><b>Sources.</b> Microsoft
+        figures (11×–800×, code sizes): <a href="https://quantum.microsoft.com/en-us/insights/blogs/microsoft-application-of-error-correction-to-trapped-ion-qubits">Microsoft Quantum blog</a>,
+        on the Nature paper "Improved quantum processor logical error rates via correction and detection"
+        — quoted verbatim. Quantinuum H2 device specs (2q error 0.156%, T₂ ≈ 10⁶ µs): Moses et al.,
+        <i>Phys. Rev. X</i> 13, 041052 (2023), Table II. IonQ Aria specs (2q error 0.40% from 99.6%
+        fidelity, T₂ = 1 s, T1 10–100 s, 135 µs / 600 µs gates, SPAM 99.61%):
+        <a href="https://learn.microsoft.com/en-us/azure/quantum/provider-ionq">Microsoft Learn — IonQ
+        provider (Azure Quantum)</a>, ms.date 2025-09-17 (Microsoft publishes Aria's spec table; Forte's
+        is not on the page). Our H2/Aria are <b>representative noise models for this simulation</b>; the
+        blog does not state which Quantinuum model its result used. All
+        logical-error curves, GSD, edge counts, and the Fibonacci-vs-Z₂ comparison are computed by our
+        own exact code (<code>phi-quantum-sim-cpp</code> / <code>-stringnet-cpp</code> / <code>-mps-cpp</code>).</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/demo-header.js"></script>
+<script>
+// ============================================================
+// Real computation: scenarios::trapped_ion_qec_sweep (Fibonacci vs Z2 vs
+// surface on identical machinery) + scenarios::ion_device_info (where a real
+// trapped-ion device sits + the distillation-free universality trade), run off
+// the UI thread in a module Web Worker (assets/js/trapped-ion-worker.js).
+// ============================================================
+
+const P = () => window.PhiTheme.palette();
+
+let worker = null;
+let sweep = null;          // [{physical, fibPL, z2PL, surfacePL, fibCompetitive}]
+let info = null;           // device-level resource trade
+let isRunning = false;
+
+const deviceSel = document.getElementById('device');
+const trialsSlider = document.getElementById('trials');
+const statusEl = document.getElementById('status');
+
+trialsSlider.oninput = () => {
+  document.getElementById('trialsVal').textContent = trialsSlider.value;
+};
+deviceSel.onchange = () => { if (!isRunning) runSimulation(); };
+
+function legendColors() {
+  const p = P();
+  document.getElementById('dotFib').style.background = p.gold;
+  document.getElementById('dotZ2').style.background = p.red;
+  document.getElementById('dotSurf').style.background = p.blue;
+}
+
+function drawChart() {
+  if (!sweep) return;
+  const pal = P();
+  const canvas = document.getElementById('chartCanvas');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * 2;
+  canvas.height = (rect.height - 44) * 2;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(2, 0, 0, 2, 0, 0);
+  const w = rect.width, h = rect.height - 44;
+
+  ctx.fillStyle = pal.panel;
+  ctx.fillRect(0, 0, w, h);
+
+  const pad = { top: 18, right: 24, bottom: 34, left: 52 };
+  const cw = w - pad.left - pad.right, ch = h - pad.top - pad.bottom;
+  const xMin = 0, xMax = 0.20, yMin = 0, yMax = 0.6;
+  const toX = (v) => pad.left + (v - xMin) / (xMax - xMin) * cw;
+  const toY = (v) => pad.top + (1 - (v - yMin) / (yMax - yMin)) * ch;
+
+  ctx.strokeStyle = pal.grid; ctx.lineWidth = 0.5;
+  ctx.fillStyle = pal.textDim; ctx.font = '10px Inter';
+  for (let yv = 0; yv <= 0.6001; yv += 0.1) {
+    const y = toY(yv);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+    ctx.textAlign = 'right'; ctx.fillText(yv.toFixed(1), pad.left - 8, y + 4);
+  }
+  for (let xv = 0; xv <= 0.2001; xv += 0.04) {
+    const px = toX(xv);
+    ctx.beginPath(); ctx.moveTo(px, pad.top); ctx.lineTo(px, h - pad.bottom); ctx.stroke();
+    ctx.textAlign = 'center'; ctx.fillText((xv * 100).toFixed(0) + '%', px, h - pad.bottom + 16);
+  }
+
+  // Honest device band: the rigorous, sourced gate-error FLOOR (solid) up to an
+  // idle-inclusive estimate (dashed). Idle dephasing per syndrome round is
+  // schedule-dependent, so the device sits SOMEWHERE in this band — we show the
+  // range rather than fabricate a single point. With real ion T₂ (~1 s, H2 and
+  // Aria) the band is a sliver — no invented single "operating point".
+  if (info) {
+    const g = pal.green || '#3a9';
+    const xf = toX(Math.min(info.gateError2q, xMax));
+    const xu = toX(Math.min(info.pEff, xMax));
+    ctx.fillStyle = g; ctx.globalAlpha = 0.10;
+    ctx.fillRect(xf, pad.top, Math.max(1, xu - xf), ch);
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = g; ctx.lineWidth = 1.4;             // gate-error floor (rigorous)
+    ctx.beginPath(); ctx.moveTo(xf, pad.top); ctx.lineTo(xf, h - pad.bottom); ctx.stroke();
+    ctx.setLineDash([4, 3]); ctx.globalAlpha = 0.7;        // idle-inclusive (model)
+    ctx.beginPath(); ctx.moveTo(xu, pad.top); ctx.lineTo(xu, h - pad.bottom); ctx.stroke();
+    ctx.setLineDash([]); ctx.globalAlpha = 1;
+    ctx.fillStyle = g; ctx.font = '9.5px Inter'; ctx.textAlign = 'left';
+    ctx.fillText('gate floor', xf + 3, pad.top + 10);
+    if (xu - xf > 30) ctx.fillText('+ idle (model)', xu + 3, pad.top + 22);
+  }
+
+  const pts = sweep.slice().sort((a, b) => a.physical - b.physical);
+  function line(key, color, width, dashed) {
+    ctx.strokeStyle = color; ctx.lineWidth = width;
+    if (dashed) ctx.setLineDash([5, 4]); else ctx.setLineDash([]);
+    ctx.beginPath();
+    pts.forEach((pt, i) => {
+      const px = toX(pt.physical), py = toY(pt[key]);
+      i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+    });
+    ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = color;
+    pts.forEach((pt) => { ctx.beginPath(); ctx.arc(toX(pt.physical), toY(pt[key]), 2.4, 0, 7); ctx.fill(); });
+  }
+  line('surfacePL', pal.blue, 1.4, true);   // anchor (different metric)
+  line('z2PL', pal.red, 2.6, false);        // abelian / surface-equivalent
+  line('fibPL', pal.gold, 2.6, false);      // Fibonacci (distillation-free) — on top
+
+  ctx.fillStyle = pal.textDim; ctx.font = '11px Inter'; ctx.textAlign = 'center';
+  ctx.fillText('Physical Error Rate (dephasing)', w / 2, h - 3);
+  ctx.save(); ctx.translate(13, h / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Logical Error Rate', 0, 0); ctx.restore();
+}
+
+function renderCards() {
+  if (!info) return;
+  document.getElementById('distill').textContent =
+    info.abelianDistillInputs + ' → ' + info.fibonacciDistillInputs + ' states';
+  // Honest: the 0 is rigorous (braiding-universality is a theorem); the abelian
+  // count is illustrative of one protocol (our φ-distiller at 2 levels), not a
+  // canonical figure — the load-bearing fact is >0 vs 0.
+  document.getElementById('distillSub').textContent =
+    info.abelianDistillInputs + ' = φ-distiller, 2 levels (illustrative) · rigorous: abelian > 0, '
+    + 'Fibonacci braiding-universal → 0';
+  // Headline = the rigorous, sourced gate-error floor. Idle dephasing is shown
+  // separately as a schedule-dependent (model) term, never folded into the
+  // headline number.
+  const floorPct = info.gateError2q * 100;
+  const idlePct  = Math.max(0, info.pEff - info.gateError2q) * 100;
+  document.getElementById('peff').textContent =
+    (floorPct < 1 ? floorPct.toFixed(3) : floorPct.toFixed(2)) + '%';
+  document.getElementById('peffSub').textContent =
+    '2q gate error (sourced) · + idle ' + idlePct.toFixed(2)
+    + '% (schedule-dependent, model) · GSD ' + info.logicalDim
+    + ' · ' + info.physicalEdges + ' edges';
+}
+
+function runSimulation() {
+  if (isRunning || !worker) return;
+  isRunning = true;
+  document.getElementById('btnRun').classList.add('running');
+  document.getElementById('btnRun').textContent = 'Simulating…';
+  const trials = parseInt(trialsSlider.value);
+  statusEl.textContent = 'Computing exact string-net QEC (' + trials + ' trials/point)…';
+  worker.postMessage({ trajectories: trials, device: deviceSel.value });
+}
+
+function initWorker() {
+  try {
+    worker = new Worker('assets/js/trapped-ion-worker.js', { type: 'module' });
+  } catch (e) {
+    statusEl.textContent = 'This demo needs a web server (WASM can’t load from file://).';
+    return;
+  }
+  worker.onmessage = (e) => {
+    isRunning = false;
+    document.getElementById('btnRun').classList.remove('running');
+    document.getElementById('btnRun').textContent = 'Run Simulation';
+    if (!e.data.ok) { statusEl.textContent = 'Error: ' + e.data.error; return; }
+    sweep = e.data.points;
+    info = e.data.info;
+    const dev = deviceSel.options[deviceSel.selectedIndex].text;
+    const floorPct = info.gateError2q * 100;
+    const idlePct  = Math.max(0, info.pEff - info.gateError2q) * 100;
+    const idleNote = idlePct >= 0.05 ? ' (+' + idlePct.toFixed(1) + '% idle, model)' : '';
+    statusEl.textContent = dev + ' · gate floor ' + floorPct.toFixed(2) + '%'
+      + idleNote + ' vs ~10% threshold · ' + parseInt(trialsSlider.value) + ' trials/point';
+    renderCards();
+    drawChart();
+  };
+  worker.onerror = (e) => {
+    isRunning = false;
+    statusEl.textContent = 'Worker error: ' + (e.message || 'failed to load WASM');
+  };
+}
+
+window.addEventListener('resize', () => { drawChart(); });
+window.PhiTheme && window.PhiTheme.onChange(() => { legendColors(); drawChart(); });
+
+legendColors();
+initWorker();
+setTimeout(runSimulation, 400);
+</script>
+</body>
+</html>

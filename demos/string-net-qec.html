@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>φCoherent — Fibonacci String-Net QEC vs Surface Code</title>
+<meta name="description" content="Interactive demo: a genuine 2D Levin-Wen Fibonacci string-net code (d=φ) compared fairly, on identical machinery, against the surface code — computed live in your browser from phi-quantum-stringnet-cpp via WebAssembly.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://phicoherent.com/demos/string-net-qec.html">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#C9A830">
+<script>try{if(localStorage.getItem('phi-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/demo.css">
+</head>
+<body>
+
+<header class="demo-header" data-demo="string-net-qec"
+        data-title="Fibonacci String-Net QEC vs Surface Code"></header>
+
+<div class="main">
+  <div class="controls">
+    <div class="control-group">
+      <label>Physical Error Rate (dephasing)</label>
+      <div class="slider-row">
+        <input type="range" id="errorRate" min="2" max="20" step="2" value="8">
+        <span class="slider-value" id="errorRateVal">8%</span>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>Monte Carlo Trials / point</label>
+      <div class="slider-row">
+        <input type="range" id="trials" min="400" max="3000" step="200" value="1200">
+        <span class="slider-value" id="trialsVal">1200</span>
+      </div>
+    </div>
+
+    <button class="btn-run" id="btnRun" onclick="runSimulation()">Run Simulation</button>
+    <div class="demo-status" id="status">Loading…</div>
+
+    <div class="stat-card stat-gold">
+      <div class="stat-label">Fair Verdict (same metric)</div>
+      <div class="stat-value" id="verdict">—</div>
+      <div class="stat-sub">Fibonacci vs surface-equivalent</div>
+    </div>
+
+    <div class="stat-card stat-green">
+      <div class="stat-label">Fibonacci String-Net (d=φ)</div>
+      <div class="stat-value" id="fibError">—</div>
+      <div class="stat-sub">2D Levin-Wen code · distance 4</div>
+    </div>
+
+    <div class="stat-card stat-red">
+      <div class="stat-label">Surface-Equivalent (Z₂ toric)</div>
+      <div class="stat-value" id="z2Error">—</div>
+      <div class="stat-sub">identical lattice · noise · decoder</div>
+    </div>
+  </div>
+
+  <div class="canvas-area">
+    <div class="chart-panel">
+      <div class="panel-header">
+        <span class="panel-title">Logical Error Rate vs Physical Error Rate</span>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" id="dotFib"></div> Fibonacci string-net (d=φ)</div>
+          <div class="legend-item"><div class="legend-dot" id="dotZ2"></div> Surface-equivalent (Z₂ toric)</div>
+          <div class="legend-item"><div class="legend-dot" id="dotSurf"></div> SurfaceQEC (anchor — see note)</div>
+        </div>
+      </div>
+      <canvas id="chartCanvas"></canvas>
+    </div>
+
+    <div class="chart-panel" style="margin-top:14px;">
+      <div class="panel-header"><span class="panel-title">What this shows — and its honest scope</span></div>
+      <div style="padding:14px 18px;font:400 13.5px/1.62 Inter,sans-serif;color:var(--text-dim,#555);">
+        <p style="margin:0 0 10px;">This is the <b>genuine 2D Fibonacci string-net code</b> — a real
+        Levin-Wen topological code with quantum dimension <b>d<sub>τ</sub> = φ</b>, on a torus with a
+        true logical qubit — <b>not</b> a 1D τ-chain surrogate and not the older
+        Fibonacci-<i>concatenated</i>-surface construction.</p>
+        <p style="margin:0 0 10px;"><b>The fair head-to-head</b> is the gold vs red curves: Fibonacci
+        (d=φ) against the <b>Z₂ toric code — which is the surface code's topological order</b> — run on
+        <b>identical</b> machinery: same lattice, same dephasing noise, same projective syndrome, same
+        minimum-weight decoder, same entanglement-fidelity metric, same distance-4 code. There is no
+        asymmetry to rig. The only thing that differs between the two curves is the F-symbol that makes
+        the code Fibonacci. On this fair axis, <b>Fibonacci is competitive — consistently a touch
+        better.</b></p>
+        <p style="margin:0 0 10px;">The blue dashed curve is the <b>literal</b> surface code
+        (<code>SurfaceQEC</code>, union-find on the planar lattice) as an independent anchor. It uses a
+        <b>different metric</b> (a single-qubit binary logical-error rate, not the 2-qubit entanglement
+        fidelity of the gold/red pair), so its absolute height is <b>not</b> directly comparable — it is
+        shown only to confirm the red leg sits in the standard surface-code regime.</p>
+        <p style="margin:0;"><b>Scope (no overclaiming):</b> this is a fair comparison <i>point</i> at a
+        single distance under code-capacity noise — not a threshold curve. A multi-distance threshold
+        needs the tensor-network decoder (the boundary-MPS contraction engine is built and validated
+        against exact contraction; the Levin-Wen PEPS + TN decoder is the scoped next step). Everything
+        here is computed live in your browser from <code>phi-quantum-stringnet-cpp</code> via WebAssembly.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/demo-header.js"></script>
+<script>
+// ============================================================
+// Real computation: stringnet::compare_stringnet_vs_surface_sweep,
+// run off the UI thread in a module Web Worker
+// (assets/js/stringnet-worker.js). The genuine 2D Fibonacci
+// Levin-Wen code vs the Z2 toric (= surface-equivalent) on
+// identical exact machinery, plus the literal SurfaceQEC anchor.
+// ============================================================
+
+const P = () => window.PhiTheme.palette();
+
+let worker = null;
+let sweep = null;          // [{physical, fibPL, z2PL, surfacePL, competitive}]
+let isRunning = false;
+
+const errorRateSlider = document.getElementById('errorRate');
+const trialsSlider = document.getElementById('trials');
+const statusEl = document.getElementById('status');
+
+errorRateSlider.oninput = () => {
+  document.getElementById('errorRateVal').textContent = errorRateSlider.value + '%';
+  if (sweep) renderFromCache();
+};
+trialsSlider.oninput = () => {
+  document.getElementById('trialsVal').textContent = trialsSlider.value;
+};
+
+function legendColors() {
+  const p = P();
+  document.getElementById('dotFib').style.background = p.gold;
+  document.getElementById('dotZ2').style.background = p.red;
+  document.getElementById('dotSurf').style.background = p.blue;
+}
+
+function nearestPoint(pPctTarget) {
+  let best = sweep[0], bestd = Infinity;
+  for (const p of sweep) {
+    const d = Math.abs(p.physical * 100 - pPctTarget);
+    if (d < bestd) { bestd = d; best = p; }
+  }
+  return best;
+}
+
+// ── linear p_L vs p chart (p_L here is order 0.1–0.6, not a tiny tail) ──────
+function drawChart(selectedPpct) {
+  if (!sweep) return;
+  const pal = P();
+  const canvas = document.getElementById('chartCanvas');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * 2;
+  canvas.height = (rect.height - 44) * 2;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(2, 0, 0, 2, 0, 0);
+  const w = rect.width, h = rect.height - 44;
+
+  ctx.fillStyle = pal.panel;
+  ctx.fillRect(0, 0, w, h);
+
+  const pad = { top: 18, right: 24, bottom: 34, left: 52 };
+  const cw = w - pad.left - pad.right, ch = h - pad.top - pad.bottom;
+  const xMin = 0, xMax = 0.20, yMin = 0, yMax = 0.6;
+  const toX = (v) => pad.left + (v - xMin) / (xMax - xMin) * cw;
+  const toY = (v) => pad.top + (1 - (v - yMin) / (yMax - yMin)) * ch;
+
+  ctx.strokeStyle = pal.grid; ctx.lineWidth = 0.5;
+  ctx.fillStyle = pal.textDim; ctx.font = '10px Inter';
+  for (let yv = 0; yv <= 0.6001; yv += 0.1) {
+    const y = toY(yv);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+    ctx.textAlign = 'right'; ctx.fillText(yv.toFixed(1), pad.left - 8, y + 4);
+  }
+  for (let xv = 0; xv <= 0.2001; xv += 0.04) {
+    const px = toX(xv);
+    ctx.beginPath(); ctx.moveTo(px, pad.top); ctx.lineTo(px, h - pad.bottom); ctx.stroke();
+    ctx.textAlign = 'center'; ctx.fillText((xv * 100).toFixed(0) + '%', px, h - pad.bottom + 16);
+  }
+
+  // selected-error marker
+  ctx.strokeStyle = pal.gold; ctx.globalAlpha = 0.5; ctx.setLineDash([2, 2]);
+  const curX = toX(selectedPpct / 100);
+  ctx.beginPath(); ctx.moveTo(curX, pad.top); ctx.lineTo(curX, h - pad.bottom); ctx.stroke();
+  ctx.setLineDash([]); ctx.globalAlpha = 1;
+
+  const pts = sweep.slice().sort((a, b) => a.physical - b.physical);
+  function line(key, color, width, dashed) {
+    ctx.strokeStyle = color; ctx.lineWidth = width;
+    if (dashed) ctx.setLineDash([5, 4]); else ctx.setLineDash([]);
+    ctx.beginPath();
+    pts.forEach((pt, i) => {
+      const px = toX(pt.physical), py = toY(pt[key]);
+      i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+    });
+    ctx.stroke(); ctx.setLineDash([]);
+    // markers
+    ctx.fillStyle = color;
+    pts.forEach((pt) => { ctx.beginPath(); ctx.arc(toX(pt.physical), toY(pt[key]), width === 2.6 ? 2.6 : 2, 0, 7); ctx.fill(); });
+  }
+  line('surfacePL', pal.blue, 1.4, true);     // anchor (different metric)
+  line('z2PL', pal.red, 2.6, false);          // surface-equivalent (same metric)
+  line('fibPL', pal.gold, 2.6, false);        // Fibonacci (same metric) — on top
+
+  ctx.fillStyle = pal.textDim; ctx.font = '11px Inter'; ctx.textAlign = 'center';
+  ctx.fillText('Physical Error Rate (dephasing)', w / 2, h - 3);
+  ctx.save(); ctx.translate(13, h / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Logical Error Rate', 0, 0); ctx.restore();
+}
+
+function renderFromCache() {
+  if (!sweep) return;
+  const pPct = parseFloat(errorRateSlider.value);
+  const pt = nearestPoint(pPct);
+  const fmt = (v) => v.toFixed(4);
+
+  const better = pt.fibPL <= pt.z2PL + 1e-9;
+  document.getElementById('verdict').textContent = pt.competitive
+    ? (better ? 'competitive ✓' : 'competitive') : 'below par';
+  document.getElementById('fibError').textContent = fmt(pt.fibPL);
+  document.getElementById('z2Error').textContent = fmt(pt.z2PL);
+  drawChart(pPct);
+}
+
+function runSimulation() {
+  if (isRunning || !worker) return;
+  isRunning = true;
+  document.getElementById('btnRun').classList.add('running');
+  document.getElementById('btnRun').textContent = 'Simulating…';
+  const trials = parseInt(trialsSlider.value);
+  statusEl.textContent = 'Computing exact string-net QEC (' + trials + ' trials/point)…';
+  worker.postMessage({ trajectories: trials });
+}
+
+function initWorker() {
+  try {
+    worker = new Worker('assets/js/stringnet-worker.js', { type: 'module' });
+  } catch (e) {
+    statusEl.textContent = 'This demo needs a web server (WASM can’t load from file://).';
+    return;
+  }
+  worker.onmessage = (e) => {
+    isRunning = false;
+    document.getElementById('btnRun').classList.remove('running');
+    document.getElementById('btnRun').textContent = 'Run Simulation';
+    if (!e.data.ok) { statusEl.textContent = 'Error: ' + e.data.error; return; }
+    sweep = e.data.points;
+    const allComp = sweep.every((p) => p.competitive);
+    statusEl.textContent = (allComp ? 'Fibonacci competitive across the sweep · ' : 'Sweep complete · ')
+      + parseInt(trialsSlider.value) + ' trials/point';
+    renderFromCache();
+  };
+  worker.onerror = (e) => {
+    isRunning = false;
+    statusEl.textContent = 'Worker error: ' + (e.message || 'failed to load WASM');
+  };
+}
+
+window.addEventListener('resize', () => { if (sweep) renderFromCache(); });
+window.PhiTheme && window.PhiTheme.onChange(() => { legendColors(); if (sweep) renderFromCache(); });
+
+legendColors();
+initWorker();
+setTimeout(runSimulation, 400);
+</script>
+</body>
+</html>

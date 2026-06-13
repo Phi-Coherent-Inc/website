@@ -115,7 +115,7 @@
       <div class="canvas-panel">
         <div class="panel-header">
           <span class="panel-title">Braid Fidelity vs Length — idealized vs realistic exchange cost</span>
-          <span class="panel-tag tag-phi">IBM Heron p = 0.001</span>
+          <span class="panel-tag tag-phi">physical p = 0.001 (≈ IBM Heron r3 2q error, ~0.12%)</span>
         </div>
         <canvas id="fidelityCanvas"></canvas>
       </div>
@@ -155,6 +155,11 @@
         <em>code-capacity surrogate</em>; the true non-Abelian (string-net) decoder is #P-flavoured and BQP-complete to validate;</li>
     <li>that Fibonacci anyons are realized hardware — this is simulation, computed live from phi-quantum-topoqec-cpp via WebAssembly.</li>
   </ul>
+  <p style="margin:8px 0 0;font-size:12px;opacity:.75">The fidelity sweep uses a representative
+  superconducting per-gate error <em>p = 0.001</em> (≈ IBM Heron r3's published 2q median ~0.0012). The
+  feasibility-budget inputs — <em>15 mK</em> operating temperature, a 99% parity monitor, 1000 read-out
+  probe passes, visibility <em>V₀ = 0.9</em> — are <strong>illustrative design assumptions</strong>
+  (notional, not measured specs), chosen to size the per-logical-gate error budget.</p>
 </div>
 
 <script src="assets/demo-header.js"></script>

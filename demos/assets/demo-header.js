@@ -18,7 +18,8 @@
   'use strict';
 
   var DEMOS = [
-    { id: 'error-correction',     file: 'error-correction.html',     name: 'Error Correction' },
+    { id: 'trapped-ion-qec',      file: 'trapped-ion-qec.html',      name: 'Trapped-Ion QEC Companion' },
+    { id: 'string-net-qec',       file: 'string-net-qec.html',       name: 'String-Net QEC' },
     { id: 'anyon-braiding',       file: 'anyon-braiding.html',       name: 'Anyon Braiding' },
     { id: 'time-reversal',        file: 'time-reversal.html',        name: 'Time Reversal' },
     { id: 'vqe-landscape',        file: 'vqe-landscape.html',        name: 'VQE Landscape' },

@@ -1090,7 +1090,7 @@ footer {
         <div class="card reveal reveal-delay-3">
           <span class="card-label">Pillar III</span>
           <h3>Quantum Computing</h3>
-          <p>Production-grade quantum simulation — statevector, stabilizer, MPS, and photonic — together with a novel family of N-nacci multi-stratum error correction codes, exact time-reversal recovery for characterized errors, proved closed-form channel analytics, and structural symmetry guarantees built into every ensemble level. Benchmarked against published noise specifications for 5 devices: IBM Heron R2, IBM Eagle R3, Google Willow, IonQ Forte, and Quantinuum H2. And a complete, patent-pending design for the physical machine itself — from the qubit chip to the cryogenic cooling pump.</p>
+          <p>Production-grade quantum simulation — statevector, stabilizer, MPS, and photonic — together with a genuine 2D Fibonacci string-net topological code (d_τ = φ) that is competitive with the surface code on a fair, same-metric comparison, exact time-reversal recovery for characterized errors, and proved closed-form channel analytics. Benchmarked against published noise specifications for 6 devices: IBM Heron R2, IBM Eagle R3, Google Willow, IonQ Forte, IonQ Aria, and Quantinuum H2. And a complete, patent-pending design for the physical machine itself — from the qubit chip to the cryogenic cooling pump.</p>
         </div>
         <div class="card reveal reveal-delay-4">
           <span class="card-label">Pillar IV</span>
@@ -1211,25 +1211,25 @@ footer {
           <div class="stat-body">Noiseless variational simulation reaches chemical accuracy on molecular hydrogen — 800× inside the accepted threshold. Lithium hydride is solved to 0.034 milliHartree error versus the exact reference. Both benchmark molecules solved exactly by a minimal circuit.</div>
         </div>
         <div class="stat-card reveal reveal-delay-3">
-          <div class="stat-num">5</div>
+          <div class="stat-num">6</div>
           <div class="stat-title">Published hardware noise models</div>
-          <div class="stat-body">IBM Heron R2 · IBM Eagle R3 · Google Willow · IonQ Forte · Quantinuum H2. Published Pauli noise parameters — not real-device measurements.</div>
+          <div class="stat-body">IBM Heron R2 · IBM Eagle R3 · Google Willow · IonQ Forte · IonQ Aria · Quantinuum H2. Device parameters from published vendor specs &amp; papers, applied through a Pauli-twirled noise model.</div>
         </div>
         <div class="stat-card reveal reveal-delay-4">
-          <div class="stat-num">90</div>
-          <div class="stat-title">Passing tests, fully reproducible</div>
-          <div class="stat-body">Every result is snapshot-pinned and reproducible from source in minutes. Includes photonic and time-reversal recovery sweeps. Cross-validated against an independent reference simulator.</div>
+          <div class="stat-num">62</div>
+          <div class="stat-title">Passing tests in the quantum-simulation suite</div>
+          <div class="stat-body">The phi-quantum-sim suite — 62 tests, all green — is snapshot-pinned and reproducible from source in minutes. Includes photonic and time-reversal recovery sweeps, and the 16-anchor cross-validation against Stim, the standard reference simulator.</div>
         </div>
         <div class="stat-card stat-card--wide reveal reveal-delay-4">
-          <div class="stat-num">94×</div>
-          <div class="stat-title">Lower logical error rate at matched qubit budget — 2D ensemble result</div>
-          <div class="stat-body">At 530 physical qubits, a 4-level ensemble achieves 94× lower logical error rate than the best single code fitting the same qubit budget, at typical near-term hardware error rates. Full 2D simulation under realistic noise — no analytical shortcuts. 15,000 trials per configuration.</div>
+          <div class="stat-num" style="font-size:1rem; letter-spacing:.08em; color: var(--accent, #c8a95a);">Genuine Fibonacci String-Net Code</div>
+          <div class="stat-title">Competitive with the surface code — a fair, same-metric comparison</div>
+          <div class="stat-body">A real 2D Levin–Wen Fibonacci topological code — quantum dimension d_τ = φ, a true logical qubit on a torus, not a 1D surrogate — measured against the surface code's own topological order on identical machinery: same lattice, noise, projective syndrome, minimum-weight decoder, metric, and code distance. On that honest axis the Fibonacci code is competitive — consistently a touch better. Exact, no analytical shortcuts; the multi-distance threshold is the scoped next step. Run it live in the String-Net QEC demo.</div>
         </div>
         <div class="stat-card stat-card--wide reveal reveal-delay-4">
           <div class="stat-num" style="font-size:1rem; letter-spacing:.08em; color: var(--accent, #c8a95a);">Exact Time-Reversal Recovery</div>
           <div class="stat-title">Fidelity = 1.000 at all tested error angles · PTM Eigenvalue Theorem proved</div>
           <div class="stat-body">
-            When an error type is characterized, the framework constructs the exact inverse operation and recovers the original quantum state to machine precision — fidelity = 1.000 at all tested error magnitudes. Without recovery, state fidelity falls to 0.729 at maximum error angle. The underlying phi-weighted channel obeys a proved closed-form theorem: total error contraction depends only on error rate and N-nacci order, independent of how errors distribute across axes. Verified across an 8-point sweep.
+            When an error type is characterized, the framework constructs the exact inverse operation and recovers the original quantum state to machine precision — fidelity = 1.000 (to 1e-12) at all tested error magnitudes. Without recovery, two-qubit state fidelity falls to 0.729 at the maximum error angle (π/4). The underlying phi-weighted channel obeys a proved closed-form theorem: total error contraction depends only on error rate and N-nacci order, independent of how errors distribute across axes. Verified across a 5-point angle sweep.
           </div>
         </div>
         <div class="stat-card stat-card--wide reveal reveal-delay-4">
@@ -1239,7 +1239,7 @@ footer {
         </div>
       </div>
       <div class="tags reveal">
-        <span class="tag">N-nacci multi-stratum error correction</span>
+        <span class="tag">Genuine 2D Fibonacci string-net code</span>
         <span class="tag">Cross-validated against Stim v1.14.0</span>
         <span class="tag">Chemical-accuracy variational simulation</span>
         <span class="tag">Entanglement distillation</span>
@@ -1248,7 +1248,7 @@ footer {
         <span class="tag">Exact time-reversal recovery</span>
         <span class="tag">Structural symmetry guarantee</span>
         <span class="tag">Quantum cryptography validated</span>
-        <span class="tag">5 hardware noise models</span>
+        <span class="tag">6 hardware noise models</span>
         <span class="tag">Shor-resistant validated</span>
         <span class="tag">AGPL + commercial license</span>
       </div>
@@ -1269,10 +1269,16 @@ footer {
         and a real variational eigensolver, computed live as you adjust the controls.
       </p>
       <div class="demo-grid">
-        <a class="card demo-card reveal reveal-delay-1" href="demos/error-correction.html">
-          <span class="card-label">N-nacci QEC</span>
-          <h3>Error Correction</h3>
-          <p>Sweep the physical error rate and concatenation depth and compare the Fibonacci-concatenated ensemble against a matched single surface code at equal qubit budget — both decoded live by the same union-find decoder.</p>
+        <a class="card demo-card reveal reveal-delay-1" href="demos/trapped-ion-qec.html">
+          <span class="card-label">Companion · trapped-ion QEC</span>
+          <h3>Trapped-Ion QEC Companion</h3>
+          <p>Alongside Microsoft + Quantinuum's trapped-ion error correction — not a competitor, a companion sandbox. Run their abelian code class and our non-abelian Fibonacci string-net (d_τ = φ) on identical machinery under real Quantinuum H2 / IonQ Aria noise, and see the frontier their work doesn't cover: Fibonacci is braiding-universal, so its magic-state distillation cost drops to zero. Honest, code-capacity, computed live.</p>
+          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card demo-card reveal reveal-delay-1" href="demos/string-net-qec.html">
+          <span class="card-label">String-Net QEC · d_τ = φ</span>
+          <h3>String-Net QEC vs Surface</h3>
+          <p>A genuine 2D Levin-Wen Fibonacci code — a real topological code with a logical qubit, not a 1D surrogate — compared fairly against the surface code on identical machinery: same lattice, noise, decoder, metric. On that honest axis the Fibonacci code is competitive, a touch better. Computed live, with its scope stated plainly.</p>
           <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
         </a>
         <a class="card demo-card reveal reveal-delay-2" href="demos/anyon-braiding.html">
