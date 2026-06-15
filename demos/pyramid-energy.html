@@ -55,6 +55,11 @@
   .btn-strike.flash { animation:strikePulse .5s ease-out; }
   .strike-readout { margin-top:6px; font-size:11.5px; color:var(--text-muted);
                     font-variant-numeric:tabular-nums; }
+  /* screen flash over the 3D device when a strike fires (timescale-independent) */
+  #screenFlash { position:absolute; inset:0; pointer-events:none; opacity:0;
+                 background:radial-gradient(ellipse at 50% 18%, rgba(220,235,255,.85), rgba(180,210,255,.15) 45%, transparent 70%); }
+  @keyframes screenFlashAnim { 0%{opacity:0;} 8%{opacity:1;} 100%{opacity:0;} }
+  #screenFlash.on { animation:screenFlashAnim 1.1s ease-out; }
 
   /* ── Readout metric grid ── */
   .metric-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
@@ -171,12 +176,13 @@
   <div class="panels">
 
     <!-- 3D device (one column; spans 2 rows so Energy Loop + Live Readouts stack beside it) -->
-    <div class="scene-panel" style="grid-column:1; grid-row:span 2; min-height:420px">
+    <div class="scene-panel" style="grid-column:1; grid-row:span 2; min-height:420px; position:relative">
       <div class="panel-header">
         <span class="panel-title">The Device — DC → slosh → AC → motor</span>
         <span class="panel-tag tag-recover" id="sustainTag" title="scroll to zoom">starting…</span>
       </div>
       <canvas id="deviceCanvas"></canvas>
+      <div id="screenFlash"></div>
       <div class="ledger" style="padding:8px 14px;border-top:1px solid var(--gold-border);color:var(--text-muted);font-size:11px;line-height:1.6">
         <b style="color:var(--gold)">pyramid</b> + <b style="color:var(--gold)">obelisks</b> (parametric pump) ·
         <b style="color:#b9bdc8">silver apex cap</b> (<b style="color:var(--gold)">gold-gilt</b>) = the isolated capstone DC collector ·
@@ -412,6 +418,30 @@ function buildScene() {
   const gilt = new THREE.Mesh(new THREE.ConeGeometry(0.185, 0.26, 4), giltMat);
   gilt.rotation.y = Math.PI / 4; gilt.position.y = 1.56; scene.add(gilt); mats.gilt = giltMat;
 
+  // ── LIGHTNING BOLT (the ⚡ strike): a jagged line from the sky to the apex, with
+  //    a bright flash light at the capstone. Hidden until a strike fires; animated
+  //    by strikeFx (wall-clock fade), independent of the sim timescale.
+  const APEX_Y = 1.70;                                   // capstone tip
+  const boltMat = new THREE.LineBasicMaterial({ color: 0xeaf2ff, transparent: true, opacity: 0 });
+  let boltGeo = new THREE.BufferGeometry();
+  const bolt = new THREE.Line(boltGeo, boltMat); scene.add(bolt);
+  const apexLight = new THREE.PointLight(0xcfe4ff, 0, 6); apexLight.position.set(0, APEX_Y, 0); scene.add(apexLight);
+  function makeBolt() {
+    // jagged path from y≈4.6 down to the apex, with lateral jitter
+    const pts = []; const segs = 9; const topY = 4.6;
+    for (let i = 0; i <= segs; i++) {
+      const f = i / segs, y = topY + (APEX_Y - topY) * f;
+      const j = i === 0 || i === segs ? 0 : (Math.sin(i * 12.9898) * 43758.5453 % 1) * 0.001;
+      const jx = i === 0 || i === segs ? 0 : (((i * 7) % 5) - 2) * 0.05;
+      const jz = i === 0 || i === segs ? 0 : (((i * 3) % 5) - 2) * 0.05;
+      pts.push(new THREE.Vector3(jx + j, y, jz));
+    }
+    bolt.geometry.dispose();
+    bolt.geometry = new THREE.BufferGeometry().setFromPoints(pts);
+  }
+  let strikeFx = 0;
+  function flash() { strikeFx = 1.0; makeBolt(); }
+
   // Internal features are positioned to scale inside the pyramid. The coffer is
   // GENUINELY TINY (≈2 m in a 146 m pyramid); it's enlarged only ~4× so it stays
   // visible. The Big Void is ≈35 m — large, and shown near true scale.
@@ -551,13 +581,25 @@ function buildScene() {
     // a rate set by the (frequency-locked) synchronous speed. No idle creep.
     motor.rotation.z -= (frame.motorLocked ? (0.6 + 3.0 * frame.stageMotor) : 0.0) * dt;
     mats.rotor.color.set(frame.motorLocked ? C(q.green) : C(q.gold));
+    // ── LIGHTNING STRIKE FX: the bolt flickers and fades over ~1.1 s wall-clock,
+    //    the apex lights up white, the capstone flares. Independent of sim timescale.
+    if (strikeFx > 0) {
+      strikeFx = Math.max(0, strikeFx - dt / 1.1);
+      const flick = 0.45 + 0.55 * Math.abs(Math.sin(now * 60));   // fast flicker
+      boltMat.opacity = strikeFx * flick;
+      apexLight.intensity = strikeFx * 9.0 * flick;
+      mats.cap.color.set(C('#ffffff')); mats.gilt.color.set(C('#ffffff'));
+      mats.cap.opacity = 1.0;
+      if (strikeFx < 0.02) { boltMat.opacity = 0; apexLight.intensity = 0;
+        mats.cap.color.set(C('#cdd2dc')); mats.gilt.color.set(C(q.gold)); }
+    }
     // orbit at the fit-distance, scaled by the user's scroll-wheel zoom
     const R = orbitR * zoom;
     camera.position.set(R * Math.cos(now * 0.08), R * 0.52, R * Math.sin(now * 0.08));
     camera.lookAt(LOOK);
     renderer.render(scene, camera);
   }
-  return { stub: false, resize, recolor, update };
+  return { stub: false, resize, recolor, update, flash };
 }
 
 // ── AC waveform (2D) ─────────────────────────────────────────────────────────
@@ -764,12 +806,19 @@ function updateScaleNote() {
 }
 document.getElementById('btnRun').addEventListener('click', () => { if (demo) { frame = demo.reset(); setStages(frame); setReadouts(frame); resetSequence(); buildup = []; drawBuildup(frame); } });
 document.getElementById('btnStrike').addEventListener('click', () => {
-  if (!demo) return;
+  if (!demo) { document.getElementById('status').textContent = 'Still loading — try again in a moment.'; return; }
+  if (typeof demo.strike !== 'function') {        // stale cached WASM (pre-strike build)
+    document.getElementById('status').textContent =
+      '⚠ Old cached engine detected — hard-refresh the page (Ctrl/Cmd+Shift+R) to enable strikes.';
+    return;
+  }
   frame = demo.strike();
   setStages(frame); setReadouts(frame);
   const btn = document.getElementById('btnStrike');
   btn.classList.remove('flash'); void btn.offsetWidth; btn.classList.add('flash');
-  if (!scene.stub) scene.flash && scene.flash();
+  if (!scene.stub && scene.flash) scene.flash();
+  const ov = document.getElementById('screenFlash');     // timescale-independent screen flash
+  if (ov) { ov.classList.remove('on'); void ov.offsetWidth; ov.classList.add('on'); }
   logEvent(frame.t,
     `⚡ Lightning strike #${frame.strikeCount}: slosh spikes to ${frame.cavitationVMs.toFixed(2)} m/s ` +
     `(cavitation cap) — AC burst ${fmtW(frame.acPower)}; ~${fmtE(frame.strikeCapturedKwh)} banked ` +
