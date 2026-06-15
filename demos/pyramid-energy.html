@@ -181,6 +181,13 @@
       <div class="charge-sub" id="chargeSub">tap a strike to bank ~27.8 kWh · next: 100 kWh</div>
       <div class="charge-sub2" id="chargeEquiv">— strikes · — of the 4.38 GWh aquifer</div>
     </div>
+
+    <div class="control-group" style="margin-top:12px">
+      <label>Connected Load — Houses
+        <span class="slider-value" id="housesVal" style="float:right">4</span></label>
+      <input type="range" id="houses" min="0" max="8" step="1" value="4">
+      <div class="ledger" id="loadNote" style="color:var(--text-muted);margin-top:4px">—</div>
+    </div>
     <div class="demo-status" id="status">Loading…</div>
     <div class="ledger" style="color:var(--text-muted);margin-top:6px">
       <b style="color:var(--gold)">Idealized model.</b> This is the <b>ideal</b>
@@ -220,7 +227,9 @@
         stack above the KC = relieving chambers · inclined corridor = Grand Gallery ·
         <b style="color:var(--demo-cyan)">translucent block above the gallery</b> = Big Void (n=5, 34 Hz resonator) ·
         <b style="color:var(--demo-cyan)">cyan dashes</b> = wireless AC link ·
-        <b style="color:var(--gold)">wheel</b> = 50 Hz motor (green when locked).
+        <b style="color:var(--gold)">wheel</b> = 50 Hz motor (green when locked) ·
+        <b style="color:#ffcf6e">small houses</b> (ring, <b>to scale</b> ≈9 m vs the 146 m pyramid) =
+        the connected load; they light when the battery powers them, go dark when it empties.
         Chambers near true scale; coffer enlarged ~4× for visibility.
         <b style="color:var(--gold)">Scroll to zoom.</b>
       </div>
@@ -552,6 +561,40 @@ function buildScene() {
   }
   scene.add(motor); mats.rotor = rotorMat;
 
+  // ── THE LOAD: small houses around the pyramid, TO SCALE. Scene scale ≈ 92 m/unit
+  //    (pyramid base 230 m ↔ 2.48 units), so a ~9 m house ≈ 0.10 units — a speck next
+  //    to the pyramid. Each is wired to the structure (a grid tie) and lights up when
+  //    the battery is powering it; goes dark when the battery empties.
+  const HOUSE_W = 0.10, HOUSE_BODY_H = 0.05, HOUSE_ROOF_H = 0.035;   // ≈9×4.6 m + 3.2 m roof
+  const HOUSE_R = 2.35;                                              // ring radius (outside the base)
+  const houseGroup = new THREE.Group(); scene.add(houseGroup);
+  const houseMeshes = [];     // { body, roof, tie }
+  function buildHouses(n) {
+    while (houseMeshes.length) {                                     // clear existing
+      const h = houseMeshes.pop();
+      houseGroup.remove(h.body); houseGroup.remove(h.roof); houseGroup.remove(h.tie);
+      h.body.geometry.dispose(); h.roof.geometry.dispose(); h.tie.geometry.dispose();
+    }
+    for (let i = 0; i < n; i++) {
+      const a = (i / Math.max(1, n)) * Math.PI * 2 + 0.35;
+      const x = Math.cos(a) * HOUSE_R, z = Math.sin(a) * HOUSE_R;
+      const bodyMat = new THREE.MeshBasicMaterial({ color: C('#555a66'), transparent: true, opacity: 0.95 });
+      const roofMat = new THREE.MeshBasicMaterial({ color: C('#3c4150'), transparent: true, opacity: 0.95 });
+      const body = new THREE.Mesh(new THREE.BoxGeometry(HOUSE_W, HOUSE_BODY_H, HOUSE_W), bodyMat);
+      body.position.set(x, HOUSE_BODY_H / 2, z);
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(HOUSE_W * 0.82, HOUSE_ROOF_H, 4), roofMat);
+      roof.position.set(x, HOUSE_BODY_H + HOUSE_ROOF_H / 2, z); roof.rotation.y = Math.PI / 4;
+      // grid tie: a thin line from the pyramid base toward the house
+      const tieMat = new THREE.LineBasicMaterial({ color: C('#e0a32e'), transparent: true, opacity: 0.0 });
+      const tieGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(Math.cos(a) * 1.2, 0.02, Math.sin(a) * 1.2),
+        new THREE.Vector3(x, HOUSE_BODY_H * 0.6, z)]);
+      const tie = new THREE.Line(tieGeo, tieMat);
+      houseGroup.add(body); houseGroup.add(roof); houseGroup.add(tie);
+      houseMeshes.push({ body, roof, tie });
+    }
+  }
+
   let displayPhase = 0, lastW = 0, lastH = 0;
   // Feedback-FREE resize: size from the canvas's own CSS-laid-out box and pass
   // updateStyle=false so setSize never writes the element size back into the layout
@@ -610,6 +653,17 @@ function buildScene() {
     // a rate set by the (frequency-locked) synchronous speed. No idle creep.
     motor.rotation.z -= (frame.motorLocked ? (0.6 + 3.0 * frame.stageMotor) : 0.0) * dt;
     mats.rotor.color.set(frame.motorLocked ? C(q.green) : C(q.gold));
+    // ── THE HOUSES (the load): lit warm when the battery is powering them, dark when
+    //    the battery is empty. The grid-tie line glows while drawing.
+    const powered = frame.housesPowered && frame.numHouses > 0;
+    const litBody = C(powered ? '#ffcf6e' : '#555a66');
+    const litRoof = C(powered ? '#9a6b22' : '#3c4150');
+    const tieGlow = powered ? (0.35 + 0.35 * Math.sin(now * 4) ** 2) : 0.0;
+    for (const h of houseMeshes) {
+      h.body.material.color.copy(litBody); h.roof.material.color.copy(litRoof);
+      h.body.material.opacity = powered ? 1.0 : 0.85;
+      h.tie.material.opacity = tieGlow;
+    }
     // ── LIGHTNING STRIKE FX: the bolt flickers and fades over ~1.1 s wall-clock,
     //    the apex lights up white, the capstone flares. Independent of sim timescale.
     if (strikeFx > 0) {
@@ -628,7 +682,7 @@ function buildScene() {
     camera.lookAt(LOOK);
     renderer.render(scene, camera);
   }
-  return { stub: false, resize, recolor, update, flash };
+  return { stub: false, resize, recolor, update, flash, setHouses: buildHouses };
 }
 
 // ── AC waveform (2D) ─────────────────────────────────────────────────────────
@@ -787,8 +841,9 @@ function setReadouts(f) {
   document.getElementById('ledOut').textContent = fmtW(f.acPower);
   document.getElementById('ledV').textContent = f.struck
     ? (f.sloshV).toFixed(3) + ' m/s ⚡' : (f.sloshV * 1e3).toFixed(3) + ' mm/s';
-  // the lightning battery — charge gauge
+  // the lightning battery — charge gauge + the connected load (houses)
   updateCharge(f);
+  updateLoadNote(f);
   document.getElementById('freqTag').textContent = fOp.toFixed(2) + ' Hz';
   const tag = document.getElementById('sustainTag');
   tag.textContent = f.selfSustaining ? 'self-sustaining' : 'starting…';
@@ -814,14 +869,40 @@ function configure() {
   curMode = parseInt(document.getElementById('mode').value);
   curF1 = parseFloat(document.getElementById('f1').value);
   frame = demo.configure(field, ob, curMode);
+  applyHouses();                                   // re-apply the connected load + scene houses
   setStages(frame); setReadouts(frame); renderTau(frame);
   resetSequence(); drawBuildup(frame); updateScaleNote();
+}
+// Apply the house count to the engine load + the 3D scene.
+function applyHouses() {
+  const n = parseInt(document.getElementById('houses').value);
+  if (demo && typeof demo.setHouses === 'function') frame = demo.setHouses(n);
+  if (!scene.stub && scene.setHouses) scene.setHouses(n);
+}
+// Load readout: N houses × typical draw, and whether the battery is meeting it.
+function updateLoadNote(f) {
+  const note = document.getElementById('loadNote');
+  if (!note) return;
+  if (!f || f.numHouses === 0) { note.innerHTML = 'No load connected — add houses to draw the battery down.'; return; }
+  const per = (f.houseAvgW / 1e3).toFixed(2);
+  const tot = fmtW(f.loadW);
+  const status = f.housesPowered
+    ? '<b style="color:var(--demo-green)">powered</b> from the battery'
+    : '<b style="color:#e0703a">battery empty — houses dark</b>';
+  // hours the current battery would run this load
+  const hrs = f.loadW > 0 ? (f.storeKwh * 1e3 / f.loadW) : 0;
+  note.innerHTML = `${f.numHouses} houses × ${per} kW (typical) = <b>${tot}</b> · ${status}` +
+    (f.storeKwh > 0 ? ` · battery runs them <b>${hrs >= 1 ? hrs.toFixed(1) + ' h' : (hrs * 60).toFixed(0) + ' min'}</b> at this draw` : '');
 }
 
 document.getElementById('field').oninput = function () { document.getElementById('fieldVal').textContent = (+this.value).toFixed(1) + '×'; if (demo) configure(); };
 document.getElementById('obelisk').oninput = function () { document.getElementById('obeliskVal').textContent = (+this.value).toFixed(1) + ' kV'; if (demo) configure(); };
 document.getElementById('mode').oninput = function () { document.getElementById('modeVal').textContent = this.value; if (demo) configure(); };
 document.getElementById('f1').oninput = function () { document.getElementById('f1Val').textContent = (+this.value).toFixed(2) + ' Hz'; curF1 = +this.value; if (frame) setReadouts(frame); };
+document.getElementById('houses').oninput = function () {
+  document.getElementById('housesVal').textContent = this.value;
+  applyHouses(); if (frame) { setReadouts(frame); }
+};
 document.getElementById('timeScale').onchange = function () { timeScale = +this.value; updateScaleNote(); };
 function updateScaleNote() {
   if (!frame) return;
