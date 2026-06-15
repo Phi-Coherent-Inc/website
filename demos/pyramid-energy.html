@@ -187,7 +187,7 @@ function buildScene() {
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
-  const LOOK = new THREE.Vector3(0.4, 0.72, 0);
+  const LOOK = new THREE.Vector3(0, 0.74, 0.55);
   let orbitR = 8;                          // recomputed in resize() to fit the scene
   camera.position.set(8, 4, 8); camera.lookAt(LOOK);
   scene.add(new THREE.AmbientLight(0xffffff, 0.55));
@@ -258,8 +258,10 @@ function buildScene() {
   }
 
   // ── AC generated at the coffer → beamed WIRELESSLY to the motor ──
+  // Motor sits PERPENDICULAR to the obelisk line (obelisks are along x at z=0; the
+  // motor is on the z-axis, centred between them), so it reads as a separate unit.
   const linkMat = new THREE.LineDashedMaterial({ color: C(p.cyan), transparent: true, opacity: 0.0, dashSize: 0.1, gapSize: 0.07 });
-  const acSource = new THREE.Vector3(0.06, 0.41, 0), motorPos = new THREE.Vector3(2.25, 0.41, 0);
+  const acSource = new THREE.Vector3(0, 0.42, 0.1), motorPos = new THREE.Vector3(0, 0.41, 2.3);
   const linkGeo = new THREE.BufferGeometry().setFromPoints([acSource, motorPos]);
   const link = new THREE.Line(linkGeo, linkMat); link.computeLineDistances(); scene.add(link); mats.link = linkMat;
   const pulseMat = new THREE.MeshBasicMaterial({ color: C(p.cyan), transparent: true, opacity: 0 });
