@@ -188,6 +188,16 @@
       <input type="range" id="houses" min="0" max="8" step="1" value="4">
       <div class="ledger" id="loadNote" style="color:var(--text-muted);margin-top:4px">—</div>
     </div>
+
+    <div class="control-group" style="margin-top:12px">
+      <label>Apex Corona — sharpened capstone point
+        <span class="slider-value" id="tipVal" style="float:right">1.5 mm</span></label>
+      <input type="range" id="tipR" min="1.0" max="2.0" step="0.1" value="1.5">
+      <label style="margin-top:8px">Emission points
+        <span class="slider-value" id="emitVal" style="float:right">1 · single apex</span></label>
+      <input type="range" id="emit" min="0" max="3" step="1" value="0">
+      <div class="ledger" id="coronaNote" style="color:var(--text-muted);margin-top:4px">—</div>
+    </div>
     <div class="demo-status" id="status">Loading…</div>
     <div class="ledger" style="color:var(--text-muted);margin-top:6px">
       <b style="color:var(--gold)">Idealized model.</b> This is the <b>ideal</b>
@@ -229,7 +239,8 @@
         <b style="color:var(--demo-cyan)">cyan dashes</b> = wireless AC link ·
         <b style="color:var(--gold)">wheel</b> = 50 Hz motor (green when locked) ·
         <b style="color:#ffcf6e">small houses</b> (ring, <b>to scale</b> ≈9 m vs the 146 m pyramid) =
-        the connected load; they light when the battery powers them, go dark when it empties.
+        the connected load; they light when the battery powers them, go dark when it empties ·
+        <b style="color:#b89cff">violet apex glow</b> = the sharpened point in continuous corona (point discharge).
         Chambers near true scale; coffer enlarged ~4× for visibility.
         <b style="color:var(--gold)">Scroll to zoom.</b>
       </div>
@@ -456,10 +467,17 @@ function buildScene() {
   const gilt = new THREE.Mesh(new THREE.ConeGeometry(0.185, 0.26, 4), giltMat);
   gilt.rotation.y = Math.PI / 4; gilt.position.y = 1.56; scene.add(gilt); mats.gilt = giltMat;
 
+  // ── APEX CORONA GLOW: the sharpened point in continuous point-discharge (St. Elmo's
+  //    fire). A soft violet glow at the tip, always on when the apex is in corona; it
+  //    pulses and grows with the emission-point count.
+  const APEX_Y = 1.70;                                   // capstone tip
+  const coronaMat = new THREE.MeshBasicMaterial({ color: C('#b89cff'), transparent: true, opacity: 0 });
+  const coronaGlow = new THREE.Mesh(new THREE.SphereGeometry(0.05, 16, 16), coronaMat);
+  coronaGlow.position.y = APEX_Y; scene.add(coronaGlow); mats.corona = coronaMat;
+
   // ── LIGHTNING BOLT (the ⚡ strike): a jagged line from the sky to the apex, with
   //    a bright flash light at the capstone. Hidden until a strike fires; animated
   //    by strikeFx (wall-clock fade), independent of the sim timescale.
-  const APEX_Y = 1.70;                                   // capstone tip
   const boltMat = new THREE.LineBasicMaterial({ color: 0xeaf2ff, transparent: true, opacity: 0 });
   let boltGeo = new THREE.BufferGeometry();
   const bolt = new THREE.Line(boltGeo, boltMat); scene.add(bolt);
@@ -653,6 +671,16 @@ function buildScene() {
     // a rate set by the (frequency-locked) synchronous speed. No idle creep.
     motor.rotation.z -= (frame.motorLocked ? (0.6 + 3.0 * frame.stageMotor) : 0.0) * dt;
     mats.rotor.color.set(frame.motorLocked ? C(q.green) : C(q.gold));
+    // ── APEX CORONA GLOW: on when the sharpened tip is in continuous corona; brighter
+    //    and larger with more emission points (log scale). Pulses (the discharge flicker).
+    if (frame.coronaActiveFair) {
+      const pts = Math.max(1, frame.emissionPoints || 1);
+      const lvl = 0.25 + 0.18 * (Math.log10(pts));        // 1→0.25, 1000→0.79
+      const flick = 0.7 + 0.3 * Math.sin(now * 22) * Math.sin(now * 7);
+      coronaMat.opacity = lvl * flick;
+      const sc = 0.7 + 0.25 * Math.log10(pts) + 0.12 * Math.sin(now * 9);
+      coronaGlow.scale.setScalar(sc);
+    } else { coronaMat.opacity = 0; }
     // ── THE HOUSES (the load): lit warm when the battery is powering them, dark when
     //    the battery is empty. The grid-tie line glows while drawing.
     const powered = frame.housesPowered && frame.numHouses > 0;
@@ -841,9 +869,10 @@ function setReadouts(f) {
   document.getElementById('ledOut').textContent = fmtW(f.acPower);
   document.getElementById('ledV').textContent = f.struck
     ? (f.sloshV).toFixed(3) + ' m/s ⚡' : (f.sloshV * 1e3).toFixed(3) + ' mm/s';
-  // the lightning battery — charge gauge + the connected load (houses)
+  // the lightning battery — charge gauge + the connected load (houses) + apex corona
   updateCharge(f);
   updateLoadNote(f);
+  updateCoronaNote(f);
   document.getElementById('freqTag').textContent = fOp.toFixed(2) + ' Hz';
   const tag = document.getElementById('sustainTag');
   tag.textContent = f.selfSustaining ? 'self-sustaining' : 'starting…';
@@ -870,6 +899,7 @@ function configure() {
   curF1 = parseFloat(document.getElementById('f1').value);
   frame = demo.configure(field, ob, curMode);
   applyHouses();                                   // re-apply the connected load + scene houses
+  applyApex();                                     // re-apply the apex corona knobs
   setStages(frame); setReadouts(frame); renderTau(frame);
   resetSequence(); drawBuildup(frame); updateScaleNote();
 }
@@ -878,6 +908,28 @@ function applyHouses() {
   const n = parseInt(document.getElementById('houses').value);
   if (demo && typeof demo.setHouses === 'function') frame = demo.setHouses(n);
   if (!scene.stub && scene.setHouses) scene.setHouses(n);
+}
+// Emission-points slider position 0..3 → 1, 10, 100, 1000 (log scale).
+function emitPoints() { return Math.pow(10, parseInt(document.getElementById('emit').value)); }
+// Apply the apex corona knobs (tip radius + emission points) to the C++ corona model.
+function applyApex() {
+  const tip = parseFloat(document.getElementById('tipR').value);
+  if (demo && typeof demo.setApex === 'function') frame = demo.setApex(tip, emitPoints());
+}
+// Corona readout: onset, continuous-corona status, and fair/storm/leader power vs footprint.
+function updateCoronaNote(f) {
+  const n = document.getElementById('coronaNote');
+  if (!n || !f) return;
+  const beta = Math.round(146.6 / (f.apexTipMm / 1e3)).toLocaleString();
+  const status = f.coronaActiveFair
+    ? `<b style="color:#c9a6ff">continuous corona</b> (onset ${f.coronaOnsetVpm.toFixed(0)} V/m &lt; 120 V/m)`
+    : `no fair-weather corona (onset ${f.coronaOnsetVpm.toFixed(0)} V/m &gt; 120 V/m)`;
+  const cmp = f.coronaVsFootprint >= 1
+    ? `<b style="color:var(--demo-green)">above</b>` : `below`;
+  n.innerHTML = `β = h/r ≈ <b>${beta}</b> · ${status}<br>` +
+    `corona: fair <b>${fmtW(f.coronaPowerFairW)}</b> (${cmp} the ${fmtW(f.footprintPowerW)} footprint) · ` +
+    `storm <b>${fmtW(f.coronaPowerStormW)}</b> · near-breakdown <b>${fmtW(f.coronaPowerLeaderW)}</b>` +
+    (f.emissionPoints > 1 ? ` · <span style="color:#c9a6ff">${f.emissionPoints.toLocaleString()}-point array</span>` : ` · single apex`);
 }
 // Load readout: N houses × typical draw, and whether the battery is meeting it.
 function updateLoadNote(f) {
@@ -902,6 +954,16 @@ document.getElementById('f1').oninput = function () { document.getElementById('f
 document.getElementById('houses').oninput = function () {
   document.getElementById('housesVal').textContent = this.value;
   applyHouses(); if (frame) { setReadouts(frame); }
+};
+document.getElementById('tipR').oninput = function () {
+  document.getElementById('tipVal').textContent = (+this.value).toFixed(1) + ' mm';
+  applyApex(); if (frame) updateCoronaNote(frame);
+};
+document.getElementById('emit').oninput = function () {
+  const pts = emitPoints();
+  document.getElementById('emitVal').textContent = pts === 1 ? '1 · single apex'
+    : pts.toLocaleString() + ' · needle array';
+  applyApex(); if (frame) updateCoronaNote(frame);
 };
 document.getElementById('timeScale').onchange = function () { timeScale = +this.value; updateScaleNote(); };
 function updateScaleNote() {
