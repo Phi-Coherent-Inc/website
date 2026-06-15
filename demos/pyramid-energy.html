@@ -42,6 +42,20 @@
                font-variant-numeric:tabular-nums; transition:color .25s; }
   .stage-item.on .stage-pct { color:var(--gold-dim); }
 
+  /* ── Lightning-strike action button ── */
+  .btn-strike { width:100%; margin-top:8px; padding:11px 14px; cursor:pointer;
+                font-size:13.5px; font-weight:600; letter-spacing:.02em;
+                color:#1a1208; border:1px solid #e8b84b; border-radius:8px;
+                background:linear-gradient(180deg,#ffd97a,#e0a32e);
+                box-shadow:0 0 0 0 rgba(255,210,90,.0); transition:box-shadow .15s, transform .05s; }
+  .btn-strike:hover:not(:disabled) { box-shadow:0 0 18px rgba(255,210,90,.55); }
+  .btn-strike:active:not(:disabled) { transform:translateY(1px); }
+  .btn-strike:disabled { opacity:.45; cursor:not-allowed; }
+  @keyframes strikePulse { 0%{box-shadow:0 0 0 0 rgba(255,225,120,.9);} 100%{box-shadow:0 0 26px 6px rgba(255,225,120,0);} }
+  .btn-strike.flash { animation:strikePulse .5s ease-out; }
+  .strike-readout { margin-top:6px; font-size:11.5px; color:var(--text-muted);
+                    font-variant-numeric:tabular-nums; }
+
   /* ── Readout metric grid ── */
   .metric-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   /* the 4-up energy story (fair-weather → storm → strike → store) collapses to 2-up then 1-up */
@@ -128,6 +142,11 @@
     </div>
 
     <button class="btn-run" id="btnRun">Cold-Start the Device</button>
+    <button class="btn-strike" id="btnStrike" title="Inject a lightning strike — the slosh spikes to the mercury cavitation ceiling and the bolt banks into the aquifer store">⚡ Trigger Lightning Strike</button>
+    <div class="strike-readout ledger" id="strikeReadout">
+      Strikes: <b id="strikeCount">0</b> &nbsp;·&nbsp; Store banked: <b id="strikeStore">0 Wh</b>
+      &nbsp;·&nbsp; slosh cap: <b id="strikeCap">—</b>
+    </div>
     <div class="demo-status" id="status">Loading…</div>
     <div class="ledger" style="color:var(--text-muted);margin-top:6px">
       <b style="color:var(--gold)">Idealized model.</b> This is the <b>ideal</b>
@@ -685,7 +704,7 @@ function setReadouts(f) {
   document.getElementById('rpmSub').textContent = f.motorLocked
     ? 'locked · sync ' + rpmSync.toFixed(0) + ' rpm · ' + fOp.toFixed(2) + ' Hz'
     : 'awaiting resonant lock (not self-starting) · sync ' + rpmSync.toFixed(0) + ' rpm';
-  document.getElementById('acOut').textContent = fmtP(f.acPower);
+  document.getElementById('acOut').textContent = fmtW(f.acPower);
   document.getElementById('cavityNote').innerHTML =
     `Cavity index <b>Q=φ=${f.cavityIndex.toFixed(3)}</b> (premise) sets f via 1/√Q · ` +
     `obelisk pump @ <b>${f.obeliskResonanceHz.toFixed(1)} Hz</b> (2·f<sub>n</sub>).`;
@@ -694,8 +713,13 @@ function setReadouts(f) {
   document.getElementById('ledLoop').innerHTML = f.dcLoopClosed
     ? '<span style="color:var(--demo-green)">closed</span>' : 'open';
   document.getElementById('ledIn').textContent = fmtP(f.pumpReservoirW);
-  document.getElementById('ledOut').textContent = fmtP(f.acPower);
-  document.getElementById('ledV').textContent = (f.sloshV * 1e3).toFixed(3) + ' mm/s';
+  document.getElementById('ledOut').textContent = fmtW(f.acPower);
+  document.getElementById('ledV').textContent = f.struck
+    ? (f.sloshV).toFixed(3) + ' m/s ⚡' : (f.sloshV * 1e3).toFixed(3) + ' mm/s';
+  // strike accumulator
+  document.getElementById('strikeCount').textContent = f.strikeCount;
+  document.getElementById('strikeStore').textContent = fmtE(f.storeKwh);
+  document.getElementById('strikeCap').textContent = f.cavitationVMs.toFixed(2) + ' m/s';
   document.getElementById('freqTag').textContent = fOp.toFixed(2) + ' Hz';
   const tag = document.getElementById('sustainTag');
   tag.textContent = f.selfSustaining ? 'self-sustaining' : 'starting…';
@@ -739,6 +763,18 @@ function updateScaleNote() {
     `at ${timeScale}× first AC ≈ <b>${wallTxt}</b>. (See the breakdown below.)`;
 }
 document.getElementById('btnRun').addEventListener('click', () => { if (demo) { frame = demo.reset(); setStages(frame); setReadouts(frame); resetSequence(); buildup = []; drawBuildup(frame); } });
+document.getElementById('btnStrike').addEventListener('click', () => {
+  if (!demo) return;
+  frame = demo.strike();
+  setStages(frame); setReadouts(frame);
+  const btn = document.getElementById('btnStrike');
+  btn.classList.remove('flash'); void btn.offsetWidth; btn.classList.add('flash');
+  if (!scene.stub) scene.flash && scene.flash();
+  logEvent(frame.t,
+    `⚡ Lightning strike #${frame.strikeCount}: slosh spikes to ${frame.cavitationVMs.toFixed(2)} m/s ` +
+    `(cavitation cap) — AC burst ${fmtW(frame.acPower)}; ~${fmtE(frame.strikeCapturedKwh)} banked ` +
+    `(store now ${fmtE(frame.storeKwh)}); ringing down at the cavity Q.`, true);
+});
 window.addEventListener('resize', () => { if (!scene.stub) scene.resize(); });
 window.PhiTheme && window.PhiTheme.onChange(() => { if (!scene.stub) scene.recolor(); renderLadder(); if (frame) renderTau(frame); });
 
