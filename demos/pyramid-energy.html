@@ -72,6 +72,18 @@
       </div>
     </div>
 
+    <div class="control-group">
+      <label>Time Scale</label>
+      <div class="slider-row">
+        <select id="timeScale" class="demo-select">
+          <option value="1">Real-Time (1×)</option>
+          <option value="10">10× faster</option>
+          <option value="100" selected>100× faster</option>
+        </select>
+      </div>
+      <div class="ledger" style="color:var(--text-muted);margin-top:4px" id="scaleNote"></div>
+    </div>
+
     <button class="btn-run" id="btnRun">Cold-Start the Device</button>
     <div class="demo-status" id="status">Loading…</div>
     <div class="ledger" style="color:var(--text-muted);margin-top:6px">
@@ -165,7 +177,7 @@ import { ready, PhiPyramid } from './assets/js/phi-quantum.js';
 
 const pal = () => window.PhiTheme.palette();
 const C = (hex) => new THREE.Color(hex);
-const TIME_ACCEL = 45;     // sim seconds per wall-clock second (startup visible in ~10 s)
+let timeScale = 100;       // sim seconds per wall-clock second (Real-Time / 10× / 100×)
 
 // Live Schumann lock: the device runs on the n-th harmonic of the OBSERVED
 // fundamental f₁ (entered from a live source). f_n/f₁ = √(n(n+1)/2) is exact
@@ -414,6 +426,15 @@ document.getElementById('field').oninput = function () { document.getElementById
 document.getElementById('obelisk').oninput = function () { document.getElementById('obeliskVal').textContent = (+this.value).toFixed(1) + ' kV'; if (demo) configure(); };
 document.getElementById('mode').oninput = function () { document.getElementById('modeVal').textContent = this.value; if (demo) configure(); };
 document.getElementById('f1').oninput = function () { document.getElementById('f1Val').textContent = (+this.value).toFixed(2) + ' Hz'; curF1 = +this.value; if (frame) setReadouts(frame); };
+document.getElementById('timeScale').onchange = function () { timeScale = +this.value; updateScaleNote(); };
+function updateScaleNote() {
+  if (!frame) return;
+  const realMin = frame.startupSeconds / 60;        // computed: 3·(ε₀/σ)
+  const wall = frame.startupSeconds / timeScale;    // wall-clock at this scale
+  const wallTxt = wall >= 90 ? (wall / 60).toFixed(1) + ' min' : wall.toFixed(0) + ' s';
+  document.getElementById('scaleNote').innerHTML =
+    `Startup ≈ <b>${realMin.toFixed(0)} min</b> real (τ=ε₀/σ); at ${timeScale}× ≈ <b>${wallTxt}</b>.`;
+}
 document.getElementById('btnRun').addEventListener('click', () => { if (demo) { frame = demo.reset(); setStages(frame); setReadouts(frame); } });
 window.addEventListener('resize', () => { if (!scene.stub) scene.resize(); });
 window.PhiTheme && window.PhiTheme.onChange(() => { if (!scene.stub) scene.recolor(); renderLadder(); });
@@ -436,7 +457,7 @@ function loop() {
   const now = performance.now() / 1000;
   const dt = Math.min(0.05, now - last); last = now;
   if (demo) {
-    frame = demo.step(dt * TIME_ACCEL);
+    frame = demo.step(dt * timeScale);
     setStages(frame); setReadouts(frame);
     if (!scene.stub) { scene.resize(); scene.update(frame, dt, now); }
     drawWave(frame, dt);
@@ -448,6 +469,7 @@ await ready();
 demo = PhiPyramid.createDemo();
 configure();
 renderLadder();
+updateScaleNote();
 if (scene.stub) {
   const host = document.querySelector('.scene-panel');
   const d = document.createElement('div');
