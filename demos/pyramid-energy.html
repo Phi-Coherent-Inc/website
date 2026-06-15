@@ -157,6 +157,7 @@
       <div class="ledger" style="padding:8px 14px;border-top:1px solid var(--gold-border);color:var(--text-muted);font-size:11px;line-height:1.6">
         <b style="color:var(--gold)">pyramid</b> + <b style="color:var(--gold)">obelisks</b> (parametric pump) ·
         <b style="color:#b9bdc8">silver apex cap</b> (<b style="color:var(--gold)">gold-gilt</b>) = the isolated capstone DC collector ·
+        <b style="color:#3a3f4c">dark base slab</b> = the basalt foundation (conductive ground plane, closes the DC loop) ·
         <b style="color:var(--demo-cyan)">small box</b> = mercury coffer in the King's Chamber (sloshes) ·
         stack above the KC = relieving chambers · inclined corridor = Grand Gallery ·
         <b style="color:var(--demo-cyan)">translucent block above the gallery</b> = Big Void (n=5, 34 Hz resonator) ·
@@ -205,8 +206,8 @@
         </div>
         <div class="ledger" style="margin-top:14px">
           Apex collector: <b id="ledApex">—</b> &nbsp;·&nbsp; DC reservoir in: <b id="ledIn">—</b><br>
-          AC out: <b id="ledOut">—</b><br>
-          Slosh velocity: <b id="ledV">—</b><br>
+          Ground plane (basalt+aquifer): <b id="ledGround">—</b> &nbsp;·&nbsp; DC loop: <b id="ledLoop">—</b><br>
+          AC out: <b id="ledOut">—</b> &nbsp;·&nbsp; Slosh velocity: <b id="ledV">—</b><br>
           <span style="color:var(--text-muted)">Energy-conserved: out ≤ in. The device sells <b>coherence</b> (a 50 Hz lock), not bulk watts.</span>
         </div>
       </div>
@@ -317,6 +318,13 @@ function buildScene() {
   const groundMat = new THREE.MeshBasicMaterial({ color: C(p.axis), transparent: true, opacity: 0.12 });
   const ground = new THREE.Mesh(new THREE.CircleGeometry(3.2, 48), groundMat);
   ground.rotation.x = -Math.PI / 2; scene.add(ground); mats.ground = groundMat;
+
+  // ── BASALT BASE — the foundation slab under the whole structure: the conductive
+  // ground plane that closes the DC return loop (dark, just below the pyramid base).
+  const BASALT = '#2b2f3a';
+  const basaltMat = new THREE.MeshBasicMaterial({ color: C(BASALT), transparent: true, opacity: 0.6 });
+  const basalt = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.08, 2.6), basaltMat);
+  basalt.position.y = -0.04; scene.add(basalt); mats.basalt = basaltMat;
 
   // ── Pyramid shell (wireframe, TO SCALE — base/height ≈ 1.55, like Giza) ──
   const pyMat = new THREE.MeshBasicMaterial({ color: C(p.gold), wireframe: true, transparent: true, opacity: 0.4 });
@@ -599,6 +607,9 @@ function setReadouts(f) {
     `Cavity index <b>Q=φ=${f.cavityIndex.toFixed(3)}</b> (premise) sets f via 1/√Q · ` +
     `obelisk pump @ <b>${f.obeliskResonanceHz.toFixed(1)} Hz</b> (2·f<sub>n</sub>).`;
   document.getElementById('ledApex').textContent = (f.collectorApexV / 1e3).toFixed(1) + ' kV';
+  document.getElementById('ledGround').textContent = f.groundResistanceOhm.toFixed(2) + ' Ω';
+  document.getElementById('ledLoop').innerHTML = f.dcLoopClosed
+    ? '<span style="color:var(--demo-green)">closed</span>' : 'open';
   document.getElementById('ledIn').textContent = fmtP(f.pumpReservoirW);
   document.getElementById('ledOut').textContent = fmtP(f.acPower);
   document.getElementById('ledV').textContent = (f.sloshV * 1e3).toFixed(3) + ' mm/s';
