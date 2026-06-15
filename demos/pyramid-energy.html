@@ -102,10 +102,14 @@
       <div class="stat-sub">slosh → MHD alternator</div>
     </div>
 
-    <div class="stat-card stat-gold">
-      <div class="stat-label">Big Void Flywheel</div>
-      <div class="stat-value" id="voidGain">—</div>
-      <div class="stat-sub">low-density chamber, coupled to the coffer (slosh boost)</div>
+    <div class="control-group">
+      <label>Schumann Harmonic Ladder — each void → one harmonic</label>
+      <div id="ladder" class="ladder" style="font-size:11px;line-height:1.85"></div>
+      <div class="ledger" style="color:var(--text-muted);margin-top:4px">
+        Each chamber is tuned (by length, f=m·c/2L) to one Schumann harmonic. The
+        coffer/King's Chamber are n=8 (50 Hz) — the EM output. n=3 &amp; n=7 are
+        <b>predicted</b> voids that complete the ladder (not yet found).
+      </div>
     </div>
 
     <div class="control-group">
@@ -130,7 +134,7 @@
       <b style="color:var(--gold)">pyramid</b> + <b style="color:var(--gold)">obelisks</b> (parametric pump) ·
       <b style="color:var(--demo-cyan)">small box</b> = mercury coffer in the King's Chamber (sloshes) ·
       stack above the KC = relieving chambers · inclined corridor = Grand Gallery ·
-      <b style="color:var(--demo-cyan)">translucent block above the gallery</b> = Big Void (coupled flywheel) ·
+      <b style="color:var(--demo-cyan)">translucent block above the gallery</b> = Big Void (n=5, 34 Hz resonator) ·
       <b style="color:var(--demo-cyan)">cyan dashes</b> = wireless AC link ·
       <b style="color:var(--gold)">wheel</b> = 50 Hz motor (green when locked).
       Chambers near true scale; coffer enlarged ~4× for visibility.
@@ -240,10 +244,10 @@ function buildScene() {
   const gg = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.1, 0.045), ggMat);
   gg.position.set(-0.27, 0.30, 0); gg.rotation.z = INCL; scene.add(gg); mats.gg = ggMat;
 
-  // ── THE BIG VOID — the low-density AIR RESONANT CHAMBER that sits JUST ABOVE THE
-  // GRAND GALLERY (a similar tall-narrow cross-section, ≈30 m long; ScanPyramids
-  // 2017). Parallel to the gallery — NOT above the King's Chamber. It is coupled to
-  // the coffer as a displacement FLYWHEEL (the ×voidGain boost) and co-oscillates. ──
+  // ── THE BIG VOID — the low-density AIR RESONANT CHAMBER just ABOVE THE GRAND
+  // GALLERY (similar tall-narrow cross-section, ≈30 m / 100 ft; ScanPyramids 2017).
+  // It is the n=5 Schumann resonator (33.8 Hz) — its OWN harmonic, NOT a 50 Hz
+  // flywheel for the coffer (different frequency ⇒ no coupling). It simply resonates. ──
   const voidFill = new THREE.MeshBasicMaterial({ color: C(p.cyan), transparent: true, opacity: 0.14 });
   const voidEdge = new THREE.MeshBasicMaterial({ color: C(p.cyan), wireframe: true, transparent: true, opacity: 0.5 });
   const voidBox = new THREE.BoxGeometry(0.34, 0.1, 0.05);
@@ -253,12 +257,6 @@ function buildScene() {
   const VOID_Y = 0.45;
   bigVoid.position.set(-0.25, VOID_Y, 0); bigVoid.rotation.z = INCL; scene.add(bigVoid);
   mats.voidFill = voidFill; mats.voidEdge = voidEdge;
-
-  // Coupling link coffer ↔ Big Void (the coupled resonance — the flywheel coupling)
-  const cplMat = new THREE.LineDashedMaterial({ color: C(p.cyan), transparent: true, opacity: 0.35, dashSize: 0.035, gapSize: 0.03 });
-  const cpl = new THREE.Line(new THREE.BufferGeometry().setFromPoints(
-    [new THREE.Vector3(0, 0.42, 0), new THREE.Vector3(-0.1, VOID_Y + 0.02, 0)]), cplMat);
-  cpl.computeLineDistances(); scene.add(cpl); mats.cpl = cplMat;
 
   // ── Two obelisks (external parametric pump), to scale (≈30 m) ──
   const obMat = new THREE.MeshBasicMaterial({ color: C(p.gold), transparent: true, opacity: 0.6 });
@@ -312,7 +310,7 @@ function buildScene() {
     mats.py.color.set(C(q.gold)); mats.ground.color.set(C(q.axis));
     mats.kc.color.set(C(q.axis)); mats.gg.color.set(C(q.axis)); mats.rc.color.set(C(q.axis));
     mats.hg.color.set(C(q.cyan)); mats.voidFill.color.set(C(q.cyan)); mats.voidEdge.color.set(C(q.cyan));
-    mats.cpl.color.set(C(q.cyan)); mats.link.color.set(C(q.cyan)); mats.pulse.color.set(C(q.cyan));
+    mats.link.color.set(C(q.cyan)); mats.pulse.color.set(C(q.cyan));
     mats.rotor.color.set(C(q.gold));
   }
   function update(frame, dt, now) {
@@ -325,13 +323,12 @@ function buildScene() {
     mercury.position.x = Math.sin(displayPhase) * 0.012 * amp;
     mercury.position.y = 0.395 - Math.abs(Math.sin(displayPhase)) * 0.005 * amp;
     mercury.material.opacity = 0.5 + 0.5 * amp;
-    // Big Void FLYWHEEL: co-oscillates with the coffer, with a LARGER swing (it's the
-    // low-density displacement amplifier — the ×voidGain boost on the slosh).
-    bigVoid.rotation.z = INCL + Math.sin(displayPhase * 0.85) * 0.05 * amp;
-    bigVoid.position.y = VOID_Y + Math.sin(displayPhase * 0.85) * 0.025 * amp;
+    // Big Void: the n=5 Schumann resonator (33.8 Hz) — it resonates on its own
+    // harmonic (a gentle sway), NOT a 50 Hz flywheel for the coffer.
+    bigVoid.rotation.z = INCL + Math.sin(displayPhase * 0.68) * 0.04 * amp;
+    bigVoid.position.y = VOID_Y + Math.sin(displayPhase * 0.68) * 0.02 * amp;
     mats.voidFill.opacity = 0.10 + 0.12 * amp;
     mats.voidEdge.opacity = 0.40 + 0.30 * amp;
-    mats.cpl.opacity = 0.20 + 0.40 * env;
     // obelisks glow with the parametric pump stage
     const glow = 0.4 + 0.6 * frame.stageParametric;
     obs.forEach((o, i) => { o.material.color.set(C(q.gold)); o.material.opacity = glow * (0.7 + 0.3 * Math.sin(displayPhase * 2 + i)); });
@@ -396,7 +393,6 @@ function setReadouts(f) {
   document.getElementById('rpm').textContent = rpmDisp.toFixed(0) + ' rpm';
   document.getElementById('rpmSub').textContent = 'sync ' + rpmSync.toFixed(0) + ' rpm · ' + fOp.toFixed(2) + ' Hz (live)';
   document.getElementById('acOut').textContent = fmtP(f.acPower);
-  document.getElementById('voidGain').textContent = '×' + f.voidGain.toFixed(2);
   document.getElementById('ledIn').textContent = fmtP(f.pumpReservoirW);
   document.getElementById('ledOut').textContent = fmtP(f.acPower);
   document.getElementById('ledV').textContent = (f.sloshV * 1e3).toFixed(3) + ' mm/s';
@@ -420,7 +416,21 @@ document.getElementById('mode').oninput = function () { document.getElementById(
 document.getElementById('f1').oninput = function () { document.getElementById('f1Val').textContent = (+this.value).toFixed(2) + ' Hz'; curF1 = +this.value; if (frame) setReadouts(frame); };
 document.getElementById('btnRun').addEventListener('click', () => { if (demo) { frame = demo.reset(); setStages(frame); setReadouts(frame); } });
 window.addEventListener('resize', () => { if (!scene.stub) scene.resize(); });
-window.PhiTheme && window.PhiTheme.onChange(() => { if (!scene.stub) scene.recolor(); });
+window.PhiTheme && window.PhiTheme.onChange(() => { if (!scene.stub) scene.recolor(); renderLadder(); });
+
+// The Schumann harmonic ladder — every void → its tuned harmonic, live from C++.
+function renderLadder() {
+  const rungs = PhiPyramid.chamberLadder();
+  const p = window.PhiTheme.palette();
+  document.getElementById('ladder').innerHTML = rungs.map((r) => {
+    const out = r.n === 8;
+    const col = r.predicted ? p.textDim : (out ? p.green : p.gold);
+    const host = r.host.replace('PREDICTED ', '');
+    const tag = r.predicted ? ' <span style="opacity:.7">· predicted</span>'
+              : out ? ' <span style="opacity:.85">· EM output</span>' : '';
+    return `<div style="color:${col}"><b>n=${r.n}</b> · ${r.freqHz.toFixed(1)} Hz · ${host}${tag}</div>`;
+  }).join('');
+}
 
 function loop() {
   const now = performance.now() / 1000;
@@ -437,6 +447,7 @@ function loop() {
 await ready();
 demo = PhiPyramid.createDemo();
 configure();
+renderLadder();
 if (scene.stub) {
   const host = document.querySelector('.scene-panel');
   const d = document.createElement('div');

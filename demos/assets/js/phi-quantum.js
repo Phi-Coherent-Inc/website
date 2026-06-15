@@ -214,6 +214,9 @@ export const PhiPyramid = {
   //             stageMotor, vSs, nSync, fHz, pumpReservoirW, seedReservoirW,
   //             selfSustaining }. Call .delete() on the driver when done.
   createDemo() { return new _module.PyramidDemo(); },
+  // The Schumann chamber ladder: every void → its tuned harmonic (n=3, n=7 predicted).
+  // Returns [{ n, freqHz, lengthM, predicted, host }] for n=2..8.
+  chamberLadder() { return vecToArray(_module.chamberLadder()); },
 };
 
 const api = { ready, isReady, PhiCoherent, PhiRecovery, PhiVQE, PhiTunnel, PhiCrypto, PhiTopo, PhiPyramid };
