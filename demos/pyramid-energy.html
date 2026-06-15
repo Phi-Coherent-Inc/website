@@ -173,8 +173,10 @@ function buildScene() {
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
-  camera.position.set(3.4, 2.4, 3.4);
-  camera.lookAt(0, 0.5, 0);
+  const ORBIT_R = 7.0, ORBIT_Y = 3.8;     // fixed distance + height (no zoom)
+  const LOOK = new THREE.Vector3(0.5, 0.75, 0);
+  camera.position.set(ORBIT_R, ORBIT_Y, ORBIT_R);
+  camera.lookAt(LOOK);
   scene.add(new THREE.AmbientLight(0xffffff, 0.55));
   const dl = new THREE.DirectionalLight(0xffffff, 0.6); dl.position.set(4, 6, 3); scene.add(dl);
 
@@ -271,10 +273,10 @@ function buildScene() {
     // motor spins faster as it locks; color → green when self-sustaining
     motor.rotation.z -= (0.4 + 3.0 * frame.stageMotor) * dt;
     mats.rotor.color.set(frame.selfSustaining ? C(q.green) : C(q.gold));
-    // slow camera orbit
-    camera.position.x = 3.4 * Math.cos(now * 0.1);
-    camera.position.z = 3.4 * Math.sin(now * 0.1);
-    camera.lookAt(0, 0.6, 0);
+    // slow camera orbit at a FIXED distance + height (pulled back so the whole
+    // pyramid, obelisks and motor stay in frame — no zoom).
+    camera.position.set(ORBIT_R * Math.cos(now * 0.08), ORBIT_Y, ORBIT_R * Math.sin(now * 0.08));
+    camera.lookAt(LOOK);
     renderer.render(scene, camera);
   }
   return { stub: false, resize, recolor, update };
