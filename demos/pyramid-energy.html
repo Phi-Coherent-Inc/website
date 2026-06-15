@@ -128,11 +128,12 @@
     <canvas id="deviceCanvas"></canvas>
     <div class="ledger" style="padding:8px 14px;border-top:1px solid var(--gold-border);color:var(--text-muted);font-size:11px;line-height:1.6">
       <b style="color:var(--gold)">pyramid</b> + <b style="color:var(--gold)">obelisks</b> (parametric pump) ·
-      <b style="color:var(--demo-cyan)">small box</b> = mercury coffer (sloshes) ·
-      <b style="color:var(--demo-cyan)">big translucent block</b> = Big Void air chamber (coupled flywheel) ·
+      <b style="color:var(--demo-cyan)">small box</b> = mercury coffer in the King's Chamber (sloshes) ·
+      stack above the KC = relieving chambers · inclined corridor = Grand Gallery ·
+      <b style="color:var(--demo-cyan)">translucent block above the gallery</b> = Big Void (coupled flywheel) ·
       <b style="color:var(--demo-cyan)">cyan dashes</b> = wireless AC link ·
       <b style="color:var(--gold)">wheel</b> = 50 Hz motor (green when locked).
-      Internal chambers are near true scale; the coffer is enlarged ~4× for visibility.
+      Chambers near true scale; coffer enlarged ~4× for visibility.
     </div>
   </div>
 
@@ -212,40 +213,51 @@ function buildScene() {
 
   // King's Chamber — the air-acoustic resonator (Q≈300), small wire box
   const kcMat = new THREE.MeshBasicMaterial({ color: C(p.axis), wireframe: true, transparent: true, opacity: 0.55 });
-  const kc = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.085, 0.09), kcMat);
-  kc.position.set(0, 0.42, 0); scene.add(kc); mats.kc = kcMat;
+  const kc = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.075, 0.09), kcMat);
+  kc.position.set(0, 0.40, 0); scene.add(kc); mats.kc = kcMat;
+
+  // Relieving Chambers — the granite-beam support stack DIRECTLY ABOVE the King's
+  // Chamber that carries the weight above it. (This is the known space over the KC —
+  // NOT the Big Void, which is above the Grand Gallery.)
+  const rcMat = new THREE.MeshBasicMaterial({ color: C(p.axis), wireframe: true, transparent: true, opacity: 0.4 });
+  for (let i = 0; i < 5; i++) {
+    const rc = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.012, 0.1), rcMat);
+    rc.position.set(0, 0.455 + i * 0.026, 0); scene.add(rc);
+  }
+  mats.rc = rcMat;
 
   // Coffer + mercury (the conductor; sloshes horizontally → MHD → AC) — tiny
   const cofferMat = new THREE.MeshBasicMaterial({ color: C(p.axis), wireframe: true, transparent: true, opacity: 0.85 });
-  const coffer = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.045, 0.05), cofferMat);
-  coffer.position.set(0, 0.41, 0); scene.add(coffer);
+  const coffer = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.04, 0.05), cofferMat);
+  coffer.position.set(0, 0.40, 0); scene.add(coffer);
   const hgMat = new THREE.MeshBasicMaterial({ color: C(p.cyan), transparent: true, opacity: 0.9 });
-  const mercury = new THREE.Mesh(new THREE.BoxGeometry(0.082, 0.028, 0.045), hgMat);
-  mercury.position.set(0, 0.405, 0); scene.add(mercury); mats.hg = hgMat;
+  const mercury = new THREE.Mesh(new THREE.BoxGeometry(0.082, 0.026, 0.045), hgMat);
+  mercury.position.set(0, 0.395, 0); scene.add(mercury); mats.hg = hgMat;
 
-  // Grand Gallery — inclined shaft that ASCENDS up to the King's Chamber (its high
-  // end meets the KC; it slopes down and away from there).
+  // Grand Gallery — a TALL, NARROW corridor that ASCENDS up to the King's Chamber
+  // (its high end meets the KC; it slopes down and away from there).
   const ggMat = new THREE.MeshBasicMaterial({ color: C(p.axis), wireframe: true, transparent: true, opacity: 0.3 });
-  const gg = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.06, 0.07), ggMat);
-  gg.position.set(-0.26, 0.34, 0); gg.rotation.z = INCL; scene.add(gg); mats.gg = ggMat;
+  const gg = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.1, 0.045), ggMat);
+  gg.position.set(-0.27, 0.30, 0); gg.rotation.z = INCL; scene.add(gg); mats.gg = ggMat;
 
-  // ── THE BIG VOID — the low-density AIR RESONANT CHAMBER above the Grand Gallery,
-  // coupled to the coffer as a displacement FLYWHEEL (the ×voidGain boost on the
-  // slosh). Large, near true scale (≈35 m). It co-oscillates with the coffer. ──
+  // ── THE BIG VOID — the low-density AIR RESONANT CHAMBER that sits JUST ABOVE THE
+  // GRAND GALLERY (a similar tall-narrow cross-section, ≈30 m long; ScanPyramids
+  // 2017). Parallel to the gallery — NOT above the King's Chamber. It is coupled to
+  // the coffer as a displacement FLYWHEEL (the ×voidGain boost) and co-oscillates. ──
   const voidFill = new THREE.MeshBasicMaterial({ color: C(p.cyan), transparent: true, opacity: 0.14 });
   const voidEdge = new THREE.MeshBasicMaterial({ color: C(p.cyan), wireframe: true, transparent: true, opacity: 0.5 });
-  const voidBox = new THREE.BoxGeometry(0.52, 0.17, 0.17);
+  const voidBox = new THREE.BoxGeometry(0.34, 0.1, 0.05);
   const bigVoid = new THREE.Group();
   bigVoid.add(new THREE.Mesh(voidBox, voidFill));
   bigVoid.add(new THREE.Mesh(voidBox, voidEdge));
-  const VOID_Y = 0.76;
-  bigVoid.position.set(-0.05, VOID_Y, 0); bigVoid.rotation.z = INCL; scene.add(bigVoid);
+  const VOID_Y = 0.45;
+  bigVoid.position.set(-0.25, VOID_Y, 0); bigVoid.rotation.z = INCL; scene.add(bigVoid);
   mats.voidFill = voidFill; mats.voidEdge = voidEdge;
 
   // Coupling link coffer ↔ Big Void (the coupled resonance — the flywheel coupling)
   const cplMat = new THREE.LineDashedMaterial({ color: C(p.cyan), transparent: true, opacity: 0.35, dashSize: 0.035, gapSize: 0.03 });
   const cpl = new THREE.Line(new THREE.BufferGeometry().setFromPoints(
-    [new THREE.Vector3(0, 0.44, 0), new THREE.Vector3(-0.05, VOID_Y - 0.09, 0)]), cplMat);
+    [new THREE.Vector3(0, 0.42, 0), new THREE.Vector3(-0.1, VOID_Y + 0.02, 0)]), cplMat);
   cpl.computeLineDistances(); scene.add(cpl); mats.cpl = cplMat;
 
   // ── Two obelisks (external parametric pump), to scale (≈30 m) ──
@@ -298,7 +310,7 @@ function buildScene() {
   function recolor() {
     const q = pal(); renderer.setClearColor(C(q.canvas), 1);
     mats.py.color.set(C(q.gold)); mats.ground.color.set(C(q.axis));
-    mats.kc.color.set(C(q.axis)); mats.gg.color.set(C(q.axis));
+    mats.kc.color.set(C(q.axis)); mats.gg.color.set(C(q.axis)); mats.rc.color.set(C(q.axis));
     mats.hg.color.set(C(q.cyan)); mats.voidFill.color.set(C(q.cyan)); mats.voidEdge.color.set(C(q.cyan));
     mats.cpl.color.set(C(q.cyan)); mats.link.color.set(C(q.cyan)); mats.pulse.color.set(C(q.cyan));
     mats.rotor.color.set(C(q.gold));
@@ -311,7 +323,7 @@ function buildScene() {
     // coffer mercury: HORIZONTAL slosh — the surface tilts side to side (tiny coffer)
     mercury.rotation.z = Math.sin(displayPhase) * 0.34 * amp;
     mercury.position.x = Math.sin(displayPhase) * 0.012 * amp;
-    mercury.position.y = 0.405 - Math.abs(Math.sin(displayPhase)) * 0.006 * amp;
+    mercury.position.y = 0.395 - Math.abs(Math.sin(displayPhase)) * 0.005 * amp;
     mercury.material.opacity = 0.5 + 0.5 * amp;
     // Big Void FLYWHEEL: co-oscillates with the coffer, with a LARGER swing (it's the
     // low-density displacement amplifier — the ×voidGain boost on the slosh).
