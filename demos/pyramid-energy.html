@@ -44,6 +44,10 @@
 
   /* ── Readout metric grid ── */
   .metric-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  /* the 4-up energy story (fair-weather → storm → strike → store) collapses to 2-up then 1-up */
+  .energy-grid { grid-template-columns:repeat(4, 1fr); }
+  @media (max-width:1100px) { .energy-grid { grid-template-columns:1fr 1fr; } }
+  @media (max-width:620px)  { .energy-grid { grid-template-columns:1fr; } }
 
   /* ── Event log ── */
   .event-log { display:flex; flex-direction:column; max-height:150px; overflow-y:auto; font-size:11px; }
@@ -209,6 +213,52 @@
           Ground plane (basalt+aquifer): <b id="ledGround">—</b> &nbsp;·&nbsp; DC loop: <b id="ledLoop">—</b><br>
           AC out: <b id="ledOut">—</b> &nbsp;·&nbsp; Slosh velocity: <b id="ledV">—</b><br>
           <span style="color:var(--text-muted)">Energy-conserved: out ≤ in. The device sells <b>coherence</b> (a 50 Hz lock), not bulk watts.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Atmospheric Energy — where the energy actually is (fair-weather → storm → strike → store) -->
+    <div class="scene-panel span2">
+      <div class="panel-header">
+        <span class="panel-title">Atmospheric Energy — where the energy actually is</span>
+        <span class="panel-tag tag-recover">fair-weather → storm → strike → store</span>
+      </div>
+      <div class="panel-body">
+        <div class="metric-grid energy-grid">
+          <!-- fair-weather DC — the trickle that STARTS it -->
+          <div class="stat-card">
+            <div class="stat-label">Fair-weather DC <span style="color:var(--text-muted)">(starts it)</span></div>
+            <div class="stat-value" id="enFair">—</div>
+            <div class="stat-sub">steady atmospheric pump — the µW seed</div>
+          </div>
+          <!-- the storm regime -->
+          <div class="stat-card stat-gold">
+            <div class="stat-label">Storm tap <span style="color:var(--text-muted)">(charges it)</span></div>
+            <div class="stat-value" id="enStorm">—</div>
+            <div class="stat-sub" id="enStormSub">apex tap ≈ MV · ×vs fair-weather</div>
+          </div>
+          <!-- the lightning strike -->
+          <div class="stat-card stat-gold">
+            <div class="stat-label">Lightning strike</div>
+            <div class="stat-value" id="enStrike">—</div>
+            <div class="stat-sub" id="enStrikeSub">captured into the resonant sink</div>
+          </div>
+          <!-- the aquifer store -->
+          <div class="stat-card stat-green">
+            <div class="stat-label">Aquifer store <span style="color:var(--text-muted)">(holds it)</span></div>
+            <div class="stat-value" id="enVrtra">—</div>
+            <div class="stat-sub" id="enVrtraSub">geological capacity — never saturates</div>
+          </div>
+        </div>
+        <div class="ledger" style="margin-top:14px">
+          Banked per storm season: <b id="enBanked">—</b> &nbsp;·&nbsp;
+          Delivered (8 h draw): <b id="enBurst">—</b><br>
+          <span style="color:var(--text-muted)">The fair-weather DC <b>starts</b> the machine; each lightning strike
+          <b>charges</b> the aquifer electrochemically; the store <b>holds</b> it and meters it
+          out. This is the answer to “where is all the energy?” — not a µW trickle but a lightning-charged
+          geological battery. <b>Not free energy</b>: total stays strike-limited; the store buffers the flood,
+          it doesn't create it. The strike→aquifer charging coupling is the open frontier
+          (<span style="color:var(--gold)">[EST]</span>).</span>
         </div>
       </div>
     </div>
@@ -584,6 +634,38 @@ function drawBuildup(f) {
 let scene = buildScene();
 let demo = null, frame = null, last = performance.now() / 1000;
 const fmtP = (w) => w >= 1e-3 ? (w * 1e3).toFixed(2) + ' mW' : (w * 1e6).toFixed(1) + ' µW';
+// full-range power (µW … TW) for the storm/discharge regime
+const fmtW = (w) => {
+  const a = Math.abs(w);
+  if (a >= 1e12) return (w / 1e12).toFixed(1) + ' TW';
+  if (a >= 1e9)  return (w / 1e9).toFixed(1) + ' GW';
+  if (a >= 1e6)  return (w / 1e6).toFixed(2) + ' MW';
+  if (a >= 1e3)  return (w / 1e3).toFixed(2) + ' kW';
+  if (a >= 1)    return w.toFixed(1) + ' W';
+  if (a >= 1e-3) return (w * 1e3).toFixed(1) + ' mW';
+  return (w * 1e6).toFixed(1) + ' µW';
+};
+// energy in kWh (kWh … GWh)
+const fmtE = (kwh) => {
+  const a = Math.abs(kwh);
+  if (a >= 1e6) return (kwh / 1e6).toFixed(2) + ' GWh';
+  if (a >= 1e3) return (kwh / 1e3).toFixed(2) + ' MWh';
+  if (a >= 1)   return kwh.toFixed(1) + ' kWh';
+  return (kwh * 1e3).toFixed(0) + ' Wh';
+};
+// volts (V … MV)
+const fmtV = (v) => {
+  const a = Math.abs(v);
+  if (a >= 1e6) return (v / 1e6).toFixed(2) + ' MV';
+  if (a >= 1e3) return (v / 1e3).toFixed(1) + ' kV';
+  return v.toFixed(1) + ' V';
+};
+// dimensionless ×-factor (compact, log-scale aware)
+const fmtX = (x) => {
+  if (x >= 1e7) return x.toExponential(0).replace('e+', '×10^') + '×';
+  if (x >= 10)  return Math.round(x).toLocaleString() + '×';
+  return x.toFixed(1) + '×';
+};
 
 function setStage(key, v) {
   const pct = Math.max(0, Math.min(100, Math.round(v * 100)));
@@ -617,6 +699,20 @@ function setReadouts(f) {
   document.getElementById('freqTag').textContent = fOp.toFixed(2) + ' Hz';
   const tag = document.getElementById('sustainTag');
   tag.textContent = f.selfSustaining ? 'self-sustaining' : 'starting…';
+  // ── the atmospheric ENERGY story (fair-weather → storm → strike → store) ──
+  document.getElementById('enFair').textContent  = fmtW(f.pumpReservoirW);
+  document.getElementById('enStorm').textContent = fmtW(f.stormReservoirW);
+  document.getElementById('enStormSub').innerHTML =
+    'apex tap <b>' + fmtV(f.stormTapV) + '</b> · <b>' + fmtX(f.stormOverFair) +
+    '</b> vs fair-weather · apex field ×' + Math.round(f.apexFieldEnhance);
+  document.getElementById('enStrike').textContent = fmtE(f.strikeCapturedKwh);
+  document.getElementById('enStrikeSub').innerHTML =
+    'from a <b>' + fmtW(f.strikePeakW) + '</b> bolt — captured into the resonant sink';
+  document.getElementById('enVrtra').textContent = fmtE(f.vrtraCapacityKwh);
+  document.getElementById('enVrtraSub').textContent = 'geological capacity — never saturates';
+  document.getElementById('enBanked').textContent = fmtE(f.vrtraBankedSeasonKwh) +
+    ' (~30 strikes)';
+  document.getElementById('enBurst').textContent  = fmtW(f.vrtraBurstPowerW);
 }
 
 function configure() {
