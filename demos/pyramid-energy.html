@@ -94,8 +94,8 @@
 
     <div class="control-group">
       <label>Energy Loop</label>
-      <div class="stage-row"><span class="stage-name">DC collect</span><div class="stage-track"><div class="stage-fill" id="sDc"></div></div></div>
-      <div class="stage-row"><span class="stage-name">Schumann seed</span><div class="stage-track"><div class="stage-fill" id="sSeed"></div></div></div>
+      <div class="stage-row"><span class="stage-name">DC accumulate</span><div class="stage-track"><div class="stage-fill" id="sDc"></div></div></div>
+      <div class="stage-row"><span class="stage-name">Ladder trigger</span><div class="stage-track"><div class="stage-fill" id="sSeed"></div></div></div>
       <div class="stage-row"><span class="stage-name">Obelisk pump</span><div class="stage-track"><div class="stage-fill" id="sPar"></div></div></div>
       <div class="stage-row"><span class="stage-name">Saturate</span><div class="stage-track"><div class="stage-fill" id="sSat"></div></div></div>
       <div class="stage-row"><span class="stage-name">AC output</span><div class="stage-track"><div class="stage-fill" id="sAc"></div></div></div>
@@ -118,9 +118,13 @@
       <label>Schumann Harmonic Ladder — each void → one harmonic</label>
       <div id="ladder" class="ladder" style="font-size:11px;line-height:1.85"></div>
       <div class="ledger" style="color:var(--text-muted);margin-top:4px">
-        Each chamber is tuned (by length, f=m·c/2L) to one Schumann harmonic. The
-        coffer/King's Chamber are n=8 (50 Hz) — the EM output. n=3 &amp; n=7 are
-        <b>predicted</b> voids that complete the ladder (not yet found).
+        Each chamber is tuned (by length, f=m·c/2L) to one Schumann harmonic. Tuning
+        many voids lets the device <b>harvest the AC seed across the spectrum in
+        parallel</b> — gathering the µW trigger ~2× faster than the single strongest
+        line — so the <b>mercury slosh triggers sooner</b>. (This is the AC <i>seed</i>,
+        the trigger — not DC; the DC atmospheric circuit is the separate <i>pump</i>
+        that does the work, and resonance can't speed up its conduction.) n=3 &amp; n=7
+        are <b>predicted</b> voids that complete the ladder (not yet found).
       </div>
     </div>
 
@@ -166,6 +170,32 @@
       The oscillating mercury cuts the MHD field → 50 Hz AC, transmitted to a
       tuned synchronous motor. All values are computed live in
       <b>phi-pyramid-cpp</b> (WASM) — no JavaScript physics.
+    </div>
+  </div>
+
+  <!-- ── Startup sequence ── -->
+  <div class="scene-panel" style="align-self:start">
+    <div class="panel-header">
+      <span class="panel-title">Startup Sequence — slosh &amp; AC build-up (live)</span>
+      <span class="panel-tag tag-error" id="elapsedTag">t = 0 s</span>
+    </div>
+    <div class="wf-wrap"><canvas id="buildupChart" style="height:150px"></canvas></div>
+
+    <div class="control-group" style="padding:0 14px">
+      <label>How long does it take to start? (calculated, not quoted)</label>
+      <div class="ledger" id="tauBreakdown" style="font-size:11px;line-height:1.8"></div>
+      <div class="ledger" style="color:var(--text-muted);margin-top:4px">
+        Startup is the <b>slowest of several physical processes</b>, each a textbook
+        time constant computed from constants &amp; measured chamber dimensions — no
+        single number taken on faith. <b>First AC power</b> ≈ max(cavity ring-up,
+        bulk-slosh ring-up, air-bias ε₀/σ); <b>full mercury circulation</b> is a
+        separate, much slower milestone (the sub-mm/s drift).
+      </div>
+    </div>
+
+    <div class="control-group" style="padding:0 14px 12px">
+      <label>Event Log</label>
+      <div id="eventLog" style="font-family:var(--font-mono,monospace);font-size:11px;line-height:1.7;max-height:132px;overflow-y:auto"></div>
     </div>
   </div>
 </div>
@@ -385,6 +415,70 @@ function drawWave(frame, dt) {
   wfx.stroke();
 }
 
+// ── Startup-sequence graphic: build-up chart, timescale breakdown, event log ──
+const bc = document.getElementById('buildupChart'), bcx = bc.getContext('2d');
+let buildup = [];          // {t, env, ac} history in sim-time
+let evLog = [], milestones = {};
+
+const fmtDur = (s) =>
+  s < 90 ? s.toFixed(0) + ' s' : s < 5400 ? (s / 60).toFixed(1) + ' min' : (s / 3600).toFixed(1) + ' h';
+
+// The honest "how long to start" breakdown — every value computed in C++.
+function renderTau(f) {
+  const p = pal();
+  const row = (val, label, col) => `<div style="color:${col}"><b>${fmtDur(val)}</b> · ${label}</div>`;
+  document.getElementById('tauBreakdown').innerHTML =
+    row(f.tauAcoustic, 'cavity ring-up &nbsp;Q/(π·f)', p.textDim) +
+    row(f.tauSlosh, `bulk-slosh ring-up &nbsp;Q/(π·f<sub>slosh</sub>=${f.fSlosh.toFixed(2)} Hz)`, p.textDim) +
+    row(f.tauRc, 'air-bias relaxation &nbsp;ε₀/σ &nbsp;(the DC floor)', p.textDim) +
+    row(3 * f.tauAcOnline, '⇒ FIRST AC POWER &nbsp;(to ~95%)', p.green) +
+    row(f.tauStream, 'FULL mercury circulation &nbsp;N·L/u &nbsp;(sub-mm/s drift)', p.gold) +
+    `<div style="color:${p.cyan};margin-top:3px">⚡ Schumann ladder: <b>${f.ladderRungs} rungs</b> harvest the AC ` +
+    `<b>seed</b> in parallel — <b>~${f.ladderSpeedup.toFixed(1)}×</b> the strongest single line — for a faster slosh ` +
+    `<b>trigger</b>. (Seed, not DC: the DC circuit is the separate pump; resonance can't speed conduction.)</div>`;
+}
+
+function logEvent(t, msg, ms) {
+  evLog.unshift({ t, msg, ms });
+  if (evLog.length > 9) evLog.pop();
+  const p = pal();
+  document.getElementById('eventLog').innerHTML = evLog.map((e) =>
+    `<div><span style="color:${p.gold}">${fmtDur(e.t).padStart(7)}</span> &nbsp;` +
+    `<span style="color:${e.ms ? p.green : p.textDim}">${e.msg}</span></div>`).join('');
+}
+function resetSequence() {
+  buildup = []; evLog = []; milestones = {};
+  logEvent(0, 'Cold start — DC atmospheric pump engaged; Schumann ladder harvesting the AC seed (trigger).', true);
+}
+function checkMilestones(f) {
+  const t = f.t;
+  if (!milestones.slosh && f.envelope > 0.02) { milestones.slosh = 1; logEvent(t, 'Mercury slosh ringing up (obelisk parametric feedback).', false); }
+  if (!milestones.ac && f.envelope > 0.5) { milestones.ac = 1; logEvent(t, 'FIRST AC POWER — 50 Hz output online (slosh → MHD alternator).', true); }
+  if (!milestones.sustain && f.selfSustaining) { milestones.sustain = 1; logEvent(t, 'Self-sustaining — slosh saturated at the reservoir-bounded steady state.', true); }
+  if (!milestones.motor && f.stageMotor > 0.99) { milestones.motor = 1; logEvent(t, 'Synchronous motor locked to the Schumann mode.', true); }
+  if (!milestones.circ && t >= f.tauStream) { milestones.circ = 1; logEvent(t, 'Full steady mercury circulation established (the slow sub-mm/s drift).', true); }
+}
+
+function drawBuildup(f) {
+  const q = pal(), dpr = window.devicePixelRatio || 1, w = bc.clientWidth, h = 150, pad = 5;
+  if (bc.width !== w * dpr) { bc.width = w * dpr; bc.height = h * dpr; bcx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  bcx.clearRect(0, 0, w, h);
+  const span = Math.max(f.tauAcOnline * 3 * 1.15, f.t, 1);   // x-axis: at least to first-AC time
+  bcx.strokeStyle = q.grid; bcx.lineWidth = 1;
+  bcx.beginPath(); bcx.moveTo(0, h - pad); bcx.lineTo(w, h - pad); bcx.stroke();
+  const xAc = (f.tauAcOnline * 3 / span) * w;               // first-AC marker
+  bcx.strokeStyle = q.green; bcx.setLineDash([3, 3]);
+  bcx.beginPath(); bcx.moveTo(xAc, pad); bcx.lineTo(xAc, h - pad); bcx.stroke(); bcx.setLineDash([]);
+  const plot = (key, col) => {
+    if (buildup.length < 2) return;
+    bcx.strokeStyle = col; bcx.lineWidth = 2; bcx.beginPath();
+    buildup.forEach((pt, i) => { const x = (pt.t / span) * w, y = h - pad - pt[key] * (h - 2 * pad); i ? bcx.lineTo(x, y) : bcx.moveTo(x, y); });
+    bcx.stroke();
+  };
+  plot('ac', q.cyan);                                       // AC output (∝ reservoir)
+  plot('env', f.selfSustaining ? q.green : q.gold);         // slosh envelope
+}
+
 // ── Wire it up ───────────────────────────────────────────────────────────────
 let scene = buildScene();
 let demo = null, frame = null, last = performance.now() / 1000;
@@ -419,7 +513,8 @@ function configure() {
   curMode = parseInt(document.getElementById('mode').value);
   curF1 = parseFloat(document.getElementById('f1').value);
   frame = demo.configure(field, ob, curMode);
-  setStages(frame); setReadouts(frame);
+  setStages(frame); setReadouts(frame); renderTau(frame);
+  resetSequence(); drawBuildup(frame); updateScaleNote();
 }
 
 document.getElementById('field').oninput = function () { document.getElementById('fieldVal').textContent = (+this.value).toFixed(1) + '×'; if (demo) configure(); };
@@ -429,15 +524,15 @@ document.getElementById('f1').oninput = function () { document.getElementById('f
 document.getElementById('timeScale').onchange = function () { timeScale = +this.value; updateScaleNote(); };
 function updateScaleNote() {
   if (!frame) return;
-  const realMin = frame.startupSeconds / 60;        // computed: 3·(ε₀/σ)
-  const wall = frame.startupSeconds / timeScale;    // wall-clock at this scale
+  const wall = frame.startupSeconds / timeScale;    // wall-clock for first-AC at this scale
   const wallTxt = wall >= 90 ? (wall / 60).toFixed(1) + ' min' : wall.toFixed(0) + ' s';
   document.getElementById('scaleNote').innerHTML =
-    `Startup ≈ <b>${realMin.toFixed(0)} min</b> real (τ=ε₀/σ); at ${timeScale}× ≈ <b>${wallTxt}</b>.`;
+    `First AC ≈ <b>${fmtDur(frame.startupSeconds)}</b> real, full circulation ≈ <b>${fmtDur(frame.tauStream)}</b>; ` +
+    `at ${timeScale}× first AC ≈ <b>${wallTxt}</b>. (See the breakdown below.)`;
 }
-document.getElementById('btnRun').addEventListener('click', () => { if (demo) { frame = demo.reset(); setStages(frame); setReadouts(frame); } });
+document.getElementById('btnRun').addEventListener('click', () => { if (demo) { frame = demo.reset(); setStages(frame); setReadouts(frame); resetSequence(); buildup = []; drawBuildup(frame); } });
 window.addEventListener('resize', () => { if (!scene.stub) scene.resize(); });
-window.PhiTheme && window.PhiTheme.onChange(() => { if (!scene.stub) scene.recolor(); renderLadder(); });
+window.PhiTheme && window.PhiTheme.onChange(() => { if (!scene.stub) scene.recolor(); renderLadder(); if (frame) renderTau(frame); });
 
 // The Schumann harmonic ladder — every void → its tuned harmonic, live from C++.
 function renderLadder() {
@@ -461,6 +556,13 @@ function loop() {
     setStages(frame); setReadouts(frame);
     if (!scene.stub) { scene.resize(); scene.update(frame, dt, now); }
     drawWave(frame, dt);
+    // startup-sequence graphic
+    buildup.push({ t: frame.t, env: Math.min(1, frame.envelope),
+                   ac: frame.pumpReservoirW > 0 ? Math.min(1, frame.acPower / frame.pumpReservoirW) : 0 });
+    if (buildup.length > 480) buildup = buildup.filter((_, i) => i % 2 === 0);
+    checkMilestones(frame);
+    drawBuildup(frame);
+    document.getElementById('elapsedTag').textContent = 't = ' + fmtDur(frame.t);
   }
   requestAnimationFrame(loop);
 }
