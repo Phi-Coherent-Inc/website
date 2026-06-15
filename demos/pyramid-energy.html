@@ -150,7 +150,7 @@
     <div class="scene-panel" style="grid-column:1; grid-row:span 2; min-height:420px">
       <div class="panel-header">
         <span class="panel-title">The Device — DC → slosh → AC → motor</span>
-        <span class="panel-tag tag-recover" id="sustainTag">starting…</span>
+        <span class="panel-tag tag-recover" id="sustainTag" title="scroll to zoom">starting…</span>
       </div>
       <canvas id="deviceCanvas"></canvas>
       <div class="ledger" style="padding:8px 14px;border-top:1px solid var(--gold-border);color:var(--text-muted);font-size:11px;line-height:1.6">
@@ -161,6 +161,7 @@
         <b style="color:var(--demo-cyan)">cyan dashes</b> = wireless AC link ·
         <b style="color:var(--gold)">wheel</b> = 50 Hz motor (green when locked).
         Chambers near true scale; coffer enlarged ~4× for visibility.
+        <b style="color:var(--gold)">Scroll to zoom.</b>
       </div>
     </div>
 
@@ -295,7 +296,16 @@ function buildScene() {
   const LOOK = new THREE.Vector3(0, 0.66, 0.5);
   const SCENE_R = 1.8;                     // bounding radius around LOOK (pyramid+obelisks+motor)
   let orbitR = 6;                          // recomputed in resize() to FIT that sphere
+  let zoom = 1.0;                          // user scroll-wheel zoom (multiplies orbitR)
   camera.position.set(6, 3, 6); camera.lookAt(LOOK);
+
+  // Scroll wheel zooms in/out (and nothing else). preventDefault stops the page
+  // from scrolling while the cursor is over the device.
+  canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    zoom *= Math.exp(e.deltaY * 0.0012);   // scroll up → zoom in (closer); down → out
+    zoom = Math.max(0.5, Math.min(2.4, zoom));
+  }, { passive: false });
   scene.add(new THREE.AmbientLight(0xffffff, 0.55));
   const dl = new THREE.DirectionalLight(0xffffff, 0.6); dl.position.set(4, 6, 3); scene.add(dl);
 
@@ -446,8 +456,9 @@ function buildScene() {
     // a rate set by the (frequency-locked) synchronous speed. No idle creep.
     motor.rotation.z -= (frame.motorLocked ? (0.6 + 3.0 * frame.stageMotor) : 0.0) * dt;
     mats.rotor.color.set(frame.motorLocked ? C(q.green) : C(q.gold));
-    // orbit at the FIXED fit-distance (no zoom — orbitR only changes on resize)
-    camera.position.set(orbitR * Math.cos(now * 0.08), orbitR * 0.52, orbitR * Math.sin(now * 0.08));
+    // orbit at the fit-distance, scaled by the user's scroll-wheel zoom
+    const R = orbitR * zoom;
+    camera.position.set(R * Math.cos(now * 0.08), R * 0.52, R * Math.sin(now * 0.08));
     camera.lookAt(LOOK);
     renderer.render(scene, camera);
   }
