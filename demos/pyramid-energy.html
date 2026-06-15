@@ -442,9 +442,10 @@ function buildScene() {
     pulse.position.lerpVectors(acSource, motorPos, u);
     mats.pulse.opacity = frame.stageAc * (0.4 + 0.6 * Math.sin(now * 6) ** 2);
     mats.pulse.color.set(C(q.cyan));
-    // motor spins up and locks; green when self-sustaining
-    motor.rotation.z -= (0.4 + 3.0 * frame.stageMotor) * dt;
-    mats.rotor.color.set(frame.selfSustaining ? C(q.green) : C(q.gold));
+    // Synchronous motor: dead still until it pulls into resonant lock, then spins at
+    // a rate set by the (frequency-locked) synchronous speed. No idle creep.
+    motor.rotation.z -= (frame.motorLocked ? (0.6 + 3.0 * frame.stageMotor) : 0.0) * dt;
+    mats.rotor.color.set(frame.motorLocked ? C(q.green) : C(q.gold));
     // orbit at the FIXED fit-distance (no zoom — orbitR only changes on resize)
     camera.position.set(orbitR * Math.cos(now * 0.08), orbitR * 0.52, orbitR * Math.sin(now * 0.08));
     camera.lookAt(LOOK);
@@ -517,7 +518,8 @@ function checkMilestones(f) {
   if (!milestones.slosh && f.envelope > 0.02) { milestones.slosh = 1; logEvent(t, 'Mercury slosh ringing up (obelisk parametric feedback).', false); }
   if (!milestones.ac && f.envelope > 0.5) { milestones.ac = 1; logEvent(t, 'FIRST AC POWER — 50 Hz output online (slosh → MHD alternator).', true); }
   if (!milestones.sustain && f.selfSustaining) { milestones.sustain = 1; logEvent(t, 'Self-sustaining — slosh saturated at the reservoir-bounded steady state.', true); }
-  if (!milestones.motor && f.stageMotor > 0.99) { milestones.motor = 1; logEvent(t, 'Synchronous motor locked to the Schumann mode.', true); }
+  if (!milestones.lock && f.motorLocked) { milestones.lock = 1; logEvent(t, 'Resonant lock — AC strong enough; synchronous motor pulls into step (was at rest).', true); }
+  if (!milestones.motor && f.stageMotor > 0.99) { milestones.motor = 1; logEvent(t, 'Motor at full synchronous speed, locked to the Schumann mode.', true); }
   if (!milestones.circ && t >= f.tauStream) { milestones.circ = 1; logEvent(t, 'Full steady mercury circulation established (the slow sub-mm/s drift).', true); }
 }
 
@@ -561,7 +563,9 @@ function setReadouts(f) {
   const rampFrac = f.nSync > 0 ? f.motorRpm / f.nSync : 0;   // C++ startup ramp 0→1
   const rpmDisp = rpmSync * rampFrac;                        // ramps up, locks to live freq
   document.getElementById('rpm').textContent = rpmDisp.toFixed(0) + ' rpm';
-  document.getElementById('rpmSub').textContent = 'sync ' + rpmSync.toFixed(0) + ' rpm · ' + fOp.toFixed(2) + ' Hz (live)';
+  document.getElementById('rpmSub').textContent = f.motorLocked
+    ? 'locked · sync ' + rpmSync.toFixed(0) + ' rpm · ' + fOp.toFixed(2) + ' Hz'
+    : 'awaiting resonant lock (not self-starting) · sync ' + rpmSync.toFixed(0) + ' rpm';
   document.getElementById('acOut').textContent = fmtP(f.acPower);
   document.getElementById('ledIn').textContent = fmtP(f.pumpReservoirW);
   document.getElementById('ledOut').textContent = fmtP(f.acPower);
