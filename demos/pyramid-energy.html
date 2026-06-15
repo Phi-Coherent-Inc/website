@@ -95,6 +95,7 @@
         <input type="range" id="mode" min="1" max="8" step="1" value="8">
         <span class="slider-value" id="modeVal">8</span>
       </div>
+      <div class="ledger" style="color:var(--text-muted);margin-top:4px" id="cavityNote"></div>
     </div>
 
     <div class="control-group">
@@ -594,6 +595,9 @@ function setReadouts(f) {
     ? 'locked · sync ' + rpmSync.toFixed(0) + ' rpm · ' + fOp.toFixed(2) + ' Hz'
     : 'awaiting resonant lock (not self-starting) · sync ' + rpmSync.toFixed(0) + ' rpm';
   document.getElementById('acOut').textContent = fmtP(f.acPower);
+  document.getElementById('cavityNote').innerHTML =
+    `Cavity index <b>Q=φ=${f.cavityIndex.toFixed(3)}</b> (premise) sets f via 1/√Q · ` +
+    `obelisk pump @ <b>${f.obeliskResonanceHz.toFixed(1)} Hz</b> (2·f<sub>n</sub>).`;
   document.getElementById('ledApex').textContent = (f.collectorApexV / 1e3).toFixed(1) + ' kV';
   document.getElementById('ledIn').textContent = fmtP(f.pumpReservoirW);
   document.getElementById('ledOut').textContent = fmtP(f.acPower);
