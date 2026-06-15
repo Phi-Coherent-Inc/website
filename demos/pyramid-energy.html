@@ -17,14 +17,52 @@
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/demo.css">
 <style>
-  .stage-row { display:flex; align-items:center; gap:8px; margin:6px 0; }
-  .stage-name { font-size:12px; width:74px; color:var(--text-muted); }
-  .stage-track { flex:1; height:7px; background:var(--demo-grid-line); border-radius:4px; overflow:hidden; }
-  .stage-fill { height:100%; width:0%; background:var(--gold); transition:width .12s linear; }
+  /* ── Right-side panel grid (controls live in the 280px column, panels here) ── */
+  .panels { display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:16px;
+            align-content:start; min-width:0; }
+  .panels .span2 { grid-column:1 / -1; }
+  .panel-body { padding:14px 16px; }
+  .scene-panel { align-self:start; }
+
+  /* ── Polished stage list (the Energy Loop) ── */
+  .stage-list { display:flex; flex-direction:column; gap:7px; }
+  .stage-item { position:relative; display:flex; align-items:center; gap:10px;
+                padding:9px 12px; border:1px solid var(--gold-border); border-radius:7px;
+                overflow:hidden; background:var(--card); }
+  .stage-prog { position:absolute; inset:0 auto 0 0; width:0; background:var(--gold);
+                opacity:.12; transition:width .2s linear; }
+  .stage-item > *:not(.stage-prog) { position:relative; z-index:1; }
+  .stage-dot { width:9px; height:9px; border-radius:50%; border:1.5px solid var(--text-muted);
+               flex-shrink:0; transition:.25s; }
+  .stage-item.on .stage-dot { border-color:var(--gold); background:var(--gold);
+                              box-shadow:0 0 7px var(--gold-glow); }
+  .stage-lbl { font-size:12.5px; color:var(--text-muted); transition:color .25s; }
+  .stage-item.on .stage-lbl { color:var(--text); }
+  .stage-pct { margin-left:auto; font-size:11px; color:var(--text-muted);
+               font-variant-numeric:tabular-nums; transition:color .25s; }
+  .stage-item.on .stage-pct { color:var(--gold-dim); }
+
+  /* ── Readout metric grid ── */
+  .metric-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+  /* ── Event log ── */
+  .event-log { display:flex; flex-direction:column; max-height:150px; overflow-y:auto; font-size:11px; }
+  .event-row { display:flex; gap:10px; padding:5px 0; border-bottom:1px solid var(--gold-border); line-height:1.5; }
+  .event-row:last-child { border-bottom:none; }
+  .event-t { color:var(--text-muted); flex-shrink:0; font-variant-numeric:tabular-nums; min-width:50px; }
+
+  /* ── Startup sequence: chart left, breakdown+log right ── */
+  .startup-cols { display:grid; grid-template-columns:1.05fr 1fr; gap:18px; padding:14px 16px; }
+
   .ledger { font-size:12px; line-height:1.7; }
   .ledger b { color:var(--text); font-variant-numeric:tabular-nums; }
   .wf-wrap { padding:0 14px 12px; }
-  #waveform { width:100%; height:120px; display:block; }
+  #waveform, #buildupChart { width:100%; display:block; }
+  #waveform { height:120px; }
+  #buildupChart { height:150px; }
+
+  @media (max-width:900px){ .startup-cols{ grid-template-columns:1fr; } }
+  @media (max-width:760px){ .panels{ grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -32,8 +70,8 @@
 <header class="demo-header" data-demo="pyramid-energy"
         data-title="Pyramid Energy Device"></header>
 
-<div class="main main--triple">
-  <!-- ── Controls ── -->
+<div class="main">
+  <!-- ── Controls (left column — controls only) ── -->
   <div class="controls">
     <div class="control-group">
       <label>Atmospheric Field (DC drive)</label>
@@ -91,100 +129,129 @@
       φ-pyramid transducer (loss-bounded steady state), computed live in
       phi-pyramid-cpp — a faithful upper-bound device, not a built machine.
     </div>
+  </div>
 
-    <div class="control-group">
-      <label>Energy Loop</label>
-      <div class="stage-row"><span class="stage-name">DC accumulate</span><div class="stage-track"><div class="stage-fill" id="sDc"></div></div></div>
-      <div class="stage-row"><span class="stage-name">Ladder trigger</span><div class="stage-track"><div class="stage-fill" id="sSeed"></div></div></div>
-      <div class="stage-row"><span class="stage-name">Obelisk pump</span><div class="stage-track"><div class="stage-fill" id="sPar"></div></div></div>
-      <div class="stage-row"><span class="stage-name">Saturate</span><div class="stage-track"><div class="stage-fill" id="sSat"></div></div></div>
-      <div class="stage-row"><span class="stage-name">AC output</span><div class="stage-track"><div class="stage-fill" id="sAc"></div></div></div>
-      <div class="stage-row"><span class="stage-name">Motor lock</span><div class="stage-track"><div class="stage-fill" id="sMot"></div></div></div>
-    </div>
+  <!-- ── Panels (right side — every readout in its own section) ── -->
+  <div class="panels">
 
-    <div class="stat-card stat-gold">
-      <div class="stat-label">Synchronous Motor</div>
-      <div class="stat-value" id="rpm">0 rpm</div>
-      <div class="stat-sub" id="rpmSub">locked to the Schumann mode</div>
-    </div>
-
-    <div class="stat-card stat-green">
-      <div class="stat-label">AC Output (50 Hz)</div>
-      <div class="stat-value" id="acOut">— </div>
-      <div class="stat-sub">slosh → MHD alternator</div>
-    </div>
-
-    <div class="control-group">
-      <label>Schumann Harmonic Ladder — each void → one harmonic</label>
-      <div id="ladder" class="ladder" style="font-size:11px;line-height:1.85"></div>
-      <div class="ledger" style="color:var(--text-muted);margin-top:4px">
-        Each chamber is tuned (by length, f=m·c/2L) to one Schumann harmonic. Tuning
-        many voids lets the device <b>harvest the AC seed across the spectrum in
-        parallel</b> — gathering the µW trigger ~2× faster than the single strongest
-        line — so the <b>mercury slosh triggers sooner</b>. (This is the AC <i>seed</i>,
-        the trigger — not DC; the DC atmospheric circuit is the separate <i>pump</i>
-        that does the work, and resonance can't speed up its conduction.) n=3 &amp; n=7
-        are <b>predicted</b> voids that complete the ladder (not yet found).
+    <!-- 3D device (full width) -->
+    <div class="scene-panel span2" style="height:clamp(360px,52vh,540px)">
+      <div class="panel-header">
+        <span class="panel-title">The Device — DC drive → slosh → AC → wireless → motor</span>
+        <span class="panel-tag tag-recover" id="sustainTag">starting…</span>
+      </div>
+      <canvas id="deviceCanvas"></canvas>
+      <div class="ledger" style="padding:8px 14px;border-top:1px solid var(--gold-border);color:var(--text-muted);font-size:11px;line-height:1.6">
+        <b style="color:var(--gold)">pyramid</b> + <b style="color:var(--gold)">obelisks</b> (parametric pump) ·
+        <b style="color:var(--demo-cyan)">small box</b> = mercury coffer in the King's Chamber (sloshes) ·
+        stack above the KC = relieving chambers · inclined corridor = Grand Gallery ·
+        <b style="color:var(--demo-cyan)">translucent block above the gallery</b> = Big Void (n=5, 34 Hz resonator) ·
+        <b style="color:var(--demo-cyan)">cyan dashes</b> = wireless AC link ·
+        <b style="color:var(--gold)">wheel</b> = 50 Hz motor (green when locked).
+        Chambers near true scale; coffer enlarged ~4× for visibility.
       </div>
     </div>
 
-    <div class="control-group">
-      <label>Honest Energy Ledger</label>
-      <div class="ledger">
-        DC reservoir in: <b id="ledIn">—</b><br>
-        AC delivered out: <b id="ledOut">—</b><br>
-        Slosh velocity: <b id="ledV">—</b><br>
-        <span style="color:var(--text-muted)">Energy-conserved: out ≤ in. The device sells <b>coherence</b> (a 50 Hz lock), not bulk watts.</span>
+    <!-- Energy Loop (own section) -->
+    <div class="scene-panel">
+      <div class="panel-header">
+        <span class="panel-title">Energy Loop</span>
+      </div>
+      <div class="panel-body">
+        <div class="stage-list">
+          <div class="stage-item" id="stDc"><div class="stage-prog" id="sDc"></div><div class="stage-dot"></div><span class="stage-lbl">DC accumulate</span><span class="stage-pct" id="pDc">0%</span></div>
+          <div class="stage-item" id="stSeed"><div class="stage-prog" id="sSeed"></div><div class="stage-dot"></div><span class="stage-lbl">Ladder trigger</span><span class="stage-pct" id="pSeed">0%</span></div>
+          <div class="stage-item" id="stPar"><div class="stage-prog" id="sPar"></div><div class="stage-dot"></div><span class="stage-lbl">Obelisk pump</span><span class="stage-pct" id="pPar">0%</span></div>
+          <div class="stage-item" id="stSat"><div class="stage-prog" id="sSat"></div><div class="stage-dot"></div><span class="stage-lbl">Saturate</span><span class="stage-pct" id="pSat">0%</span></div>
+          <div class="stage-item" id="stAc"><div class="stage-prog" id="sAc"></div><div class="stage-dot"></div><span class="stage-lbl">AC output</span><span class="stage-pct" id="pAc">0%</span></div>
+          <div class="stage-item" id="stMot"><div class="stage-prog" id="sMot"></div><div class="stage-dot"></div><span class="stage-lbl">Motor lock</span><span class="stage-pct" id="pMot">0%</span></div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- ── 3D device ── -->
-  <div class="scene-panel" style="align-self:start;height:clamp(360px,56vh,560px)">
-    <div class="panel-header">
-      <span class="panel-title">The Device — DC drive → slosh → AC → wireless → motor</span>
-      <span class="panel-tag tag-recover" id="sustainTag">starting…</span>
+    <!-- Live Readouts (own section) -->
+    <div class="scene-panel">
+      <div class="panel-header">
+        <span class="panel-title">Live Readouts</span>
+        <span class="panel-tag tag-error" id="freqTag">— Hz</span>
+      </div>
+      <div class="panel-body">
+        <div class="metric-grid">
+          <div class="stat-card stat-gold">
+            <div class="stat-label">Synchronous Motor</div>
+            <div class="stat-value" id="rpm">0 rpm</div>
+            <div class="stat-sub" id="rpmSub">locked to the Schumann mode</div>
+          </div>
+          <div class="stat-card stat-green">
+            <div class="stat-label">AC Output (50 Hz)</div>
+            <div class="stat-value" id="acOut">—</div>
+            <div class="stat-sub">slosh → MHD alternator</div>
+          </div>
+        </div>
+        <div class="ledger" style="margin-top:14px">
+          DC reservoir in: <b id="ledIn">—</b> &nbsp;·&nbsp; AC out: <b id="ledOut">—</b><br>
+          Slosh velocity: <b id="ledV">—</b><br>
+          <span style="color:var(--text-muted)">Energy-conserved: out ≤ in. The device sells <b>coherence</b> (a 50 Hz lock), not bulk watts.</span>
+        </div>
+      </div>
     </div>
-    <canvas id="deviceCanvas"></canvas>
-    <div class="ledger" style="padding:8px 14px;border-top:1px solid var(--gold-border);color:var(--text-muted);font-size:11px;line-height:1.6">
-      <b style="color:var(--gold)">pyramid</b> + <b style="color:var(--gold)">obelisks</b> (parametric pump) ·
-      <b style="color:var(--demo-cyan)">small box</b> = mercury coffer in the King's Chamber (sloshes) ·
-      stack above the KC = relieving chambers · inclined corridor = Grand Gallery ·
-      <b style="color:var(--demo-cyan)">translucent block above the gallery</b> = Big Void (n=5, 34 Hz resonator) ·
-      <b style="color:var(--demo-cyan)">cyan dashes</b> = wireless AC link ·
-      <b style="color:var(--gold)">wheel</b> = 50 Hz motor (green when locked).
-      Chambers near true scale; coffer enlarged ~4× for visibility.
-    </div>
-  </div>
 
-  <!-- ── Telemetry ── -->
-  <div class="scene-panel" style="align-self:start">
-    <div class="panel-header">
-      <span class="panel-title">50 Hz AC Waveform (amplitude ∝ slosh)</span>
-      <span class="panel-tag tag-error" id="freqTag">— Hz</span>
+    <!-- 50 Hz AC waveform (own section) -->
+    <div class="scene-panel">
+      <div class="panel-header">
+        <span class="panel-title">50 Hz AC Waveform</span>
+        <span class="panel-tag tag-recover">amplitude ∝ slosh</span>
+      </div>
+      <div class="wf-wrap" style="padding-top:14px"><canvas id="waveform"></canvas></div>
+      <div class="wf-wrap ledger" style="color:var(--text-muted)">
+        The oscillating mercury cuts the MHD field → 50 Hz AC, transmitted to a
+        tuned synchronous motor. Computed live in <b>phi-pyramid-cpp</b> (WASM) —
+        no JavaScript physics.
+      </div>
     </div>
-    <div class="wf-wrap"><canvas id="waveform"></canvas></div>
-    <div class="wf-wrap ledger" style="color:var(--text-muted)">
-      The obelisk parametric feedback ramps the slosh from the Schumann seed
-      (the e<sup>rt</sup> growth), saturating at the reservoir-bounded steady state.
-      The oscillating mercury cuts the MHD field → 50 Hz AC, transmitted to a
-      tuned synchronous motor. All values are computed live in
-      <b>phi-pyramid-cpp</b> (WASM) — no JavaScript physics.
-    </div>
-  </div>
 
-  <!-- ── Startup sequence ── -->
-  <div class="scene-panel" style="align-self:start">
-    <div class="panel-header">
-      <span class="panel-title">Startup Sequence — slosh &amp; AC build-up (live)</span>
-      <span class="panel-tag tag-error" id="elapsedTag">t = 0 s</span>
+    <!-- Schumann harmonic ladder (own section) -->
+    <div class="scene-panel">
+      <div class="panel-header">
+        <span class="panel-title">Schumann Harmonic Ladder</span>
+      </div>
+      <div class="panel-body">
+        <div id="ladder" class="ladder" style="font-size:11.5px;line-height:1.95"></div>
+        <div class="ledger" style="color:var(--text-muted);margin-top:8px">
+          Each chamber is tuned (length, f=m·c/2L) to one Schumann harmonic. Tuning
+          many voids lets the device <b>harvest the AC seed across the spectrum in
+          parallel</b> (~2× the strongest single line) so the <b>mercury slosh triggers
+          sooner</b> — this is the AC <i>seed</i> (the trigger), not DC. n=3 &amp; n=7
+          are <b>predicted</b> voids that complete the ladder.
+        </div>
+      </div>
     </div>
-    <div class="wf-wrap"><canvas id="buildupChart" style="height:150px"></canvas></div>
 
-    <div class="control-group" style="padding:0 14px">
-      <label>How long does it take to start? (calculated, not quoted)</label>
-      <div class="ledger" id="tauBreakdown" style="font-size:11px;line-height:1.8"></div>
-      <div class="ledger" style="color:var(--text-muted);margin-top:4px">
+    <!-- Startup sequence (full width: chart left, breakdown + log right) -->
+    <div class="scene-panel span2">
+      <div class="panel-header">
+        <span class="panel-title">Startup Sequence — slosh &amp; AC build-up (live)</span>
+        <span class="panel-tag tag-error" id="elapsedTag">t = 0 s</span>
+      </div>
+      <div class="startup-cols">
+        <div>
+          <div class="ledger" style="color:var(--text-muted);margin-bottom:8px">
+            <span style="color:var(--gold)">━</span> slosh envelope &nbsp;
+            <span style="color:var(--demo-cyan)">━</span> AC output &nbsp;
+            <span style="color:var(--demo-green)">┊</span> first-AC marker — vs simulated time.
+          </div>
+          <canvas id="buildupChart"></canvas>
+        </div>
+        <div>
+          <div class="control-group"><label>How long to start? (calculated, not quoted)</label>
+            <div class="ledger" id="tauBreakdown" style="font-size:11px;line-height:1.8"></div>
+          </div>
+          <div class="control-group" style="margin-top:14px"><label>Event Log</label>
+            <div id="eventLog" class="event-log"></div>
+          </div>
+        </div>
+      </div>
+      <div class="ledger" style="padding:0 16px 14px;color:var(--text-muted)">
         Startup is the <b>slowest of several physical processes</b>, each a textbook
         time constant computed from constants &amp; measured chamber dimensions — no
         single number taken on faith. <b>First AC power</b> ≈ max(cavity ring-up,
@@ -193,10 +260,6 @@
       </div>
     </div>
 
-    <div class="control-group" style="padding:0 14px 12px">
-      <label>Event Log</label>
-      <div id="eventLog" style="font-family:var(--font-mono,monospace);font-size:11px;line-height:1.7;max-height:132px;overflow-y:auto"></div>
-    </div>
   </div>
 </div>
 
@@ -443,7 +506,7 @@ function logEvent(t, msg, ms) {
   if (evLog.length > 9) evLog.pop();
   const p = pal();
   document.getElementById('eventLog').innerHTML = evLog.map((e) =>
-    `<div><span style="color:${p.gold}">${fmtDur(e.t).padStart(7)}</span> &nbsp;` +
+    `<div class="event-row"><span class="event-t">${fmtDur(e.t)}</span>` +
     `<span style="color:${e.ms ? p.green : p.textDim}">${e.msg}</span></div>`).join('');
 }
 function resetSequence() {
@@ -484,13 +547,15 @@ let scene = buildScene();
 let demo = null, frame = null, last = performance.now() / 1000;
 const fmtP = (w) => w >= 1e-3 ? (w * 1e3).toFixed(2) + ' mW' : (w * 1e6).toFixed(1) + ' µW';
 
+function setStage(key, v) {
+  const pct = Math.max(0, Math.min(100, Math.round(v * 100)));
+  document.getElementById('s' + key).style.width = pct + '%';
+  document.getElementById('p' + key).textContent = pct + '%';
+  document.getElementById('st' + key).classList.toggle('on', v > 0.03);
+}
 function setStages(f) {
-  document.getElementById('sDc').style.width  = (f.stageDc * 100) + '%';
-  document.getElementById('sSeed').style.width = (f.stageSeed * 100) + '%';
-  document.getElementById('sPar').style.width  = (f.stageParametric * 100) + '%';
-  document.getElementById('sSat').style.width  = (f.stageSaturate * 100) + '%';
-  document.getElementById('sAc').style.width   = (f.stageAc * 100) + '%';
-  document.getElementById('sMot').style.width  = (f.stageMotor * 100) + '%';
+  setStage('Dc', f.stageDc);   setStage('Seed', f.stageSeed); setStage('Par', f.stageParametric);
+  setStage('Sat', f.stageSaturate); setStage('Ac', f.stageAc); setStage('Mot', f.stageMotor);
 }
 function setReadouts(f) {
   const { fOp, rpmSync } = liveLock();
