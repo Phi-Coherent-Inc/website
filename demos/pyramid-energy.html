@@ -129,15 +129,27 @@
       φ-pyramid transducer (loss-bounded steady state), computed live in
       phi-pyramid-cpp — a faithful upper-bound device, not a built machine.
     </div>
+
+    <div class="control-group">
+      <label>Schumann Harmonic Ladder</label>
+      <div id="ladder" class="ladder" style="font-size:11.5px;line-height:1.95"></div>
+      <div class="ledger" style="color:var(--text-muted);margin-top:8px">
+        Each chamber is tuned (length, f=m·c/2L) to one Schumann harmonic. Tuning
+        many voids lets the device <b>harvest the AC seed across the spectrum in
+        parallel</b> (~2× the strongest single line) so the <b>mercury slosh triggers
+        sooner</b> — this is the AC <i>seed</i> (the trigger), not DC. n=3 &amp; n=7
+        are <b>predicted</b> voids that complete the ladder.
+      </div>
+    </div>
   </div>
 
   <!-- ── Panels (right side — every readout in its own section) ── -->
   <div class="panels">
 
-    <!-- 3D device (full width) -->
-    <div class="scene-panel span2" style="height:clamp(360px,52vh,540px)">
+    <!-- 3D device (one column; spans 2 rows so Energy Loop + Live Readouts stack beside it) -->
+    <div class="scene-panel" style="grid-column:1; grid-row:span 2; min-height:420px">
       <div class="panel-header">
-        <span class="panel-title">The Device — DC drive → slosh → AC → wireless → motor</span>
+        <span class="panel-title">The Device — DC → slosh → AC → motor</span>
         <span class="panel-tag tag-recover" id="sustainTag">starting…</span>
       </div>
       <canvas id="deviceCanvas"></canvas>
@@ -196,8 +208,8 @@
       </div>
     </div>
 
-    <!-- 50 Hz AC waveform (own section) -->
-    <div class="scene-panel">
+    <!-- 50 Hz AC waveform (full width) -->
+    <div class="scene-panel span2">
       <div class="panel-header">
         <span class="panel-title">50 Hz AC Waveform</span>
         <span class="panel-tag tag-recover">amplitude ∝ slosh</span>
@@ -207,23 +219,6 @@
         The oscillating mercury cuts the MHD field → 50 Hz AC, transmitted to a
         tuned synchronous motor. Computed live in <b>phi-pyramid-cpp</b> (WASM) —
         no JavaScript physics.
-      </div>
-    </div>
-
-    <!-- Schumann harmonic ladder (own section) -->
-    <div class="scene-panel">
-      <div class="panel-header">
-        <span class="panel-title">Schumann Harmonic Ladder</span>
-      </div>
-      <div class="panel-body">
-        <div id="ladder" class="ladder" style="font-size:11.5px;line-height:1.95"></div>
-        <div class="ledger" style="color:var(--text-muted);margin-top:8px">
-          Each chamber is tuned (length, f=m·c/2L) to one Schumann harmonic. Tuning
-          many voids lets the device <b>harvest the AC seed across the spectrum in
-          parallel</b> (~2× the strongest single line) so the <b>mercury slosh triggers
-          sooner</b> — this is the AC <i>seed</i> (the trigger), not DC. n=3 &amp; n=7
-          are <b>predicted</b> voids that complete the ladder.
-        </div>
       </div>
     </div>
 
@@ -297,9 +292,10 @@ function buildScene() {
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
-  const LOOK = new THREE.Vector3(0, 0.74, 0.55);
-  let orbitR = 8;                          // recomputed in resize() to fit the scene
-  camera.position.set(8, 4, 8); camera.lookAt(LOOK);
+  const LOOK = new THREE.Vector3(0, 0.66, 0.5);
+  const SCENE_R = 1.8;                     // bounding radius around LOOK (pyramid+obelisks+motor)
+  let orbitR = 6;                          // recomputed in resize() to FIT that sphere
+  camera.position.set(6, 3, 6); camera.lookAt(LOOK);
   scene.add(new THREE.AmbientLight(0xffffff, 0.55));
   const dl = new THREE.DirectionalLight(0xffffff, 0.6); dl.position.set(4, 6, 3); scene.add(dl);
 
@@ -378,7 +374,7 @@ function buildScene() {
   // Motor sits PERPENDICULAR to the obelisk line (obelisks are along x at z=0; the
   // motor is on the z-axis, centred between them), so it reads as a separate unit.
   const linkMat = new THREE.LineDashedMaterial({ color: C(p.cyan), transparent: true, opacity: 0.0, dashSize: 0.1, gapSize: 0.07 });
-  const acSource = new THREE.Vector3(0, 0.42, 0.1), motorPos = new THREE.Vector3(0, 0.41, 2.3);
+  const acSource = new THREE.Vector3(0, 0.42, 0.1), motorPos = new THREE.Vector3(0, 0.41, 1.55);
   const linkGeo = new THREE.BufferGeometry().setFromPoints([acSource, motorPos]);
   const link = new THREE.Line(linkGeo, linkMat); link.computeLineDistances(); scene.add(link); mats.link = linkMat;
   const pulseMat = new THREE.MeshBasicMaterial({ color: C(p.cyan), transparent: true, opacity: 0 });
@@ -407,8 +403,11 @@ function buildScene() {
     renderer.setSize(w, h, false);
     const aspect = w / h;
     camera.aspect = aspect; camera.updateProjectionMatrix();
-    const vt = Math.tan(42 * Math.PI / 360);              // half vertical FOV
-    orbitR = Math.max(1.15 / vt, 2.7 / (vt * aspect)) * 1.12;   // fit height OR width
+    // Fit the whole bounding sphere at this aspect: distance = R / sin(min half-FOV).
+    // The tighter screen axis governs, so it never clips and never auto-zooms.
+    const tanV = Math.tan(42 * Math.PI / 360);
+    const halfV = Math.atan(tanV), halfH = Math.atan(tanV * aspect);
+    orbitR = SCENE_R / Math.sin(Math.min(halfV, halfH)) * 1.06;
   }
   function recolor() {
     const q = pal(); renderer.setClearColor(C(q.canvas), 1);
