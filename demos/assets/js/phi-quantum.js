@@ -198,5 +198,23 @@ export const PhiTopo = {
   },
 };
 
-const api = { ready, isReady, PhiCoherent, PhiRecovery, PhiVQE, PhiTunnel, PhiCrypto, PhiTopo };
+// ── φPyramid Energy Device (transient startup + feedback loop) ────────────────
+// The CORRECTED atmospheric-energy device: the DC atmospheric circuit drives a
+// 50 Hz mercury slosh (obelisk parametric feedback ramps it, the e^{rt} growth);
+// the slosh→MHD makes 50 Hz AC, which wirelessly drives a synchronous motor.
+// A stateful driver wrapping the VERIFIED phi-pyramid-cpp transient simulator —
+// one source of truth, no JS physics (so the demo can't drift from the C++).
+export const PhiPyramid = {
+  // Create a stateful device-demo driver (an Embind PyramidDemo). Methods:
+  //   configure(fieldScale, obeliskKV, mode) → frame   (re-seed the device)
+  //   reset() → frame                                   (cold start, same config)
+  //   step(dtSeconds) → frame                           (advance the transient)
+  // A frame = { t, sloshV, envelope, emf, acPower, motorRpm,
+  //             stageDc, stageSeed, stageParametric, stageSaturate, stageAc,
+  //             stageMotor, vSs, nSync, fHz, pumpReservoirW, seedReservoirW,
+  //             selfSustaining }. Call .delete() on the driver when done.
+  createDemo() { return new _module.PyramidDemo(); },
+};
+
+const api = { ready, isReady, PhiCoherent, PhiRecovery, PhiVQE, PhiTunnel, PhiCrypto, PhiTopo, PhiPyramid };
 export default api;

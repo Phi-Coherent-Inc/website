@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>φCoherent — Pyramid Energy Device Demo</title>
+<meta name="description" content="Interactive demo of the φ-pyramid atmospheric-energy device: the DC atmospheric circuit drives a 50 Hz mercury slosh (obelisk parametric feedback), the slosh→MHD makes 50 Hz AC, wirelessly driving a synchronous motor — the startup and feedback loop computed live from phi-pyramid-cpp via WebAssembly.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://phicoherent.com/demos/pyramid-energy.html">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#C9A830">
+<script>try{if(localStorage.getItem('phi-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/demo.css">
+<style>
+  .stage-row { display:flex; align-items:center; gap:8px; margin:6px 0; }
+  .stage-name { font-size:12px; width:74px; color:var(--text-muted); }
+  .stage-track { flex:1; height:7px; background:var(--demo-grid-line); border-radius:4px; overflow:hidden; }
+  .stage-fill { height:100%; width:0%; background:var(--gold); transition:width .12s linear; }
+  .ledger { font-size:12px; line-height:1.7; }
+  .ledger b { color:var(--text); font-variant-numeric:tabular-nums; }
+  .wf-wrap { padding:0 14px 12px; }
+  #waveform { width:100%; height:120px; display:block; }
+</style>
+</head>
+<body>
+
+<header class="demo-header" data-demo="pyramid-energy"
+        data-title="Pyramid Energy Device"></header>
+
+<div class="main main--triple">
+  <!-- ── Controls ── -->
+  <div class="controls">
+    <div class="control-group">
+      <label>Atmospheric Field (DC drive)</label>
+      <div class="slider-row">
+        <input type="range" id="field" min="0.5" max="3" step="0.1" value="1">
+        <span class="slider-value" id="fieldVal">1.0×</span>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>Obelisk Pump (parametric feedback)</label>
+      <div class="slider-row">
+        <input type="range" id="obelisk" min="0.2" max="5" step="0.1" value="1">
+        <span class="slider-value" id="obeliskVal">1.0 kV</span>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>Schumann Mode (n)</label>
+      <div class="slider-row">
+        <input type="range" id="mode" min="1" max="8" step="1" value="8">
+        <span class="slider-value" id="modeVal">8</span>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>Observed Schumann f₁ (Hz) — live lock</label>
+      <div class="slider-row">
+        <input type="range" id="f1" min="7.0" max="8.5" step="0.01" value="7.83">
+        <span class="slider-value" id="f1Val">7.83 Hz</span>
+      </div>
+      <div class="ledger" style="color:var(--text-muted);margin-top:4px">
+        Enter today's value from
+        <a href="https://www.schumann-frequency.com" target="_blank" rel="noopener" style="color:var(--gold)">schumann-frequency.com</a>;
+        the device locks the motor to its harmonic f<sub>n</sub> = f₁·√(n(n+1)/2).
+      </div>
+    </div>
+
+    <button class="btn-run" id="btnRun">Cold-Start the Device</button>
+    <div class="demo-status" id="status">Loading…</div>
+    <div class="ledger" style="color:var(--text-muted);margin-top:6px">
+      <b style="color:var(--gold)">Idealized model.</b> This is the <b>ideal</b>
+      φ-pyramid transducer (loss-bounded steady state), computed live in
+      phi-pyramid-cpp — a faithful upper-bound device, not a built machine.
+    </div>
+
+    <div class="control-group">
+      <label>Energy Loop</label>
+      <div class="stage-row"><span class="stage-name">DC collect</span><div class="stage-track"><div class="stage-fill" id="sDc"></div></div></div>
+      <div class="stage-row"><span class="stage-name">Schumann seed</span><div class="stage-track"><div class="stage-fill" id="sSeed"></div></div></div>
+      <div class="stage-row"><span class="stage-name">Obelisk pump</span><div class="stage-track"><div class="stage-fill" id="sPar"></div></div></div>
+      <div class="stage-row"><span class="stage-name">Saturate</span><div class="stage-track"><div class="stage-fill" id="sSat"></div></div></div>
+      <div class="stage-row"><span class="stage-name">AC output</span><div class="stage-track"><div class="stage-fill" id="sAc"></div></div></div>
+      <div class="stage-row"><span class="stage-name">Motor lock</span><div class="stage-track"><div class="stage-fill" id="sMot"></div></div></div>
+    </div>
+
+    <div class="stat-card stat-gold">
+      <div class="stat-label">Synchronous Motor</div>
+      <div class="stat-value" id="rpm">0 rpm</div>
+      <div class="stat-sub" id="rpmSub">locked to the Schumann mode</div>
+    </div>
+
+    <div class="stat-card stat-green">
+      <div class="stat-label">AC Output (50 Hz)</div>
+      <div class="stat-value" id="acOut">— </div>
+      <div class="stat-sub">slosh → MHD alternator</div>
+    </div>
+
+    <div class="control-group">
+      <label>Honest Energy Ledger</label>
+      <div class="ledger">
+        DC reservoir in: <b id="ledIn">—</b><br>
+        AC delivered out: <b id="ledOut">—</b><br>
+        Slosh velocity: <b id="ledV">—</b><br>
+        <span style="color:var(--text-muted)">Energy-conserved: out ≤ in. The device sells <b>coherence</b> (a 50 Hz lock), not bulk watts.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 3D device ── -->
+  <div class="scene-panel">
+    <div class="panel-header">
+      <span class="panel-title">The Device — DC drive → slosh → AC → wireless → motor</span>
+      <span class="panel-tag tag-recover" id="sustainTag">starting…</span>
+    </div>
+    <canvas id="deviceCanvas"></canvas>
+  </div>
+
+  <!-- ── Telemetry ── -->
+  <div class="scene-panel">
+    <div class="panel-header">
+      <span class="panel-title">50 Hz AC Waveform (amplitude ∝ slosh)</span>
+      <span class="panel-tag tag-error" id="freqTag">— Hz</span>
+    </div>
+    <div class="wf-wrap"><canvas id="waveform"></canvas></div>
+    <div class="wf-wrap ledger" style="color:var(--text-muted)">
+      The obelisk parametric feedback ramps the slosh from the Schumann seed
+      (the e<sup>rt</sup> growth), saturating at the reservoir-bounded steady state.
+      The oscillating mercury cuts the MHD field → 50 Hz AC, transmitted to a
+      tuned synchronous motor. All values are computed live in
+      <b>phi-pyramid-cpp</b> (WASM) — no JavaScript physics.
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="assets/demo-header.js"></script>
+<script type="module">
+import { ready, PhiPyramid } from './assets/js/phi-quantum.js';
+
+const pal = () => window.PhiTheme.palette();
+const C = (hex) => new THREE.Color(hex);
+const TIME_ACCEL = 45;     // sim seconds per wall-clock second (startup visible in ~10 s)
+
+// Live Schumann lock: the device runs on the n-th harmonic of the OBSERVED
+// fundamental f₁ (entered from a live source). f_n/f₁ = √(n(n+1)/2) is exact
+// Schumann dispersion — the lock frequency tracks the live value; the device
+// MAGNITUDES (slosh, AC, power) are the idealized model from phi-pyramid-cpp.
+let curMode = 8, curF1 = 7.83;
+function liveLock() {
+  const ratio = Math.sqrt(curMode * (curMode + 1) / 2);  // f_n / f₁  (n=8 → 6)
+  const fOp = curF1 * ratio;
+  return { fOp, rpmSync: 120 * fOp / 2 };                 // 2-pole synchronous
+}
+
+// ── 3D device scene ──────────────────────────────────────────────────────────
+let webglFailed = false;
+function buildScene() {
+  const p = pal();
+  const canvas = document.getElementById('deviceCanvas');
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setClearColor(C(p.canvas), 1);
+  } catch (e) { webglFailed = true; return { stub: true, render(){}, resize(){}, update(){} }; }
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+  camera.position.set(3.4, 2.4, 3.4);
+  camera.lookAt(0, 0.5, 0);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+  const dl = new THREE.DirectionalLight(0xffffff, 0.6); dl.position.set(4, 6, 3); scene.add(dl);
+
+  const mats = {};
+  // Ground plane
+  const groundMat = new THREE.MeshBasicMaterial({ color: C(p.axis), transparent: true, opacity: 0.12 });
+  const ground = new THREE.Mesh(new THREE.CircleGeometry(3.2, 48), groundMat);
+  ground.rotation.x = -Math.PI / 2; scene.add(ground); mats.ground = groundMat;
+
+  // Pyramid shell (square, wireframe)
+  const pyMat = new THREE.MeshBasicMaterial({ color: C(p.gold), wireframe: true, transparent: true, opacity: 0.5 });
+  const pyramid = new THREE.Mesh(new THREE.ConeGeometry(1.25, 1.7, 4), pyMat);
+  pyramid.rotation.y = Math.PI / 4; pyramid.position.y = 0.85; scene.add(pyramid); mats.py = pyMat;
+
+  // King's Chamber (small wire box inside)
+  const kcMat = new THREE.MeshBasicMaterial({ color: C(p.axis), wireframe: true, transparent: true, opacity: 0.5 });
+  const kc = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.4, 0.45), kcMat);
+  kc.position.y = 0.5; scene.add(kc);
+
+  // Coffer + mercury surface (the slosh)
+  const cofferMat = new THREE.MeshBasicMaterial({ color: C(p.axis), wireframe: true, transparent: true, opacity: 0.7 });
+  const coffer = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.2, 0.28), cofferMat);
+  coffer.position.y = 0.42; scene.add(coffer);
+  const hgMat = new THREE.MeshBasicMaterial({ color: C(p.cyan), transparent: true, opacity: 0.85 });
+  const mercury = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.08, 0.26), hgMat);
+  mercury.position.y = 0.40; scene.add(mercury); mats.hg = hgMat;
+
+  // MHD field ring around the coffer
+  const ringMat = new THREE.MeshBasicMaterial({ color: C(p.green), transparent: true, opacity: 0.5 });
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.012, 8, 40), ringMat);
+  ring.rotation.x = Math.PI / 2; ring.position.y = 0.42; scene.add(ring); mats.ring = ringMat;
+
+  // Two obelisks (the parametric pump)
+  const obMat = new THREE.MeshBasicMaterial({ color: C(p.gold), transparent: true, opacity: 0.6 });
+  const obs = [];
+  for (const x of [-1.7, 1.7]) {
+    const o = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.09, 1.2, 4), obMat.clone());
+    o.position.set(x, 0.6, 0); o.rotation.y = Math.PI / 4; scene.add(o);
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.18, 4), obMat.clone());
+    tip.position.set(x, 1.29, 0); tip.rotation.y = Math.PI / 4; scene.add(tip);
+    obs.push(o, tip);
+  }
+
+  // Wireless link (apex → motor) as a dashed line + traveling pulse
+  const linkMat = new THREE.LineBasicMaterial({ color: C(p.cyan), transparent: true, opacity: 0.0 });
+  const apex = new THREE.Vector3(0, 1.7, 0), motorPos = new THREE.Vector3(2.5, 1.1, -0.2);
+  const linkGeo = new THREE.BufferGeometry().setFromPoints([apex, motorPos]);
+  const link = new THREE.Line(linkGeo, linkMat); scene.add(link); mats.link = linkMat;
+  const pulseMat = new THREE.MeshBasicMaterial({ color: C(p.cyan), transparent: true, opacity: 0 });
+  const pulse = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 10), pulseMat); scene.add(pulse); mats.pulse = pulseMat;
+
+  // Synchronous motor (a rotor disc with spokes)
+  const motor = new THREE.Group(); motor.position.copy(motorPos);
+  const rotorMat = new THREE.MeshBasicMaterial({ color: C(p.gold), wireframe: true });
+  const rotor = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.1, 24), rotorMat);
+  rotor.rotation.x = Math.PI / 2; motor.add(rotor);
+  for (let i = 0; i < 4; i++) {
+    const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.03, 0.03), rotorMat);
+    spoke.rotation.z = i * Math.PI / 4; motor.add(spoke);
+  }
+  scene.add(motor); mats.rotor = rotorMat;
+
+  let displayPhase = 0;
+  function resize() {
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const w = rect.width, h = Math.max(220, rect.height - 44);
+    renderer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix();
+  }
+  function recolor() {
+    const q = pal(); renderer.setClearColor(C(q.canvas), 1);
+    mats.py.color.set(C(q.gold)); mats.ground.color.set(C(q.axis));
+    mats.hg.color.set(C(q.cyan)); mats.ring.color.set(C(q.green)); mats.rotor.color.set(C(q.gold));
+  }
+  function update(frame, dt, now) {
+    const q = pal();
+    const env = frame.envelope;
+    // mercury slosh: amplitude grows with envelope, oscillates at a display carrier
+    displayPhase += dt * 6.0;
+    const amp = 0.05 * Math.min(1, env * 3);
+    mercury.position.y = 0.40 + Math.sin(displayPhase) * amp;
+    mercury.rotation.z = Math.sin(displayPhase) * amp * 1.5;
+    mercury.material.opacity = 0.5 + 0.5 * Math.min(1, env * 3);
+    // obelisks glow with the parametric stage
+    const glow = 0.4 + 0.6 * frame.stageParametric;
+    obs.forEach((o, i) => { o.material.color.set(C(q.gold)); o.material.opacity = glow * (0.7 + 0.3 * Math.sin(displayPhase * 2 + i)); });
+    // MHD ring brightens with AC
+    mats.ring.opacity = 0.25 + 0.6 * frame.stageAc;
+    // wireless link appears with AC, pulse travels
+    mats.link.opacity = 0.15 + 0.7 * frame.stageAc;
+    const u = (Math.sin(now * 3) * 0.5 + 0.5);
+    pulse.position.lerpVectors(apex, motorPos, u);
+    mats.pulse.opacity = frame.stageAc * (0.4 + 0.6 * Math.sin(now * 6) ** 2);
+    mats.pulse.color.set(C(q.cyan));
+    // motor spins faster as it locks; color → green when self-sustaining
+    motor.rotation.z -= (0.4 + 3.0 * frame.stageMotor) * dt;
+    mats.rotor.color.set(frame.selfSustaining ? C(q.green) : C(q.gold));
+    // slow camera orbit
+    camera.position.x = 3.4 * Math.cos(now * 0.1);
+    camera.position.z = 3.4 * Math.sin(now * 0.1);
+    camera.lookAt(0, 0.6, 0);
+    renderer.render(scene, camera);
+  }
+  return { stub: false, resize, recolor, update };
+}
+
+// ── AC waveform (2D) ─────────────────────────────────────────────────────────
+const wf = document.getElementById('waveform');
+const wfx = wf.getContext('2d');
+let wfPhase = 0;
+function drawWave(frame, dt) {
+  const q = pal();
+  const dpr = window.devicePixelRatio || 1;
+  const w = wf.clientWidth, h = 120;
+  if (wf.width !== w * dpr) { wf.width = w * dpr; wf.height = h * dpr; wfx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  wfx.clearRect(0, 0, w, h);
+  wfx.strokeStyle = q.grid; wfx.lineWidth = 1;
+  wfx.beginPath(); wfx.moveTo(0, h / 2); wfx.lineTo(w, h / 2); wfx.stroke();
+  wfPhase += dt * 8.0;
+  const amp = (h / 2 - 8) * Math.min(1, frame.envelope * 1.05);
+  wfx.strokeStyle = frame.selfSustaining ? q.green : q.gold; wfx.lineWidth = 2;
+  wfx.beginPath();
+  for (let i = 0; i <= w; i++) {
+    const ph = wfPhase + (i / w) * Math.PI * 8;
+    const y = h / 2 - Math.sin(ph) * amp;
+    i === 0 ? wfx.moveTo(i, y) : wfx.lineTo(i, y);
+  }
+  wfx.stroke();
+}
+
+// ── Wire it up ───────────────────────────────────────────────────────────────
+let scene = buildScene();
+let demo = null, frame = null, last = performance.now() / 1000;
+const fmtP = (w) => w >= 1e-3 ? (w * 1e3).toFixed(2) + ' mW' : (w * 1e6).toFixed(1) + ' µW';
+
+function setStages(f) {
+  document.getElementById('sDc').style.width  = (f.stageDc * 100) + '%';
+  document.getElementById('sSeed').style.width = (f.stageSeed * 100) + '%';
+  document.getElementById('sPar').style.width  = (f.stageParametric * 100) + '%';
+  document.getElementById('sSat').style.width  = (f.stageSaturate * 100) + '%';
+  document.getElementById('sAc').style.width   = (f.stageAc * 100) + '%';
+  document.getElementById('sMot').style.width  = (f.stageMotor * 100) + '%';
+}
+function setReadouts(f) {
+  const { fOp, rpmSync } = liveLock();
+  const rampFrac = f.nSync > 0 ? f.motorRpm / f.nSync : 0;   // C++ startup ramp 0→1
+  const rpmDisp = rpmSync * rampFrac;                        // ramps up, locks to live freq
+  document.getElementById('rpm').textContent = rpmDisp.toFixed(0) + ' rpm';
+  document.getElementById('rpmSub').textContent = 'sync ' + rpmSync.toFixed(0) + ' rpm · ' + fOp.toFixed(2) + ' Hz (live)';
+  document.getElementById('acOut').textContent = fmtP(f.acPower);
+  document.getElementById('ledIn').textContent = fmtP(f.pumpReservoirW);
+  document.getElementById('ledOut').textContent = fmtP(f.acPower);
+  document.getElementById('ledV').textContent = (f.sloshV * 1e3).toFixed(3) + ' mm/s';
+  document.getElementById('freqTag').textContent = fOp.toFixed(2) + ' Hz';
+  const tag = document.getElementById('sustainTag');
+  tag.textContent = f.selfSustaining ? 'self-sustaining' : 'starting…';
+}
+
+function configure() {
+  const field = parseFloat(document.getElementById('field').value);
+  const ob = parseFloat(document.getElementById('obelisk').value);
+  curMode = parseInt(document.getElementById('mode').value);
+  curF1 = parseFloat(document.getElementById('f1').value);
+  frame = demo.configure(field, ob, curMode);
+  setStages(frame); setReadouts(frame);
+}
+
+document.getElementById('field').oninput = function () { document.getElementById('fieldVal').textContent = (+this.value).toFixed(1) + '×'; if (demo) configure(); };
+document.getElementById('obelisk').oninput = function () { document.getElementById('obeliskVal').textContent = (+this.value).toFixed(1) + ' kV'; if (demo) configure(); };
+document.getElementById('mode').oninput = function () { document.getElementById('modeVal').textContent = this.value; if (demo) configure(); };
+document.getElementById('f1').oninput = function () { document.getElementById('f1Val').textContent = (+this.value).toFixed(2) + ' Hz'; curF1 = +this.value; if (frame) setReadouts(frame); };
+document.getElementById('btnRun').addEventListener('click', () => { if (demo) { frame = demo.reset(); setStages(frame); setReadouts(frame); } });
+window.addEventListener('resize', () => { if (!scene.stub) scene.resize(); });
+window.PhiTheme && window.PhiTheme.onChange(() => { if (!scene.stub) scene.recolor(); });
+
+function loop() {
+  const now = performance.now() / 1000;
+  const dt = Math.min(0.05, now - last); last = now;
+  if (demo) {
+    frame = demo.step(dt * TIME_ACCEL);
+    setStages(frame); setReadouts(frame);
+    if (!scene.stub) { scene.resize(); scene.update(frame, dt, now); }
+    drawWave(frame, dt);
+  }
+  requestAnimationFrame(loop);
+}
+
+await ready();
+demo = PhiPyramid.createDemo();
+configure();
+if (scene.stub) {
+  const host = document.querySelector('.scene-panel');
+  const d = document.createElement('div');
+  d.style.cssText = 'position:absolute;inset:44px 0 0 0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;color:var(--text-muted);font-size:14px;';
+  d.textContent = '3D view needs WebGL (unavailable here) — the live device telemetry is still computed.';
+  host.appendChild(d);
+}
+document.getElementById('status').textContent = 'Live · computed in phi-pyramid-cpp (WASM)';
+loop();
+</script>
+</body>
+</html>

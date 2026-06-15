@@ -25,6 +25,7 @@
     { id: 'vqe-landscape',        file: 'vqe-landscape.html',        name: 'VQE Landscape' },
     { id: 'tunneling',            file: 'tunneling.html',            name: 'Tunneling' },
     { id: 'quantum-cryptography', file: 'quantum-cryptography.html', name: 'Quantum Cryptography' },
+    { id: 'pyramid-energy',       file: 'pyramid-energy.html',       name: 'Pyramid Energy Device' },
   ];
 
   // ── PhiTheme: palette + change subscription ────────────────────────────────
