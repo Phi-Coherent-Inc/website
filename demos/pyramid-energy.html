@@ -155,6 +155,7 @@
       <canvas id="deviceCanvas"></canvas>
       <div class="ledger" style="padding:8px 14px;border-top:1px solid var(--gold-border);color:var(--text-muted);font-size:11px;line-height:1.6">
         <b style="color:var(--gold)">pyramid</b> + <b style="color:var(--gold)">obelisks</b> (parametric pump) ·
+        <b style="color:var(--gold)">gold apex cap</b> = the isolated capstone DC collector ·
         <b style="color:var(--demo-cyan)">small box</b> = mercury coffer in the King's Chamber (sloshes) ·
         stack above the KC = relieving chambers · inclined corridor = Grand Gallery ·
         <b style="color:var(--demo-cyan)">translucent block above the gallery</b> = Big Void (n=5, 34 Hz resonator) ·
@@ -202,7 +203,8 @@
           </div>
         </div>
         <div class="ledger" style="margin-top:14px">
-          DC reservoir in: <b id="ledIn">—</b> &nbsp;·&nbsp; AC out: <b id="ledOut">—</b><br>
+          Apex collector: <b id="ledApex">—</b> &nbsp;·&nbsp; DC reservoir in: <b id="ledIn">—</b><br>
+          AC out: <b id="ledOut">—</b><br>
           Slosh velocity: <b id="ledV">—</b><br>
           <span style="color:var(--text-muted)">Energy-conserved: out ≤ in. The device sells <b>coherence</b> (a 50 Hz lock), not bulk watts.</span>
         </div>
@@ -320,6 +322,12 @@ function buildScene() {
   const pyramid = new THREE.Mesh(new THREE.ConeGeometry(1.75, 1.6, 4), pyMat);
   pyramid.rotation.y = Math.PI / 4; pyramid.position.y = 0.8; scene.add(pyramid); mats.py = pyMat;
 
+  // The APEX CAPSTONE — the isolated silver-gilt φ-pyramidion DC collector. SOLID
+  // (a metal terminal, not a wire cavity), sits at the pyramid apex (y≈1.6).
+  const capMat = new THREE.MeshBasicMaterial({ color: C(p.gold), transparent: true, opacity: 0.95 });
+  const capstone = new THREE.Mesh(new THREE.ConeGeometry(0.17, 0.24, 4), capMat);
+  capstone.rotation.y = Math.PI / 4; capstone.position.y = 1.56; scene.add(capstone); mats.cap = capMat;
+
   // Internal features are positioned to scale inside the pyramid. The coffer is
   // GENUINELY TINY (≈2 m in a 146 m pyramid); it's enlarged only ~4× so it stays
   // visible. The Big Void is ≈35 m — large, and shown near true scale.
@@ -421,7 +429,7 @@ function buildScene() {
   }
   function recolor() {
     const q = pal(); renderer.setClearColor(C(q.canvas), 1);
-    mats.py.color.set(C(q.gold)); mats.ground.color.set(C(q.axis));
+    mats.py.color.set(C(q.gold)); mats.cap.color.set(C(q.gold)); mats.ground.color.set(C(q.axis));
     mats.kc.color.set(C(q.axis)); mats.gg.color.set(C(q.axis)); mats.rc.color.set(C(q.axis));
     mats.hg.color.set(C(q.cyan)); mats.voidFill.color.set(C(q.cyan)); mats.voidEdge.color.set(C(q.cyan));
     mats.link.color.set(C(q.cyan)); mats.pulse.color.set(C(q.cyan));
@@ -446,6 +454,8 @@ function buildScene() {
     // obelisks glow with the parametric pump stage
     const glow = 0.4 + 0.6 * frame.stageParametric;
     obs.forEach((o, i) => { o.material.color.set(C(q.gold)); o.material.opacity = glow * (0.7 + 0.3 * Math.sin(displayPhase * 2 + i)); });
+    // apex capstone: the DC collector is always on — a gentle steady "breathing"
+    mats.cap.color.set(C(q.gold)); mats.cap.opacity = 0.8 + 0.2 * Math.sin(now * 2.0) ** 2;
     // wireless link + traveling pulse (coffer → motor), appears with AC
     mats.link.opacity = 0.2 + 0.7 * frame.stageAc;
     const u = (Math.sin(now * 3) * 0.5 + 0.5);
@@ -578,6 +588,7 @@ function setReadouts(f) {
     ? 'locked · sync ' + rpmSync.toFixed(0) + ' rpm · ' + fOp.toFixed(2) + ' Hz'
     : 'awaiting resonant lock (not self-starting) · sync ' + rpmSync.toFixed(0) + ' rpm';
   document.getElementById('acOut').textContent = fmtP(f.acPower);
+  document.getElementById('ledApex').textContent = (f.collectorApexV / 1e3).toFixed(1) + ' kV';
   document.getElementById('ledIn').textContent = fmtP(f.pumpReservoirW);
   document.getElementById('ledOut').textContent = fmtP(f.acPower);
   document.getElementById('ledV').textContent = (f.sloshV * 1e3).toFixed(3) + ' mm/s';
