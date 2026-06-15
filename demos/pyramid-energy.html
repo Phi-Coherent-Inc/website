@@ -323,7 +323,8 @@ function buildScene() {
   // ground plane that closes the DC return loop (dark, just below the pyramid base).
   const BASALT = '#2b2f3a';
   const basaltMat = new THREE.MeshBasicMaterial({ color: C(BASALT), transparent: true, opacity: 0.6 });
-  const basalt = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.08, 2.6), basaltMat);
+  // wide enough to carry the obelisks (x=±1.55) — the pavement extends past the base
+  const basalt = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.08, 3.5), basaltMat);
   basalt.position.y = -0.04; scene.add(basalt); mats.basalt = basaltMat;
 
   // ── Pyramid shell (wireframe, TO SCALE — base/height ≈ 1.55, like Giza) ──
