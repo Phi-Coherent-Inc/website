@@ -207,7 +207,8 @@ function buildScene() {
   // Internal features are positioned to scale inside the pyramid. The coffer is
   // GENUINELY TINY (≈2 m in a 146 m pyramid); it's enlarged only ~4× so it stays
   // visible. The Big Void is ≈35 m — large, and shown near true scale.
-  const INCL = -26 * Math.PI / 180;   // Grand-Gallery / Big-Void incline
+  const INCL = 26 * Math.PI / 180;    // incline; the gallery ASCENDS up to the KC
+                                      // (KC at the high end), descending away from it
 
   // King's Chamber — the air-acoustic resonator (Q≈300), small wire box
   const kcMat = new THREE.MeshBasicMaterial({ color: C(p.axis), wireframe: true, transparent: true, opacity: 0.55 });
@@ -222,10 +223,11 @@ function buildScene() {
   const mercury = new THREE.Mesh(new THREE.BoxGeometry(0.082, 0.028, 0.045), hgMat);
   mercury.position.set(0, 0.405, 0); scene.add(mercury); mats.hg = hgMat;
 
-  // Grand Gallery — inclined shaft leading up to the chambers
+  // Grand Gallery — inclined shaft that ASCENDS up to the King's Chamber (its high
+  // end meets the KC; it slopes down and away from there).
   const ggMat = new THREE.MeshBasicMaterial({ color: C(p.axis), wireframe: true, transparent: true, opacity: 0.3 });
   const gg = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.06, 0.07), ggMat);
-  gg.position.set(-0.16, 0.5, 0); gg.rotation.z = INCL; scene.add(gg); mats.gg = ggMat;
+  gg.position.set(-0.26, 0.34, 0); gg.rotation.z = INCL; scene.add(gg); mats.gg = ggMat;
 
   // ── THE BIG VOID — the low-density AIR RESONANT CHAMBER above the Grand Gallery,
   // coupled to the coffer as a displacement FLYWHEEL (the ×voidGain boost on the
@@ -236,14 +238,14 @@ function buildScene() {
   const bigVoid = new THREE.Group();
   bigVoid.add(new THREE.Mesh(voidBox, voidFill));
   bigVoid.add(new THREE.Mesh(voidBox, voidEdge));
-  const VOID_Y = 0.82;
-  bigVoid.position.set(0.06, VOID_Y, 0); bigVoid.rotation.z = INCL; scene.add(bigVoid);
+  const VOID_Y = 0.76;
+  bigVoid.position.set(-0.05, VOID_Y, 0); bigVoid.rotation.z = INCL; scene.add(bigVoid);
   mats.voidFill = voidFill; mats.voidEdge = voidEdge;
 
   // Coupling link coffer ↔ Big Void (the coupled resonance — the flywheel coupling)
   const cplMat = new THREE.LineDashedMaterial({ color: C(p.cyan), transparent: true, opacity: 0.35, dashSize: 0.035, gapSize: 0.03 });
   const cpl = new THREE.Line(new THREE.BufferGeometry().setFromPoints(
-    [new THREE.Vector3(0, 0.44, 0), new THREE.Vector3(0.06, VOID_Y - 0.09, 0)]), cplMat);
+    [new THREE.Vector3(0, 0.44, 0), new THREE.Vector3(-0.05, VOID_Y - 0.09, 0)]), cplMat);
   cpl.computeLineDistances(); scene.add(cpl); mats.cpl = cplMat;
 
   // ── Two obelisks (external parametric pump), to scale (≈30 m) ──
