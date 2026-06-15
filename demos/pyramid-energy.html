@@ -623,7 +623,8 @@ function renderLadder() {
     const host = r.host.replace('PREDICTED ', '');
     const tag = r.predicted ? ' <span style="opacity:.7">· predicted</span>'
               : out ? ' <span style="opacity:.85">· EM output</span>' : '';
-    return `<div style="color:${col}"><b>n=${r.n}</b> · ${r.freqHz.toFixed(1)} Hz · ${host}${tag}</div>`;
+    const q = r.sealedQ ? ` <span style="opacity:.6">· sealed Q≈${Math.round(r.sealedQ).toLocaleString()}</span>` : '';
+    return `<div style="color:${col}"><b>n=${r.n}</b> · ${r.freqHz.toFixed(1)} Hz · ${host}${q}${tag}</div>`;
   }).join('');
 }
 
