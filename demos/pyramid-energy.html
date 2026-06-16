@@ -934,12 +934,7 @@ function setReadouts(f) {
   document.getElementById('acOut').textContent = fmtW(f.acPower);
   document.getElementById('cavityNote').innerHTML =
     `Cavity index <b>Q=φ=${f.cavityIndex.toFixed(3)}</b> (premise) sets f via 1/√Q · ` +
-    `obelisk pump @ <b>${f.obeliskResonanceHz.toFixed(1)} Hz</b> (2·f<sub>n</sub>) → ` +
-    `<b>Queen's Chamber pump resonator @ ${f.qcPumpFreqHz.toFixed(1)} Hz</b> ` +
-    `(Q≈${Math.round(f.qcPumpQ).toLocaleString()}) → coffer. ` +
-    `<span style="color:var(--text-muted)">Pinned coupling η=${f.qcCouplingEta.toExponential(1)} (the solid→air wall) ⇒ ` +
-    `gain only <b>×${f.qcPumpGain.toFixed(1)}</b> (air cavity barely couples — ${f.qcAirVsDirect.toExponential(0)}× the direct solid path). ` +
-    `Threshold met regardless; output energy-limited.</span>`;
+    `obelisk pump @ <b>${f.obeliskResonanceHz.toFixed(1)} Hz</b> (2·f<sub>n</sub>).`;
   document.getElementById('ledApex').textContent = (f.collectorApexV / 1e3).toFixed(1) + ' kV';
   document.getElementById('ledGround').textContent = f.groundResistanceOhm.toFixed(2) + ' Ω';
   document.getElementById('ledLoop').innerHTML = f.dcLoopClosed
