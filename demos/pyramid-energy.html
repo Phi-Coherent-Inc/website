@@ -288,7 +288,7 @@
           Apex collector: <b id="ledApex">—</b> &nbsp;·&nbsp; DC reservoir in: <b id="ledIn">—</b><br>
           Ground plane (basalt+aquifer): <b id="ledGround">—</b> &nbsp;·&nbsp; DC loop: <b id="ledLoop">—</b><br>
           Down-conductor (electrum edges): <b id="ledDown">—</b> &nbsp;·&nbsp; strike to ground: <b id="ledStrike">—</b><br>
-          Strike → aquifer (R<sub>tot</sub> <b id="ledEarthR">—</b>): <b id="ledEarth">—</b> <span style="color:var(--text-muted)">(the bolt's GJ is in the arc, not the ground)</span><br>
+          Strike → aquifer (R<sub>tot</sub> <b id="ledEarthR">—</b>): <b id="ledEarth">—</b> <span style="color:var(--text-muted)">(capturing it is the impedance-matched hard part)</span><br>
           AC out: <b id="ledOut">—</b> &nbsp;·&nbsp; Slosh velocity: <b id="ledV">—</b><br>
           <span style="color:var(--text-muted)">Energy-conserved: out ≤ in. The device sells <b>coherence</b> (a 50 Hz lock), not bulk watts.</span>
         </div>
@@ -926,8 +926,8 @@ function setReadouts(f) {
     ? '<span style="color:var(--demo-green)">conducts</span>'
     : '<span style="color:#e0703a">flashover</span>';
   document.getElementById('ledEarthR').textContent = (f.earthRTotalOhm).toFixed(3) + ' Ω';
-  document.getElementById('ledEarth').innerHTML = (f.earthChargeC).toFixed(0) + ' C delivered · '
-    + '<b>' + (f.earthEnergyToAquiferJ).toFixed(0) + ' J</b> deposited';
+  document.getElementById('ledEarth').innerHTML = (f.earthChargeC).toFixed(0) + ' C · bolt holds <b>'
+    + fmtE(f.earthStrikeEnergyJ / 3.6e6) + '</b> · capturable ~<b>' + fmtE(f.earthCapturableJ / 3.6e6) + '</b>';
   document.getElementById('ledIn').textContent = fmtP(f.pumpReservoirW);
   document.getElementById('ledOut').textContent = fmtW(f.acPower);
   document.getElementById('ledV').textContent = f.struck
@@ -1078,10 +1078,10 @@ document.getElementById('btnStrike').addEventListener('click', () => {
   }
   fireStrike();
   logEvent(frame.t,
-    `⚡ Lightning strike #${frame.strikeCount}: conducts to the aquifer (${frame.earthChargeC.toFixed(0)} C, ` +
-    `but only ${frame.earthEnergyToAquiferJ.toFixed(0)} J deposited — the GJ is in the arc). Slosh spikes to ` +
-    `${frame.cavitationVMs.toFixed(2)} m/s, AC burst ${fmtW(frame.acPower)}. ` +
-    `[Optimistic resonant-capture assumes ~${fmtE(frame.strikeCapturedKwh)} — the crux unknown.]`, true);
+    `⚡ Lightning strike #${frame.strikeCount}: conducts to the aquifer (${frame.earthChargeC.toFixed(0)} C). ` +
+    `The bolt holds <b>${fmtE(frame.earthStrikeEnergyJ / 3.6e6)}</b> — capturing it is impedance-limited ` +
+    `(~${fmtE(frame.earthCapturableJ / 3.6e6)} at 10%, optimistic). Slosh spikes to ` +
+    `${frame.cavitationVMs.toFixed(2)} m/s, AC burst ${fmtW(frame.acPower)}.`, true);
 });
 // Storm mode: auto-fire strikes (~3/s wall-clock) so the battery visibly charges. A
 // storm is many strikes — this is the battery filling, not a new energy source. Driven
