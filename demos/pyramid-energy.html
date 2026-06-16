@@ -107,6 +107,23 @@
 
   @media (max-width:900px){ .startup-cols{ grid-template-columns:1fr; } }
   @media (max-width:760px){ .panels{ grid-template-columns:1fr; } }
+
+  /* ── System selector (Great Pyramid ↔ Obelisk Pair) — prominent, top of controls ── */
+  .system-group { margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--gold-border); }
+  .system-group .demo-select { font-weight:600; }
+  /* de-emphasize the pyramid scene/controls while the obelisk system is active */
+  .ob-dimmed { opacity:.32; pointer-events:none; filter:grayscale(.4); transition:opacity .25s; }
+  /* ── Obelisk-pair panel ── */
+  #obeliskPanel { display:none; }
+  #obeliskPanel.on { display:block; }
+  .ob-cols { display:grid; grid-template-columns:1.1fr 1fr; gap:18px; padding:14px 16px; }
+  @media (max-width:900px){ .ob-cols{ grid-template-columns:1fr; } }
+  #obDayChart { width:100%; height:200px; display:block; }
+  .ob-ctrls { display:flex; flex-direction:column; gap:14px; }
+  .ob-readout { font-size:12px; line-height:1.8; }
+  .ob-readout b { color:var(--text); font-variant-numeric:tabular-nums; }
+  .ob-verdict-go   { color:var(--demo-green); font-weight:600; }
+  .ob-verdict-fail { color:#e0703a; font-weight:600; }
 </style>
 </head>
 <body>
@@ -117,6 +134,23 @@
 <div class="main">
   <!-- ── Controls (left column — controls only) ── -->
   <div class="controls">
+    <!-- SYSTEM selector — switch between the two independent systems -->
+    <div class="control-group system-group">
+      <label>System</label>
+      <div class="slider-row">
+        <select id="systemSelect" class="demo-select">
+          <option value="pyramid" selected>Great Pyramid — energy device</option>
+          <option value="obelisk">Obelisk Pair — coupled system</option>
+        </select>
+      </div>
+      <div class="ledger" style="color:var(--text-muted);margin-top:4px">
+        The Obelisk Pair is a <b>self-contained coupled system</b>, separate from the
+        pyramid device — its own dawn-gated harvest, spark-gap dump, and courtyard carrier.
+      </div>
+    </div>
+
+    <!-- Pyramid controls — dimmed/disabled while the obelisk system is active -->
+    <div id="pyramidControls">
     <div class="control-group">
       <label>Atmospheric Field (DC drive)</label>
       <div class="slider-row">
@@ -216,10 +250,82 @@
         are <b>predicted</b> voids that complete the ladder.
       </div>
     </div>
+    </div><!-- /#pyramidControls -->
+
+    <!-- Obelisk-pair controls — shown only when the Obelisk Pair system is active -->
+    <div id="obeliskControls" style="display:none">
+      <div class="control-group">
+        <label>Obelisk Separation
+          <span class="slider-value" id="obSepVal" style="float:right">30 m</span></label>
+        <input type="range" id="obSep" min="15" max="75" step="1" value="30">
+        <div class="ledger" style="color:var(--text-muted);margin-top:4px">
+          Sets the transit/slosh <b>bell</b> (30 m → 100 Hz). Wider spacing → lower bell.
+        </div>
+      </div>
+      <div class="control-group">
+        <label>Peak Apex Harvest
+          <span class="slider-value" id="obHarvestVal" style="float:right">2.0 µA</span></label>
+        <input type="range" id="obHarvest" min="0.1" max="5" step="0.05" value="2.0">
+        <div class="ledger" style="color:var(--text-muted);margin-top:4px">
+          The sun-gated atmospheric harvest — the load-bearing
+          <span style="color:var(--gold)">[EST]</span> input. It must beat the leak floor
+          (~0.48 µA) for the system to <b>self-start</b>. Drop it to watch self-start go
+          marginal, then fail.
+        </div>
+      </div>
+      <div class="ledger" style="color:var(--text-muted);margin-top:6px">
+        <b style="color:var(--gold)">Self-contained coupled system.</b> The dawn gates a
+        µA atmospheric harvest into a spark-gap accumulator that <b>dumps</b> (a relaxation
+        oscillator) at ~48 Hz by solar noon — a relaxation-<b>dump rate</b>, not a resonance,
+        carried on the ~13.5 MHz courtyard LC carrier. Computed live in phi-pyramid-cpp (WASM).
+      </div>
+    </div>
   </div>
 
   <!-- ── Panels (right side — every readout in its own section) ── -->
   <div class="panels">
+
+    <!-- ── OBELISK PAIR — self-contained coupled system (hidden until selected) ── -->
+    <div class="scene-panel span2" id="obeliskPanel">
+      <div class="panel-header">
+        <span class="panel-title">Obelisk Pair — a day of the coupled system</span>
+        <span class="panel-tag tag-recover" id="obFireTag">cold before dawn</span>
+      </div>
+      <div class="ob-cols">
+        <div>
+          <div class="ledger" style="color:var(--text-muted);margin-bottom:8px">
+            <span style="color:var(--gold)">━</span> sun (diurnal gate) &nbsp;
+            <span style="color:var(--demo-cyan)">━</span> dump rate (Hz) &nbsp;
+            <span style="color:var(--demo-green)">┊</span> first fire — over the hour of day (0–24 h).
+          </div>
+          <canvas id="obDayChart"></canvas>
+          <div class="ledger" style="color:var(--text-muted);margin-top:8px;font-size:11px;line-height:1.6">
+            The day plays cold-before-dawn → first fire (~6.9 h) → peak (~48 Hz at solar noon)
+            → cold again. The <b>50/100 Hz</b> figure is the relaxation-<b>dump rate</b> (not a
+            resonance), riding the <b>MHz courtyard carrier</b>. Apex-harvest µA is the
+            load-bearing <span style="color:var(--gold)">[EST]</span> input — so self-start is marginal.
+          </div>
+        </div>
+        <div class="ob-ctrls">
+          <div>
+            <div class="panel-tag tag-error" id="obClockTag" style="display:inline-block">t = 0.0 h</div>
+            <div class="ob-readout" style="margin-top:10px">
+              Sun (gate): <b id="obSun">—</b> &nbsp;·&nbsp; Firing: <b id="obFiring">—</b><br>
+              Harvest: <b id="obHarv">—</b> vs leak floor <b id="obLeak">—</b><br>
+              Dump rate: <b id="obDump">—</b><br>
+              <span style="color:var(--text-muted)">Self-start (peak harvest &gt; leak floor):</span>
+              <b id="obSelf">—</b>
+            </div>
+          </div>
+          <div class="ob-readout" style="border-top:1px solid var(--gold-border);padding-top:12px;color:var(--text-muted)">
+            <b style="color:var(--gold)">Static facts</b><br>
+            Separation: <b id="obSep2">—</b> → bell <b id="obBell">—</b><br>
+            EM carrier: <b id="obCarrier">—</b> &nbsp;·&nbsp; Tura-limestone float: <b id="obFloat">—</b><br>
+            First fire: <b id="obFirst">—</b> &nbsp;·&nbsp; Peak dump: <b id="obPeak">—</b>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- 3D device (one column; spans 2 rows so Energy Loop + Live Readouts stack beside it) -->
     <div class="scene-panel" style="grid-column:1; grid-row:span 2; min-height:420px; position:relative">
@@ -1138,7 +1244,146 @@ function renderLadder() {
   }).join('');
 }
 
+// ── OBELISK PAIR — self-contained coupled system ─────────────────────────────
+// A separate world from the pyramid device: a dawn-gated µA atmospheric harvest
+// fills a spark-gap accumulator that DUMPS (relaxation oscillator) at ~48 Hz by
+// solar noon, carried on the ~13.5 MHz courtyard carrier. All physics is in the
+// phi-pyramid-cpp ObeliskPairDemo — no JS physics. We just march the clock.
+let activeSystem = 'pyramid';     // 'pyramid' | 'obelisk' — only one loop drives
+let pyramidLoopRunning = true;    // re-entrancy guard for the pyramid rAF loop
+let obDemo = null, obFrame = null, obRunning = false;
+let obDay = [];                   // {h, sun, dumpHz} samples accumulated over the playing day
+let obLastFire = -1;              // captured first-fire hour for the current day pass
+const OB_DT_HOURS = 0.2;          // simulated hours advanced per animation frame
+
+const obCanvas = document.getElementById('obDayChart');
+const obx = obCanvas.getContext('2d');
+
+function obSeparation() { return parseFloat(document.getElementById('obSep').value); }
+function obHarvest()    { return parseFloat(document.getElementById('obHarvest').value); }
+
+// (Re)seed the obelisk system from the sliders and reset the day clock + plot.
+function obConfigure() {
+  if (!obDemo) return;
+  obFrame = obDemo.configure(obSeparation(), obHarvest(), 6.0, 12.0);  // sunrise 6h, 12h daylight
+  obDay = []; obLastFire = -1;
+  obDrawDay(); obSetReadouts(obFrame);
+}
+
+function obSetReadouts(f) {
+  if (!f) return;
+  document.getElementById('obClockTag').textContent = 't = ' + f.tHour.toFixed(1) + ' h';
+  document.getElementById('obSun').textContent    = (f.sun * 100).toFixed(0) + '%';
+  document.getElementById('obFiring').innerHTML   = f.firing
+    ? '<span class="ob-verdict-go">yes</span>' : 'no';
+  document.getElementById('obHarv').textContent   = f.currentUA.toFixed(3) + ' µA';
+  document.getElementById('obLeak').textContent   = f.leakFloorUA.toFixed(2) + ' µA';
+  document.getElementById('obDump').textContent   = f.firing ? f.dumpHz.toFixed(1) + ' Hz' : '0 Hz (cold)';
+  document.getElementById('obSelf').innerHTML     = f.selfStarts
+    ? '<span class="ob-verdict-go">self-starts</span>'
+    : '<span class="ob-verdict-fail">will not fire</span>';
+  // static facts
+  document.getElementById('obSep2').textContent   = f.separationM.toFixed(0) + ' m';
+  document.getElementById('obBell').textContent   = f.bellHz.toFixed(1) + ' Hz';
+  document.getElementById('obCarrier').textContent = f.carrierMHz.toFixed(2) + ' MHz';
+  document.getElementById('obFloat').textContent  = f.floatMs.toFixed(0) + ' ms';
+  document.getElementById('obPeak').textContent   = f.peakDumpHz.toFixed(1) + ' Hz';
+  const ff = (f.firstFireHour >= 0 && isFinite(f.firstFireHour)) ? f.firstFireHour : obLastFire;
+  document.getElementById('obFirst').textContent  = ff >= 0 ? ff.toFixed(1) + ' h' : '— (no fire)';
+  const tag = document.getElementById('obFireTag');
+  tag.textContent = f.firing ? 'firing · ' + f.dumpHz.toFixed(0) + ' Hz'
+    : (f.tHour < 6 ? 'cold before dawn' : (f.tHour > 18 ? 'cold after dusk' : 'charging…'));
+}
+
+// Plot the day: x = hour 0..24, sun curve (gold) + dump-rate curve (cyan), first-fire marker.
+function obDrawDay() {
+  const q = pal(), dpr = window.devicePixelRatio || 1;
+  const w = obCanvas.clientWidth || 360, h = 200, pad = 6;
+  if (obCanvas.width !== w * dpr) { obCanvas.width = w * dpr; obCanvas.height = h * dpr; obx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  obx.clearRect(0, 0, w, h);
+  const X = (hour) => (hour / 24) * w;
+  const peak = (obFrame && obFrame.peakDumpHz > 0) ? obFrame.peakDumpHz : 50;
+  // baseline + noon gridline
+  obx.strokeStyle = q.grid; obx.lineWidth = 1;
+  obx.beginPath(); obx.moveTo(0, h - pad); obx.lineTo(w, h - pad); obx.stroke();
+  obx.beginPath(); obx.moveTo(X(12), pad); obx.lineTo(X(12), h - pad); obx.stroke();
+  // first-fire marker
+  if (obLastFire >= 0) {
+    obx.strokeStyle = q.green; obx.setLineDash([3, 3]);
+    obx.beginPath(); obx.moveTo(X(obLastFire), pad); obx.lineTo(X(obLastFire), h - pad); obx.stroke();
+    obx.setLineDash([]);
+  }
+  if (obDay.length >= 2) {
+    // sun curve (0..1 → full height)
+    obx.strokeStyle = q.gold; obx.lineWidth = 2; obx.beginPath();
+    obDay.forEach((pt, i) => { const x = X(pt.h), y = h - pad - pt.sun * (h - 2 * pad); i ? obx.lineTo(x, y) : obx.moveTo(x, y); });
+    obx.stroke();
+    // dump-rate curve (0..peak → full height)
+    obx.strokeStyle = q.cyan; obx.lineWidth = 2; obx.beginPath();
+    obDay.forEach((pt, i) => { const x = X(pt.h), y = h - pad - Math.min(1, pt.dumpHz / peak) * (h - 2 * pad); i ? obx.lineTo(x, y) : obx.moveTo(x, y); });
+    obx.stroke();
+  }
+}
+
+// The obelisk animation loop — marches the simulated day, looping back at 24 h.
+function obLoop() {
+  if (activeSystem !== 'obelisk' || !obDemo) { obRunning = false; return; }
+  obFrame = obDemo.step(OB_DT_HOURS);
+  if (obFrame.firing && obLastFire < 0) obLastFire = obFrame.tHour;
+  obDay.push({ h: obFrame.tHour, sun: obFrame.sun, dumpHz: obFrame.firing ? obFrame.dumpHz : 0 });
+  if (obFrame.tHour >= 24) { obFrame = obDemo.reset(); obDay = []; obLastFire = -1; }  // loop the day
+  obDrawDay(); obSetReadouts(obFrame);
+  requestAnimationFrame(obLoop);
+}
+
+// Lazy-create the obelisk driver on first switch, then seed + start its loop.
+async function obEnsureAndStart() {
+  if (!obDemo) {
+    await ready();
+    obDemo = PhiPyramid.createObeliskPair();
+    obConfigure();
+  } else {
+    obFrame = obDemo.reset(); obDay = []; obLastFire = -1; obSetReadouts(obFrame);
+  }
+  if (!obRunning) { obRunning = true; requestAnimationFrame(obLoop); }
+}
+
+// ── System switch: show one system, pause the other, drive exactly one loop ──
+function switchSystem(sys) {
+  activeSystem = sys;
+  const obPanel = document.getElementById('obeliskPanel');
+  const pyCtrls = document.getElementById('pyramidControls');
+  const obCtrls = document.getElementById('obeliskControls');
+  if (sys === 'obelisk') {
+    obPanel.classList.add('on');
+    obCtrls.style.display = '';
+    pyCtrls.classList.add('ob-dimmed');
+    // de-emphasize the pyramid panels (everything except the obelisk panel)
+    document.querySelectorAll('.panels > .scene-panel:not(#obeliskPanel)').forEach((el) => el.classList.add('ob-dimmed'));
+    obEnsureAndStart();
+  } else {
+    obPanel.classList.remove('on');
+    obCtrls.style.display = 'none';
+    pyCtrls.classList.remove('ob-dimmed');
+    document.querySelectorAll('.panels > .scene-panel:not(#obeliskPanel)').forEach((el) => el.classList.remove('ob-dimmed'));
+    obRunning = false;                       // obLoop will self-exit on next frame
+    if (!pyramidLoopRunning) { pyramidLoopRunning = true; last = performance.now() / 1000; requestAnimationFrame(loop); }
+  }
+}
+
+document.getElementById('systemSelect').addEventListener('change', function () { switchSystem(this.value); });
+document.getElementById('obSep').oninput = function () {
+  document.getElementById('obSepVal').textContent = this.value + ' m';
+  if (obDemo) obConfigure();
+};
+document.getElementById('obHarvest').oninput = function () {
+  document.getElementById('obHarvestVal').textContent = (+this.value).toFixed(1) + ' µA';
+  if (obDemo) obConfigure();
+};
+window.PhiTheme && window.PhiTheme.onChange(() => { if (activeSystem === 'obelisk') obDrawDay(); });
+
 function loop() {
+  if (activeSystem !== 'pyramid') { pyramidLoopRunning = false; return; }
   const now = performance.now() / 1000;
   const dt = Math.min(0.05, now - last); last = now;
   if (demo) {

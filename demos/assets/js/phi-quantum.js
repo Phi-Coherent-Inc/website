@@ -217,6 +217,12 @@ export const PhiPyramid = {
   // The Schumann chamber ladder: every void → its tuned harmonic (n=3, n=7 predicted).
   // Returns [{ n, freqHz, lengthM, predicted, host }] for n=2..8.
   chamberLadder() { return vecToArray(_module.chamberLadder()); },
+  // The OBELISK-PAIR system (a self-contained coupled system, NOT the pyramid device).
+  //   configure(separationM, apexHarvestUA, sunriseH, daylightH) → frame
+  //   reset() → frame ; step(dtHours) → frame  (march the dawn → spin-up day)
+  // A frame = { tHour, sun, currentUA, dumpHz, firing, bellHz, carrierMHz, floatMs,
+  //             leakFloorUA, selfStarts, separationM, peakDumpHz, firstFireHour }.
+  createObeliskPair() { return new _module.ObeliskPairDemo(); },
 };
 
 const api = { ready, isReady, PhiCoherent, PhiRecovery, PhiVQE, PhiTunnel, PhiCrypto, PhiTopo, PhiPyramid };
