@@ -288,6 +288,7 @@
           Apex collector: <b id="ledApex">—</b> &nbsp;·&nbsp; DC reservoir in: <b id="ledIn">—</b><br>
           Ground plane (basalt+aquifer): <b id="ledGround">—</b> &nbsp;·&nbsp; DC loop: <b id="ledLoop">—</b><br>
           Down-conductor (electrum edges): <b id="ledDown">—</b> &nbsp;·&nbsp; strike to ground: <b id="ledStrike">—</b><br>
+          Strike → aquifer (R<sub>tot</sub> <b id="ledEarthR">—</b>): <b id="ledEarth">—</b> <span style="color:var(--text-muted)">(the bolt's GJ is in the arc, not the ground)</span><br>
           AC out: <b id="ledOut">—</b> &nbsp;·&nbsp; Slosh velocity: <b id="ledV">—</b><br>
           <span style="color:var(--text-muted)">Energy-conserved: out ≤ in. The device sells <b>coherence</b> (a 50 Hz lock), not bulk watts.</span>
         </div>
@@ -497,6 +498,17 @@ function buildScene() {
     [corners[0], new THREE.Vector3(corners[0].x, -0.45, corners[0].z)]), downMat.clone());
   scene.add(earth); downConductors.push(earth);
   mats.down = downMat;
+
+  // ── THE AQUIFER (water table) below the basalt: the earth electrode the strike reaches.
+  const aquiferMat = new THREE.MeshBasicMaterial({ color: C('#3a6ea5'), transparent: true, opacity: 0.32 });
+  const aquifer = new THREE.Mesh(new THREE.CircleGeometry(2.0, 44), aquiferMat);
+  aquifer.rotation.x = -Math.PI / 2; aquifer.position.y = -0.47; scene.add(aquifer); mats.aquifer = aquiferMat;
+  // the ENERGY PULSE that travels apex → corner → shaft → aquifer when a strike conducts.
+  const earthPath = [APEX_PT.clone(), corners[0].clone(),
+                     new THREE.Vector3(corners[0].x, -0.46, corners[0].z)];
+  const gpMat = new THREE.MeshBasicMaterial({ color: C('#fff2c8'), transparent: true, opacity: 0 });
+  const groundPulse = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 12), gpMat);
+  scene.add(groundPulse); mats.gpulse = gpMat;
 
   // ── APEX CORONA GLOW: the sharpened point in continuous point-discharge (St. Elmo's
   //    fire). A soft violet glow at the tip, always on when the apex is in corona; it
@@ -734,8 +746,16 @@ function buildScene() {
       mats.cap.opacity = 1.0;
       // the electrum down-conductors carry the strike to ground — flare them bright
       for (const dc of downConductors) { dc.material.color.set(C('#fff6d8')); dc.material.opacity = strikeFx * flick; }
-      if (strikeFx < 0.02) { boltMat.opacity = 0; apexLight.intensity = 0;
+      // the ENERGY PULSE travels apex → corner → shaft → aquifer as the flash fades
+      const prog = Math.min(1, (1 - strikeFx) * 1.25);
+      const seg = prog < 0.5 ? 0 : 1, lt = prog < 0.5 ? prog / 0.5 : (prog - 0.5) / 0.5;
+      groundPulse.position.lerpVectors(earthPath[seg], earthPath[seg + 1], lt);
+      gpMat.opacity = 0.95;
+      // the aquifer flares when the pulse arrives (the strike charge reaches the water)
+      mats.aquifer.opacity = prog > 0.9 ? 0.32 + 0.5 * strikeFx + 0.18 : 0.32;
+      if (strikeFx < 0.02) { boltMat.opacity = 0; apexLight.intensity = 0; gpMat.opacity = 0;
         mats.cap.color.set(C('#8a6f63')); mats.gilt.color.set(C('#e7d9a8'));
+        mats.aquifer.opacity = 0.32;
         for (const dc of downConductors) { dc.material.color.set(C('#e7d9a8')); dc.material.opacity = 0.5; }
       }
     }
@@ -905,6 +925,9 @@ function setReadouts(f) {
   document.getElementById('ledStrike').innerHTML = f.strikeConducts
     ? '<span style="color:var(--demo-green)">conducts</span>'
     : '<span style="color:#e0703a">flashover</span>';
+  document.getElementById('ledEarthR').textContent = (f.earthRTotalOhm).toFixed(3) + ' Ω';
+  document.getElementById('ledEarth').innerHTML = (f.earthChargeC).toFixed(0) + ' C delivered · '
+    + '<b>' + (f.earthEnergyToAquiferJ).toFixed(0) + ' J</b> deposited';
   document.getElementById('ledIn').textContent = fmtP(f.pumpReservoirW);
   document.getElementById('ledOut').textContent = fmtW(f.acPower);
   document.getElementById('ledV').textContent = f.struck
@@ -1055,9 +1078,10 @@ document.getElementById('btnStrike').addEventListener('click', () => {
   }
   fireStrike();
   logEvent(frame.t,
-    `⚡ Lightning strike #${frame.strikeCount}: slosh spikes to ${frame.cavitationVMs.toFixed(2)} m/s ` +
-    `(cavitation cap) — AC burst ${fmtW(frame.acPower)}; ~${fmtE(frame.strikeCapturedKwh)} banked ` +
-    `(battery now ${fmtE(frame.storeKwh)}); ringing down at the cavity Q.`, true);
+    `⚡ Lightning strike #${frame.strikeCount}: conducts to the aquifer (${frame.earthChargeC.toFixed(0)} C, ` +
+    `but only ${frame.earthEnergyToAquiferJ.toFixed(0)} J deposited — the GJ is in the arc). Slosh spikes to ` +
+    `${frame.cavitationVMs.toFixed(2)} m/s, AC burst ${fmtW(frame.acPower)}. ` +
+    `[Optimistic resonant-capture assumes ~${fmtE(frame.strikeCapturedKwh)} — the crux unknown.]`, true);
 });
 // Storm mode: auto-fire strikes (~3/s wall-clock) so the battery visibly charges. A
 // storm is many strikes — this is the battery filling, not a new energy source. Driven
