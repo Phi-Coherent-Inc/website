@@ -232,8 +232,9 @@
       <div class="ledger" style="padding:8px 14px;border-top:1px solid var(--gold-border);color:var(--text-muted);font-size:11px;line-height:1.6">
         <b style="color:var(--gold)">pyramid</b> + <b style="color:var(--gold)">obelisks</b> (parametric pump) ·
         <b style="color:#8a6f63">granite apex cap</b> (<b style="color:#e7d9a8">electrum-coated</b>) = the isolated capstone collector, with
-        <b style="color:#e7d9a8">electrum edge down-conductors → base ground ring → earth drop</b> carrying a strike to the aquifer
-        (bare stone would flash over) ·
+        <b style="color:#e7d9a8">electrum edge down-conductors → base ground ring → central shaft</b> →
+        <b style="color:#6b5a4a">subterranean chamber</b> + <b style="color:#8aa0c0">pit</b> (real, central; purpose unknown — here the conjectured
+        earth electrode to the <b style="color:#3a6ea5">aquifer</b>), carrying a strike to ground (bare stone would flash over) ·
         <b style="color:#3a3f4c">dark base slab</b> = the basalt foundation (conductive ground plane, closes the DC loop) ·
         <b style="color:var(--demo-cyan)">small box</b> = mercury coffer in the King's Chamber (sloshes) ·
         stack above the KC = relieving chambers · inclined corridor = Grand Gallery ·
@@ -493,19 +494,36 @@ function buildScene() {
   const ring = new THREE.Line(
     new THREE.BufferGeometry().setFromPoints([corners[0], corners[1], corners[2], corners[3], corners[0]]),
     downMat.clone()); scene.add(ring); downConductors.push(ring);
-  // an earth-electrode drop from the ring down through the basalt toward the aquifer
-  const earth = new THREE.Line(new THREE.BufferGeometry().setFromPoints(
-    [corners[0], new THREE.Vector3(corners[0].x, -0.45, corners[0].z)]), downMat.clone());
-  scene.add(earth); downConductors.push(earth);
+  // a ring SPOKE carrying the collected current inward to the central earth shaft
+  const spoke = new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+    [corners[0], new THREE.Vector3(0, 0, 0)]), downMat.clone());
+  scene.add(spoke); downConductors.push(spoke);
   mats.down = downMat;
 
-  // ── THE AQUIFER (water table) below the basalt: the earth electrode the strike reaches.
+  // ── THE SUBTERRANEAN CHAMBER + PIT (real, central, below the base; purpose unknown) ──
+  //    Conjecture: the central earth-electrode hub — the down-conductor current converges
+  //    here and the PIT (dug straight down from the chamber floor) is the shaft to the
+  //    water table. Filled now; the wetter early-Holocene water table may have reached it.
+  const SUB_Y = -0.22, PIT_BOT = -0.46;
+  const subMat = new THREE.MeshBasicMaterial({ color: C('#6b5a4a'), wireframe: true, transparent: true, opacity: 0.55 });
+  const subChamber = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.15, 0.26), subMat);
+  subChamber.position.set(0, SUB_Y, 0); scene.add(subChamber); mats.sub = subMat;
+  // the central shaft from the base down through the chamber, then the PIT to the aquifer
+  const shaftLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+    [new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, SUB_Y + 0.075, 0)]), downMat.clone());
+  scene.add(shaftLine); downConductors.push(shaftLine);
+  const pitMat = new THREE.LineBasicMaterial({ color: C('#8aa0c0'), transparent: true, opacity: 0.75 });
+  const pit = new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+    [new THREE.Vector3(0, SUB_Y - 0.075, 0), new THREE.Vector3(0, PIT_BOT, 0)]), pitMat);
+  scene.add(pit); downConductors.push(pit);
+
+  // ── THE AQUIFER (water table) below the pit: the earth electrode / battery the pit reaches.
   const aquiferMat = new THREE.MeshBasicMaterial({ color: C('#3a6ea5'), transparent: true, opacity: 0.32 });
   const aquifer = new THREE.Mesh(new THREE.CircleGeometry(2.0, 44), aquiferMat);
   aquifer.rotation.x = -Math.PI / 2; aquifer.position.y = -0.47; scene.add(aquifer); mats.aquifer = aquiferMat;
-  // the ENERGY PULSE that travels apex → corner → shaft → aquifer when a strike conducts.
+  // the ENERGY PULSE: apex → edge corner → ring spoke to centre → down the pit → aquifer.
   const earthPath = [APEX_PT.clone(), corners[0].clone(),
-                     new THREE.Vector3(corners[0].x, -0.46, corners[0].z)];
+                     new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, PIT_BOT, 0)];
   const gpMat = new THREE.MeshBasicMaterial({ color: C('#fff2c8'), transparent: true, opacity: 0 });
   const groundPulse = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 12), gpMat);
   scene.add(groundPulse); mats.gpulse = gpMat;
@@ -747,8 +765,9 @@ function buildScene() {
       // the electrum down-conductors carry the strike to ground — flare them bright
       for (const dc of downConductors) { dc.material.color.set(C('#fff6d8')); dc.material.opacity = strikeFx * flick; }
       // the ENERGY PULSE travels apex → corner → shaft → aquifer as the flash fades
-      const prog = Math.min(1, (1 - strikeFx) * 1.25);
-      const seg = prog < 0.5 ? 0 : 1, lt = prog < 0.5 ? prog / 0.5 : (prog - 0.5) / 0.5;
+      const prog = Math.min(0.999, (1 - strikeFx) * 1.25);
+      const nseg = earthPath.length - 1;               // apex→corner→centre→pit
+      const seg = Math.floor(prog * nseg), lt = prog * nseg - seg;
       groundPulse.position.lerpVectors(earthPath[seg], earthPath[seg + 1], lt);
       gpMat.opacity = 0.95;
       // the aquifer flares when the pulse arrives (the strike charge reaches the water)
