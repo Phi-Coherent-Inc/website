@@ -231,7 +231,8 @@
       <div id="screenFlash"></div>
       <div class="ledger" style="padding:8px 14px;border-top:1px solid var(--gold-border);color:var(--text-muted);font-size:11px;line-height:1.6">
         <b style="color:var(--gold)">pyramid</b> + <b style="color:var(--gold)">obelisks</b> (parametric pump) ·
-        <b style="color:#b9bdc8">silver apex cap</b> (<b style="color:var(--gold)">gold-gilt</b>) = the isolated capstone DC collector ·
+        <b style="color:#8a6f63">granite apex cap</b> (<b style="color:#e7d9a8">electrum-coated</b>) = the isolated capstone collector, with
+        <b style="color:#e7d9a8">electrum edge down-conductors</b> carrying a strike to ground (bare stone would flash over) ·
         <b style="color:#3a3f4c">dark base slab</b> = the basalt foundation (conductive ground plane, closes the DC loop) ·
         <b style="color:var(--demo-cyan)">small box</b> = mercury coffer in the King's Chamber (sloshes) ·
         stack above the KC = relieving chambers · inclined corridor = Grand Gallery ·
@@ -285,6 +286,7 @@
         <div class="ledger" style="margin-top:14px">
           Apex collector: <b id="ledApex">—</b> &nbsp;·&nbsp; DC reservoir in: <b id="ledIn">—</b><br>
           Ground plane (basalt+aquifer): <b id="ledGround">—</b> &nbsp;·&nbsp; DC loop: <b id="ledLoop">—</b><br>
+          Down-conductor (electrum edges): <b id="ledDown">—</b> &nbsp;·&nbsp; strike to ground: <b id="ledStrike">—</b><br>
           AC out: <b id="ledOut">—</b> &nbsp;·&nbsp; Slosh velocity: <b id="ledV">—</b><br>
           <span style="color:var(--text-muted)">Energy-conserved: out ≤ in. The device sells <b>coherence</b> (a 50 Hz lock), not bulk watts.</span>
         </div>
@@ -457,15 +459,31 @@ function buildScene() {
   pyramid.rotation.y = Math.PI / 4; pyramid.position.y = 0.8; scene.add(pyramid); mats.py = pyMat;
 
   // The APEX CAPSTONE — the isolated φ-pyramidion DC collector at the apex (y≈1.6).
-  // SOLID SILVER body (the conductor) with a GOLD-GILT plating (anti-tarnish shell).
-  const SILVER = '#cdd2dc';
-  const capMat = new THREE.MeshBasicMaterial({ color: C(SILVER), transparent: true, opacity: 0.95 });
+  // GRANITE core (the stone pyramidion) with an ELECTRUM (Au–Ag) COATING — the conductor
+  // / terminal. The strike it gathers reaches ground via the electrum edge down-conductors.
+  const GRANITE_C = '#8a6f63';   // granite core
+  const ELECTRUM  = '#e7d9a8';   // pale-gold electrum facing
+  const capMat = new THREE.MeshBasicMaterial({ color: C(GRANITE_C), transparent: true, opacity: 0.95 });
   const capstone = new THREE.Mesh(new THREE.ConeGeometry(0.17, 0.24, 4), capMat);
   capstone.rotation.y = Math.PI / 4; capstone.position.y = 1.56; scene.add(capstone); mats.cap = capMat;
-  // the gold plating (gilding) — a thin gold wireframe shell over the silver core
-  const giltMat = new THREE.MeshBasicMaterial({ color: C(p.gold), wireframe: true, transparent: true, opacity: 0.85 });
+  // the electrum coating — a thin pale-gold wireframe shell over the granite core
+  const giltMat = new THREE.MeshBasicMaterial({ color: C(ELECTRUM), wireframe: true, transparent: true, opacity: 0.9 });
   const gilt = new THREE.Mesh(new THREE.ConeGeometry(0.185, 0.26, 4), giltMat);
   gilt.rotation.y = Math.PI / 4; gilt.position.y = 1.56; scene.add(gilt); mats.gilt = giltMat;
+
+  // ── ELECTRUM DOWN-CONDUCTORS: the metal facing down the four arris edges, apex→base.
+  //    This is the path a strike takes to ground (bare stone would flash over). They glow
+  //    when a strike is conducting the current down.
+  const APEX_PT = new THREE.Vector3(0, 1.60, 0);
+  const downMat = new THREE.LineBasicMaterial({ color: C(ELECTRUM), transparent: true, opacity: 0.5 });
+  const downConductors = [];
+  for (let k = 0; k < 4; k++) {
+    const a = Math.PI / 4 + k * Math.PI / 2;
+    const corner = new THREE.Vector3(Math.cos(a) * 1.237, 0.0, Math.sin(a) * 1.237);
+    const g = new THREE.BufferGeometry().setFromPoints([APEX_PT, corner]);
+    const line = new THREE.Line(g, downMat.clone()); scene.add(line); downConductors.push(line);
+  }
+  mats.down = downMat;
 
   // ── APEX CORONA GLOW: the sharpened point in continuous point-discharge (St. Elmo's
   //    fire). A soft violet glow at the tip, always on when the apex is in corona; it
@@ -701,8 +719,12 @@ function buildScene() {
       apexLight.intensity = strikeFx * 9.0 * flick;
       mats.cap.color.set(C('#ffffff')); mats.gilt.color.set(C('#ffffff'));
       mats.cap.opacity = 1.0;
+      // the electrum down-conductors carry the strike to ground — flare them bright
+      for (const dc of downConductors) { dc.material.color.set(C('#fff6d8')); dc.material.opacity = strikeFx * flick; }
       if (strikeFx < 0.02) { boltMat.opacity = 0; apexLight.intensity = 0;
-        mats.cap.color.set(C('#cdd2dc')); mats.gilt.color.set(C(q.gold)); }
+        mats.cap.color.set(C('#8a6f63')); mats.gilt.color.set(C('#e7d9a8'));
+        for (const dc of downConductors) { dc.material.color.set(C('#e7d9a8')); dc.material.opacity = 0.5; }
+      }
     }
     // orbit at the fit-distance, scaled by the user's scroll-wheel zoom
     const R = orbitR * zoom;
@@ -865,6 +887,11 @@ function setReadouts(f) {
   document.getElementById('ledGround').textContent = f.groundResistanceOhm.toFixed(2) + ' Ω';
   document.getElementById('ledLoop').innerHTML = f.dcLoopClosed
     ? '<span style="color:var(--demo-green)">closed</span>' : 'open';
+  document.getElementById('ledDown').innerHTML = (f.downConductorROhm).toFixed(3) + ' Ω'
+    + ' <span style="color:var(--text-muted)">(bare stone ' + (f.stoneBodyROhm / 1e6).toFixed(1) + ' MΩ)</span>';
+  document.getElementById('ledStrike').innerHTML = f.strikeConducts
+    ? '<span style="color:var(--demo-green)">conducts</span>'
+    : '<span style="color:#e0703a">flashover</span>';
   document.getElementById('ledIn').textContent = fmtP(f.pumpReservoirW);
   document.getElementById('ledOut').textContent = fmtW(f.acPower);
   document.getElementById('ledV').textContent = f.struck
