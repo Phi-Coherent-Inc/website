@@ -934,7 +934,10 @@ function setReadouts(f) {
   document.getElementById('acOut').textContent = fmtW(f.acPower);
   document.getElementById('cavityNote').innerHTML =
     `Cavity index <b>Q=φ=${f.cavityIndex.toFixed(3)}</b> (premise) sets f via 1/√Q · ` +
-    `obelisk pump @ <b>${f.obeliskResonanceHz.toFixed(1)} Hz</b> (2·f<sub>n</sub>).`;
+    `obelisk pump @ <b>${f.obeliskResonanceHz.toFixed(1)} Hz</b> (2·f<sub>n</sub>) → ` +
+    `<b>Queen's Chamber pump resonator @ ${f.qcPumpFreqHz.toFixed(1)} Hz</b> ` +
+    `(Q≈${Math.round(f.qcPumpQ).toLocaleString()}, ×${Math.round(f.qcPumpGain)} pump-depth gain) → coffer. ` +
+    `<span style="color:var(--text-muted)">A coupling/start-up win (margin ${f.pumpMarginEnhanced.toExponential(0)}×), not more watts.</span>`;
   document.getElementById('ledApex').textContent = (f.collectorApexV / 1e3).toFixed(1) + ' kV';
   document.getElementById('ledGround').textContent = f.groundResistanceOhm.toFixed(2) + ' Ω';
   document.getElementById('ledLoop').innerHTML = f.dcLoopClosed
