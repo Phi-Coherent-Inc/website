@@ -232,7 +232,8 @@
       <div class="ledger" style="padding:8px 14px;border-top:1px solid var(--gold-border);color:var(--text-muted);font-size:11px;line-height:1.6">
         <b style="color:var(--gold)">pyramid</b> + <b style="color:var(--gold)">obelisks</b> (parametric pump) ·
         <b style="color:#8a6f63">granite apex cap</b> (<b style="color:#e7d9a8">electrum-coated</b>) = the isolated capstone collector, with
-        <b style="color:#e7d9a8">electrum edge down-conductors</b> carrying a strike to ground (bare stone would flash over) ·
+        <b style="color:#e7d9a8">electrum edge down-conductors → base ground ring → earth drop</b> carrying a strike to the aquifer
+        (bare stone would flash over) ·
         <b style="color:#3a3f4c">dark base slab</b> = the basalt foundation (conductive ground plane, closes the DC loop) ·
         <b style="color:var(--demo-cyan)">small box</b> = mercury coffer in the King's Chamber (sloshes) ·
         stack above the KC = relieving chambers · inclined corridor = Grand Gallery ·
@@ -471,18 +472,30 @@ function buildScene() {
   const gilt = new THREE.Mesh(new THREE.ConeGeometry(0.185, 0.26, 4), giltMat);
   gilt.rotation.y = Math.PI / 4; gilt.position.y = 1.56; scene.add(gilt); mats.gilt = giltMat;
 
-  // ── ELECTRUM DOWN-CONDUCTORS: the metal facing down the four arris edges, apex→base.
-  //    This is the path a strike takes to ground (bare stone would flash over). They glow
-  //    when a strike is conducting the current down.
+  // ── ELECTRUM DOWN-CONDUCTORS: the metal facing down the four ARRIS EDGES, apex→base
+  //    corner, overlaying the pyramid edges (cone circumradius 1.75 at the 45° corners).
+  //    They tie into a base GROUND RING (the perimeter "frame") which bonds to the basalt
+  //    pavement and drops to the aquifer earth electrode. The whole path glows while a
+  //    strike conducts the current down to ground (bare stone would flash over).
   const APEX_PT = new THREE.Vector3(0, 1.60, 0);
-  const downMat = new THREE.LineBasicMaterial({ color: C(ELECTRUM), transparent: true, opacity: 0.5 });
+  const downMat = new THREE.LineBasicMaterial({ color: C(ELECTRUM), transparent: true, opacity: 0.55 });
   const downConductors = [];
+  const corners = [];
   for (let k = 0; k < 4; k++) {
-    const a = Math.PI / 4 + k * Math.PI / 2;
-    const corner = new THREE.Vector3(Math.cos(a) * 1.237, 0.0, Math.sin(a) * 1.237);
+    const a = Math.PI / 4 + k * Math.PI / 2;                       // 45°,135°,225°,315° corners
+    const corner = new THREE.Vector3(Math.cos(a) * 1.75, 0.0, Math.sin(a) * 1.75);   // circumradius
+    corners.push(corner);
     const g = new THREE.BufferGeometry().setFromPoints([APEX_PT, corner]);
     const line = new THREE.Line(g, downMat.clone()); scene.add(line); downConductors.push(line);
   }
+  // the base ground RING (the "frame") connecting the four corners on the basalt pavement
+  const ring = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints([corners[0], corners[1], corners[2], corners[3], corners[0]]),
+    downMat.clone()); scene.add(ring); downConductors.push(ring);
+  // an earth-electrode drop from the ring down through the basalt toward the aquifer
+  const earth = new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+    [corners[0], new THREE.Vector3(corners[0].x, -0.45, corners[0].z)]), downMat.clone());
+  scene.add(earth); downConductors.push(earth);
   mats.down = downMat;
 
   // ── APEX CORONA GLOW: the sharpened point in continuous point-discharge (St. Elmo's
