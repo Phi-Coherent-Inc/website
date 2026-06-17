@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>φCoherent — Fracton Topological Order</title>
+<meta name="description" content="Interactive demo: the X-cube fracton model stores a sub-extensive number of logical qubits (k = 6L−3) and has immobile excitations with no string operator — protection by immobility. Anti-wash baseline: the 3D toric code (constant k = 3, mobile excitations) on the same lattice. Computed live in your browser via WebAssembly.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://phicoherent.com/demos/fracton.html">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#C9A830">
+<script>try{if(localStorage.getItem('phi-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/demo.css">
+<style>
+  .caveat-footer {
+    max-width: 1180px; margin: 8px auto 40px; padding: 16px 20px;
+    border: 1px solid var(--gold-border); border-radius: 10px;
+    font: 400 12.5px/1.6 Inter, sans-serif; color: var(--text-muted);
+    background: var(--surface);
+  }
+  .caveat-footer strong { color: var(--text); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<header class="demo-header" data-demo="fracton"
+        data-title="Fracton Topological Order"></header>
+
+<div class="main">
+  <div class="controls">
+    <button class="btn-run" id="btnRun">Run Fracton Measurement</button>
+    <div class="demo-status" id="status">Loading…</div>
+
+    <div class="control-group">
+      <label>Lattice size L<sub>max</sub></label>
+      <div class="slider-row">
+        <input type="range" id="maxL" min="2" max="7" step="1" value="6">
+        <span class="slider-value" id="maxLVal">6</span>
+      </div>
+    </div>
+
+    <div class="stat-card stat-gold">
+      <div class="stat-label">X-cube logical qubits (at L<sub>max</sub>)</div>
+      <div class="stat-value" id="xcubeKVal">—</div>
+      <div class="stat-sub">k = 6L − 3, sub-extensive</div>
+    </div>
+
+    <div class="stat-card stat-cyan">
+      <div class="stat-label">3D toric logical qubits</div>
+      <div class="stat-value" id="toricKVal">—</div>
+      <div class="stat-sub">k = 3, constant</div>
+    </div>
+
+    <div class="stat-card stat-gold">
+      <div class="stat-label">X-cube syndrome weight (at len = 5)</div>
+      <div class="stat-value" id="xcubeWVal">—</div>
+      <div class="stat-sub">4·len — immobile, grows</div>
+    </div>
+
+    <div class="stat-card stat-cyan">
+      <div class="stat-label">3D toric syndrome weight</div>
+      <div class="stat-value" id="toricWVal">—</div>
+      <div class="stat-sub">weight 2 — mobile (string operator)</div>
+    </div>
+  </div>
+
+  <div class="canvas-area">
+    <div class="chart-panel" style="height:280px">
+      <div class="panel-header">
+        <span class="panel-title">Ground-state degeneracy — X-cube k = 6L−3 (grows) vs 3D toric k = 3 (flat)</span>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" id="dotXcube"></div> X-cube: 6L−3, sub-extensive</div>
+          <div class="legend-item"><div class="legend-dot" id="dotToric"></div> 3D toric: constant k = 3</div>
+        </div>
+      </div>
+      <canvas id="gsdCanvas"></canvas>
+    </div>
+
+    <div class="chart-panel" style="height:280px;margin-top:4px">
+      <div class="panel-header">
+        <span class="panel-title">Excitation mobility — straight-Z-string syndrome weight vs string length</span>
+        <span class="panel-tag tag-phi">protection by immobility</span>
+      </div>
+      <canvas id="mobilityCanvas"></canvas>
+    </div>
+
+    <div class="chart-panel" style="margin-top:4px;">
+      <div class="panel-header"><span class="panel-title">What this shows — sub-extensive degeneracy + immobile excitations</span></div>
+      <div style="padding:14px 18px;font:400 13.5px/1.62 Inter,sans-serif;color:var(--text-muted);">
+        <p style="margin:0 0 10px;">Fracton order: <b>sub-extensive degeneracy + immobile excitations.</b>
+        The <b>X-cube model</b> stores more logical qubits as it grows and its excitations
+        cannot move (no string operator) — <b>protection by immobility, the containment
+        principle made physical.</b> Anti-wash baseline: the <b>3D toric code</b> (constant
+        degeneracy, mobile excitations) on the same lattice. <b>No φ.</b></p>
+        <p style="margin:0;">The upper chart is the headline: as the lattice size L grows, the
+        X-cube logical-qubit count <b>k = 6L − 3</b> rises while the 3D toric code stays flat at
+        <b>k = 3</b>. The lower chart measures mobility: a straight Z-string excitation in the 3D
+        toric code costs a <b>constant</b> syndrome weight of 2 (the endpoints are mobile point
+        charges joined by a string operator), whereas in the X-cube model the same string lights
+        up syndrome weight <b>4·len</b> — there is no string operator, so the excitation is frozen
+        in place. Computed live in your browser via WebAssembly.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="caveat-footer">
+  <strong>Honest scope.</strong> Both stabilizer codes are simulated on a common cubic lattice.
+  The X-cube ground-state degeneracy (k = 6L − 3) and the 3D toric degeneracy (k = 3) are the exact
+  stabilizer counts; the mobility weights are read off the straight Z-string syndrome. No golden
+  ratio enters — this is a structural fracton-vs-toric comparison, and the X-cube column is the
+  one that grows and freezes. Not realized hardware.
+</div>
+
+<script src="assets/demo-header.js"></script>
+<script>
+// ============================================================
+// Real computation: runFractonGsd (ground-state degeneracy vs lattice
+// size L — X-cube k = 6L−3 vs 3D toric k = 3) + runFractonMobility
+// (straight-Z-string syndrome weight vs string length — 3D toric flat
+// at 2 vs X-cube 4·len), run off the UI thread in a module Web Worker
+// (assets/js/fracton-worker.js). Sub-extensive degeneracy + immobile
+// excitations are the fracton fingerprints; no φ — the X-cube is the
+// column that grows and freezes against the 3D-toric baseline.
+// ============================================================
+
+const P = () => window.PhiTheme.palette();
+
+let worker = null;
+let gsd = null;       // [{ L, xcubeK, toric3dK, physicalQubits }]
+let mobility = null;  // [{ len, toricWeight, xcubeWeight }]
+let isRunning = false;
+
+const statusEl = document.getElementById('status');
+
+function legendColors() {
+  const p = P();
+  document.getElementById('dotXcube').style.background = p.gold;
+  document.getElementById('dotToric').style.background = p.cyan;
+}
+
+// ── GSD: two series of k vs L — X-cube (gold, rising) + 3D toric (cyan, flat) ───
+function drawGsd() {
+  if (!gsd || !gsd.length) return;
+  const pal = P();
+  const canvas = document.getElementById('gsdCanvas');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * 2; canvas.height = (rect.height - 44) * 2;
+  const ctx = canvas.getContext('2d'); ctx.setTransform(2, 0, 0, 2, 0, 0);
+  const w = rect.width, h = rect.height - 44;
+  ctx.fillStyle = pal.panel; ctx.fillRect(0, 0, w, h);
+
+  const pad = { top: 20, right: 28, bottom: 40, left: 54 };
+  const cw = w - pad.left - pad.right, ch = h - pad.top - pad.bottom;
+  const N = gsd.length;
+  const toX = (i) => pad.left + (N <= 1 ? 0.5 : i / (N - 1)) * cw;
+  const yMax = Math.max(...gsd.map((p) => p.xcubeK), 3) * 1.14;
+  const toY = (v) => pad.top + (1 - v / yMax) * ch;
+
+  ctx.strokeStyle = pal.grid; ctx.lineWidth = 0.5; ctx.fillStyle = pal.textDim; ctx.font = '10px Inter';
+  const gridN = 6;
+  for (let i = 0; i <= gridN; i++) {
+    const yv = yMax * i / gridN, y = toY(yv);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+    ctx.textAlign = 'right'; ctx.fillText(yv.toFixed(0), pad.left - 8, y + 3);
+  }
+
+  const series = [
+    { key: 'xcubeK',   color: pal.gold, label: 'X-cube: 6L−3, sub-extensive' },
+    { key: 'toric3dK', color: pal.cyan, label: '3D toric: constant k = 3' },
+  ];
+  series.forEach((s) => {
+    ctx.strokeStyle = s.color; ctx.lineWidth = 2.2; ctx.beginPath();
+    gsd.forEach((p, i) => { const x = toX(i), y = toY(p[s.key]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ctx.stroke();
+    gsd.forEach((p, i) => {
+      ctx.fillStyle = s.color;
+      ctx.beginPath(); ctx.arc(toX(i), toY(p[s.key]), 3, 0, 2 * Math.PI); ctx.fill();
+    });
+    // value label on the last point
+    const last = gsd[gsd.length - 1];
+    ctx.fillStyle = pal.text; ctx.font = '600 12px Inter'; ctx.textAlign = 'left';
+    ctx.fillText('k = ' + last[s.key], toX(N - 1) + 6, toY(last[s.key]) + 4);
+  });
+
+  // x-axis: lattice size L
+  ctx.fillStyle = pal.textDim; ctx.font = '9px Inter'; ctx.textAlign = 'center';
+  gsd.forEach((p, i) => { ctx.fillText('L = ' + p.L, toX(i), h - pad.bottom + 15); });
+  ctx.font = '11px Inter';
+  ctx.fillText('lattice size L', w / 2, h - 3);
+  ctx.save(); ctx.translate(12, h / 2); ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = 'center'; ctx.fillText('logical qubits k', 0, 0); ctx.restore();
+}
+
+// ── mobility: syndrome weight vs string length — toric flat 2 vs X-cube 4·len ──
+function drawMobility() {
+  if (!mobility || !mobility.length) return;
+  const pal = P();
+  const canvas = document.getElementById('mobilityCanvas');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * 2; canvas.height = (rect.height - 44) * 2;
+  const ctx = canvas.getContext('2d'); ctx.setTransform(2, 0, 0, 2, 0, 0);
+  const w = rect.width, h = rect.height - 44;
+  ctx.fillStyle = pal.panel; ctx.fillRect(0, 0, w, h);
+
+  const pad = { top: 20, right: 28, bottom: 40, left: 54 };
+  const cw = w - pad.left - pad.right, ch = h - pad.top - pad.bottom;
+  const N = mobility.length;
+  const toX = (i) => pad.left + (N <= 1 ? 0.5 : i / (N - 1)) * cw;
+  const yMax = Math.max(...mobility.map((p) => p.xcubeWeight), 2) * 1.14;
+  const toY = (v) => pad.top + (1 - v / yMax) * ch;
+
+  ctx.strokeStyle = pal.grid; ctx.lineWidth = 0.5; ctx.fillStyle = pal.textDim; ctx.font = '10px Inter';
+  const gridN = 6;
+  for (let i = 0; i <= gridN; i++) {
+    const yv = yMax * i / gridN, y = toY(yv);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+    ctx.textAlign = 'right'; ctx.fillText(yv.toFixed(0), pad.left - 8, y + 3);
+  }
+
+  const series = [
+    { key: 'xcubeWeight', color: pal.gold, label: 'X-cube: immobile, grows' },
+    { key: 'toricWeight', color: pal.cyan, label: '3D toric: mobile, weight 2' },
+  ];
+  series.forEach((s) => {
+    ctx.strokeStyle = s.color; ctx.lineWidth = 2.2; ctx.beginPath();
+    mobility.forEach((p, i) => { const x = toX(i), y = toY(p[s.key]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ctx.stroke();
+    mobility.forEach((p, i) => {
+      ctx.fillStyle = s.color;
+      ctx.beginPath(); ctx.arc(toX(i), toY(p[s.key]), 3, 0, 2 * Math.PI); ctx.fill();
+    });
+    const last = mobility[mobility.length - 1];
+    ctx.fillStyle = pal.text; ctx.font = '600 12px Inter'; ctx.textAlign = 'left';
+    ctx.fillText('w = ' + last[s.key], toX(N - 1) + 6, toY(last[s.key]) + 4);
+  });
+
+  // x-axis: string length
+  ctx.fillStyle = pal.textDim; ctx.font = '9px Inter'; ctx.textAlign = 'center';
+  mobility.forEach((p, i) => { ctx.fillText('len ' + p.len, toX(i), h - pad.bottom + 15); });
+  ctx.font = '11px Inter';
+  ctx.fillText('straight Z-string length', w / 2, h - 3);
+  ctx.save(); ctx.translate(12, h / 2); ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = 'center'; ctx.fillText('syndrome weight', 0, 0); ctx.restore();
+}
+
+function renderCards() {
+  if (gsd && gsd.length) {
+    const last = gsd[gsd.length - 1];
+    document.getElementById('xcubeKVal').textContent = last.xcubeK;
+    document.getElementById('toricKVal').textContent = last.toric3dK;
+  }
+  if (mobility && mobility.length) {
+    const last = mobility[mobility.length - 1];
+    document.getElementById('xcubeWVal').textContent = last.xcubeWeight;
+    document.getElementById('toricWVal').textContent = last.toricWeight;
+  }
+}
+
+function renderAll() { renderCards(); drawGsd(); drawMobility(); }
+
+function runFracton() {
+  if (isRunning || !worker) return;
+  isRunning = true;
+  document.getElementById('btnRun').classList.add('running');
+  document.getElementById('btnRun').textContent = 'Measuring…';
+  statusEl.textContent = 'Counting ground-state degeneracy + Z-string syndrome (X-cube vs 3D toric)…';
+  const maxL = parseInt(document.getElementById('maxL').value, 10) || 6;
+  worker.postMessage({ maxL });
+}
+
+function initWorker() {
+  try {
+    worker = new Worker('assets/js/fracton-worker.js', { type: 'module' });
+  } catch (e) {
+    statusEl.textContent = 'This demo needs a web server (WASM can’t load from file://).';
+    return;
+  }
+  worker.onmessage = (e) => {
+    isRunning = false;
+    document.getElementById('btnRun').classList.remove('running');
+    document.getElementById('btnRun').textContent = 'Run Fracton Measurement';
+    if (!e.data.ok) { statusEl.textContent = 'Error: ' + e.data.error; return; }
+    gsd = e.data.gsd;
+    mobility = e.data.mobility;
+    const lastK = gsd && gsd.length ? gsd[gsd.length - 1] : null;
+    statusEl.textContent = lastK
+      ? 'Measured · X-cube k = 6L−3 → ' + lastK.xcubeK + ' (sub-extensive) vs 3D toric k = ' + lastK.toric3dK + ' (flat)'
+      : 'Measured.';
+    renderAll();
+  };
+  worker.onerror = (e) => {
+    isRunning = false;
+    statusEl.textContent = 'Worker error: ' + (e.message || 'failed to load WASM');
+  };
+}
+
+const maxLEl = document.getElementById('maxL');
+maxLEl.addEventListener('input', () => {
+  document.getElementById('maxLVal').textContent = maxLEl.value;
+});
+maxLEl.addEventListener('change', () => { runFracton(); });
+
+window.addEventListener('resize', () => { if (gsd) renderAll(); });
+window.PhiTheme && window.PhiTheme.onChange(() => { legendColors(); if (gsd) renderAll(); });
+
+document.getElementById('btnRun').addEventListener('click', runFracton);
+
+legendColors();
+initWorker();
+setTimeout(runFracton, 400);
+</script>
+</body>
+</html>
