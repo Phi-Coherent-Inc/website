@@ -22,6 +22,7 @@
     { id: 'string-net-qec',       file: 'string-net-qec.html',       name: 'String-Net QEC' },
     { id: 'tee-signature',        file: 'tee-signature.html',        name: 'Topological Entropy γ' },
     { id: 'mipt',                 file: 'mipt.html',                 name: 'Measurement Transition' },
+    { id: 'mipt-scaling',         file: 'mipt-scaling.html',         name: 'MIPT Finite-Size Scaling' },
     { id: 'fracton',              file: 'fracton.html',              name: 'Fracton Order' },
     { id: 'qudit-mbqc',           file: 'qudit-mbqc.html',           name: 'Qudit MBQC' },
     { id: 'qudit-mbqc-2d',        file: 'qudit-mbqc-2d.html',        name: '2D Qudit MBQC' },

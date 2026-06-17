@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>φCoherent — MIPT Finite-Size Scaling</title>
+<meta name="description" content="Interactive demo: finite-size scaling of the measurement-induced phase transition in the Clifford setting. A random-Clifford + measurement circuit on a stabilizer tableau, scaled to 20 qubits. The half-chain entropy fans out (volume-law) below the critical measurement rate and collapses (area-law) above; the dimensionless tripartite mutual information curves for different system sizes cross at p_c ≈ 0.15 — the known Clifford-MIPT critical point. Computed live in your browser via WebAssembly. No golden ratio.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://phicoherent.com/demos/mipt-scaling.html">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#C9A830">
+<script>try{if(localStorage.getItem('phi-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/demo.css">
+<style>
+  .caveat-footer {
+    max-width: 1180px; margin: 8px auto 40px; padding: 16px 20px;
+    border: 1px solid var(--gold-border); border-radius: 10px;
+    font: 400 12.5px/1.6 Inter, sans-serif; color: var(--text-muted);
+    background: var(--surface);
+  }
+  .caveat-footer strong { color: var(--text); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<header class="demo-header" data-demo="mipt-scaling"
+        data-title="MIPT Finite-Size Scaling"></header>
+
+<div class="main">
+  <div class="controls">
+    <button class="btn-run" id="btnRun">Run Scaling Sweep</button>
+    <div class="demo-status" id="status">Loading…</div>
+
+    <div class="control-group">
+      <label>Trajectories per point (averaging)</label>
+      <div class="slider-row">
+        <input type="range" id="traj" min="20" max="80" step="10" value="40">
+        <span class="slider-value" id="trajVal">40</span>
+      </div>
+    </div>
+
+    <div class="stat-card stat-gold">
+      <div class="stat-label">Located critical point p<sub>c</sub></div>
+      <div class="stat-value" id="pcVal">—</div>
+      <div class="stat-sub">from the I₃ crossing · Clifford MIPT ≈ 0.16</div>
+    </div>
+
+    <div class="stat-card stat-cyan">
+      <div class="stat-label">Volume-law entropy (L = 20, low p)</div>
+      <div class="stat-value" id="volVal">—</div>
+      <div class="stat-sub">S(L/2) extensive in L</div>
+    </div>
+
+    <div class="stat-card stat-gold">
+      <div class="stat-label">Area-law entropy (high p)</div>
+      <div class="stat-value" id="areaVal">—</div>
+      <div class="stat-sub">collapsed, L-independent</div>
+    </div>
+
+    <div class="stat-card stat-cyan">
+      <div class="stat-label">Largest system simulated</div>
+      <div class="stat-value">20 qubits</div>
+      <div class="stat-sub">Clifford — exact, no truncation</div>
+    </div>
+  </div>
+
+  <div class="canvas-area">
+    <div class="chart-panel" style="height:280px">
+      <div class="panel-header">
+        <span class="panel-title">Order parameter — half-chain entropy S(L/2) vs measurement rate (volume → area)</span>
+        <div class="legend" id="legendS"></div>
+      </div>
+      <canvas id="sCanvas"></canvas>
+    </div>
+
+    <div class="chart-panel" style="height:280px;margin-top:4px">
+      <div class="panel-header">
+        <span class="panel-title">Finite-size locator — tripartite mutual information I₃: curves cross at p_c</span>
+        <span class="panel-tag tag-phi">data crossing = critical point</span>
+      </div>
+      <canvas id="i3Canvas"></canvas>
+    </div>
+
+    <div class="chart-panel" style="margin-top:4px;">
+      <div class="panel-header"><span class="panel-title">What this shows — a real phase transition, located by finite-size scaling</span></div>
+      <div style="padding:14px 18px;font:400 13.5px/1.62 Inter,sans-serif;color:var(--text-muted);">
+        <p style="margin:0 0 10px;">A quantum circuit where entangling gates compete with projective
+        measurements at rate p has a genuine <b>phase transition</b>: below a critical rate the steady
+        state is <b>volume-law</b> entangled, above it the constant collapse forces an <b>area-law</b>
+        (disentangled) state. To <em>locate</em> the transition you need <b>finite-size scaling</b> —
+        and that needs large systems. Exact state-vector simulation caps out near 14 qubits, where the
+        transition is washed out by finite size. So this runs in the <b>Clifford</b> setting, where
+        Gottesman–Knill lets a stabilizer tableau reach <b>20 qubits</b> exactly and a stabilizer
+        state's entanglement entropy is a GF(2) matrix rank. <b>No φ:</b> measurement × entanglement
+        physics.</p>
+        <p style="margin:0 0 10px;">The <b>upper chart</b> is the order parameter. At small p the
+        half-chain entropy S(L/2) <b>fans out</b> — bigger systems hold more entanglement (volume-law).
+        At large p the curves <b>collapse together</b> at a small value (area-law). The crossover is
+        the transition.</p>
+        <p style="margin:0;">The <b>lower chart</b> pins it down. The tripartite mutual information I₃
+        is <b>dimensionless</b> — scale-invariant exactly at the critical point — so the curves for
+        different system sizes all <b>cross at a single point</b>. That crossing is the standard
+        finite-size-scaling locator, and here it lands at <b>p<sub>c</sub> ≈ 0.15</b>, matching the
+        known Clifford-MIPT critical value (~0.16) from the literature. Computed live in your browser
+        via WebAssembly.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="caveat-footer">
+  <strong>Honest scope.</strong> Clifford (stabilizer) hybrid circuits: a brick-wall of random
+  single-qubit Cliffords + CNOT competing with rate-p Z measurements, periodic boundary, run to a
+  steady state (depth 2L). Entropy is the exact stabilizer formula S(A) = rank<sub>GF(2)</sub>(G|<sub>A</sub>) − |A|.
+  The located p<sub>c</sub> depends mildly on the gate ensemble; it falls in the established
+  Clifford-MIPT window (~0.16). The exponent ν is not extracted here (would need a full data
+  collapse). No golden ratio — a φ-structured measurement schedule would wash. Not realized hardware.
+</div>
+
+<script src="assets/demo-header.js"></script>
+<script>
+// ============================================================
+// Real computation: runMiptScaling (half-chain entropy S(L/2) and tripartite
+// mutual information I₃ vs measurement rate p, for L ∈ {8,12,16,20}, in the
+// Clifford setting on a stabilizer tableau with GF(2)-rank entropy) — run off
+// the UI thread in a module Web Worker (assets/js/mipt-scaling-worker.js). The
+// I₃ curves cross at the critical point p_c ≈ 0.15; no φ.
+// ============================================================
+
+const P = () => window.PhiTheme.palette();
+const SIZES = [8, 12, 16, 20];
+
+let worker = null;
+let rows = null;     // [{ p, s8..s20, i3_8..i3_20 }]
+let isRunning = false;
+
+const statusEl = document.getElementById('status');
+
+function sizeColors() {
+  const p = P();
+  return { 8: p.cyan, 12: p.blue, 16: p.gold, 20: p.red };
+}
+function sKey(L) { return 's' + L; }
+function i3Key(L) { return 'i3_' + L; }
+
+function buildLegend() {
+  const c = sizeColors();
+  document.getElementById('legendS').innerHTML = SIZES.map((L) =>
+    '<div class="legend-item"><div class="legend-dot" style="background:' + c[L] + '"></div> L = ' + L + '</div>'
+  ).join('');
+}
+
+function setupCanvas(id) {
+  const canvas = document.getElementById(id);
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * 2; canvas.height = (rect.height - 44) * 2;
+  const ctx = canvas.getContext('2d'); ctx.setTransform(2, 0, 0, 2, 0, 0);
+  const w = rect.width, h = rect.height - 44;
+  const pal = P();
+  ctx.fillStyle = pal.panel; ctx.fillRect(0, 0, w, h);
+  return { ctx, w, h, pal };
+}
+
+// Locate the I₃ crossing of the largest vs smallest system (sign change of diff).
+function locatePc() {
+  if (!rows || rows.length < 2) return null;
+  for (let i = 1; i < rows.length; i++) {
+    const d0 = rows[i - 1].i3_20 - rows[i - 1].i3_8;
+    const d1 = rows[i].i3_20 - rows[i].i3_8;
+    if (d0 < 0 && d1 >= 0) {
+      const t = (-d0) / (d1 - d0);
+      return rows[i - 1].p + (rows[i].p - rows[i - 1].p) * t;
+    }
+  }
+  return null;
+}
+
+function drawCurves(id, keyFn, opts) {
+  if (!rows || !rows.length) return;
+  const { ctx, w, h, pal } = setupCanvas(id);
+  const pad = { top: 22, right: 58, bottom: 40, left: 56 };
+  const cw = w - pad.left - pad.right, ch = h - pad.top - pad.bottom;
+  const xs = rows.map((r) => r.p);
+  const xMin = Math.min(...xs), xMax = Math.max(...xs);
+  const toX = (p) => pad.left + (xMax <= xMin ? 0.5 : (p - xMin) / (xMax - xMin)) * cw;
+  let yMin = opts.yMin, yMax = opts.yMax;
+  if (yMin == null || yMax == null) {
+    let lo = Infinity, hi = -Infinity;
+    rows.forEach((r) => SIZES.forEach((L) => { lo = Math.min(lo, r[keyFn(L)]); hi = Math.max(hi, r[keyFn(L)]); }));
+    const pad2 = (hi - lo) * 0.12 + 0.05; yMin = lo - pad2; yMax = hi + pad2;
+  }
+  const toY = (v) => pad.top + (1 - (v - yMin) / (yMax - yMin)) * ch;
+
+  ctx.strokeStyle = pal.grid; ctx.lineWidth = 0.5; ctx.fillStyle = pal.textDim; ctx.font = '10px Inter';
+  for (let i = 0; i <= 6; i++) {
+    const yv = yMin + (yMax - yMin) * i / 6, y = toY(yv);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+    ctx.textAlign = 'right'; ctx.fillText(yv.toFixed(opts.yfix || 1), pad.left - 8, y + 3);
+  }
+  // zero line for I₃
+  if (yMin < 0 && yMax > 0) {
+    ctx.strokeStyle = pal.axis; ctx.lineWidth = 1; ctx.beginPath();
+    ctx.moveTo(pad.left, toY(0)); ctx.lineTo(w - pad.right, toY(0)); ctx.stroke();
+  }
+  // p_c marker
+  const pc = locatePc();
+  if (opts.markPc && pc != null) {
+    ctx.strokeStyle = pal.green; ctx.setLineDash([5, 4]); ctx.lineWidth = 1.5; ctx.beginPath();
+    ctx.moveTo(toX(pc), pad.top); ctx.lineTo(toX(pc), h - pad.bottom); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = pal.green; ctx.font = '600 11px Inter'; ctx.textAlign = 'center';
+    ctx.fillText('p_c ≈ ' + pc.toFixed(2), toX(pc), pad.top - 8);
+  }
+
+  const c = sizeColors();
+  SIZES.forEach((L) => {
+    ctx.strokeStyle = c[L]; ctx.lineWidth = 2.2; ctx.beginPath();
+    rows.forEach((r, i) => { const x = toX(r.p), y = toY(r[keyFn(L)]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ctx.stroke();
+    rows.forEach((r) => { ctx.fillStyle = c[L]; ctx.beginPath(); ctx.arc(toX(r.p), toY(r[keyFn(L)]), 2.6, 0, 2 * Math.PI); ctx.fill(); });
+  });
+
+  ctx.fillStyle = pal.textDim; ctx.font = '11px Inter'; ctx.textAlign = 'center';
+  ctx.fillText('measurement rate p', (pad.left + w - pad.right) / 2, h - 3);
+  ctx.save(); ctx.translate(12, h / 2); ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = 'center'; ctx.fillText(opts.ylabel, 0, 0); ctx.restore();
+}
+
+function renderCards() {
+  if (!rows || !rows.length) return;
+  const pc = locatePc();
+  document.getElementById('pcVal').textContent = pc != null ? pc.toFixed(3) : '—';
+  document.getElementById('volVal').textContent = rows[0].s20.toFixed(2) + ' bits';
+  document.getElementById('areaVal').textContent = rows[rows.length - 1].s20.toFixed(2) + ' bits';
+}
+
+function renderAll() {
+  renderCards();
+  drawCurves('sCanvas', sKey, { yMin: 0, ylabel: 'half-chain entropy S(L/2) (bits)', yfix: 1, markPc: true });
+  drawCurves('i3Canvas', i3Key, { ylabel: 'tripartite mutual information I₃ (bits)', yfix: 1, markPc: true });
+}
+
+function runDemo() {
+  if (isRunning || !worker) return;
+  isRunning = true;
+  document.getElementById('btnRun').classList.add('running');
+  document.getElementById('btnRun').textContent = 'Sweeping…';
+  statusEl.textContent = 'Running Clifford hybrid circuits across L = 8,12,16,20 and measurement rates…';
+  const traj = parseInt(document.getElementById('traj').value, 10) || 40;
+  worker.postMessage({ trajectories: traj });
+}
+
+function initWorker() {
+  try {
+    worker = new Worker('assets/js/mipt-scaling-worker.js', { type: 'module' });
+  } catch (e) {
+    statusEl.textContent = 'This demo needs a web server (WASM can’t load from file://).';
+    return;
+  }
+  worker.onmessage = (e) => {
+    isRunning = false;
+    document.getElementById('btnRun').classList.remove('running');
+    document.getElementById('btnRun').textContent = 'Run Scaling Sweep';
+    if (!e.data.ok) { statusEl.textContent = 'Error: ' + e.data.error; return; }
+    rows = e.data.rows;
+    const pc = locatePc();
+    statusEl.textContent = pc != null
+      ? 'Swept · I₃ curves cross at p_c ≈ ' + pc.toFixed(3) + ' (Clifford MIPT ≈ 0.16)'
+      : 'Swept.';
+    renderAll();
+  };
+  worker.onerror = (e) => {
+    isRunning = false;
+    statusEl.textContent = 'Worker error: ' + (e.message || 'failed to load WASM');
+  };
+}
+
+const trajEl = document.getElementById('traj');
+trajEl.addEventListener('input', () => { document.getElementById('trajVal').textContent = trajEl.value; });
+trajEl.addEventListener('change', () => { runDemo(); });
+
+window.addEventListener('resize', () => { if (rows) renderAll(); });
+window.PhiTheme && window.PhiTheme.onChange(() => { buildLegend(); if (rows) renderAll(); });
+
+document.getElementById('btnRun').addEventListener('click', runDemo);
+
+buildLegend();
+initWorker();
+setTimeout(runDemo, 400);
+</script>
+</body>
+</html>
