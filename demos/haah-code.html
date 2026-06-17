@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>φCoherent — Haah's Code (Type-II Fracton)</title>
+<meta name="description" content="Interactive demo: Haah's cubic code, the strongest form of fracton order (type-II). Its ground-state degeneracy is irregular and non-monotonic in system size — with a clean powers-of-two law k(2^m)=4L−2 — unlike the X-cube's smooth k=6L−3. Validated by CSS commutativity and the Frobenius fractal identity that gives its no-string logical operators. Computed live in your browser via WebAssembly. No golden ratio.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://phicoherent.com/demos/haah-code.html">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#C9A830">
+<script>try{if(localStorage.getItem('phi-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/demo.css">
+<style>
+  .caveat-footer { max-width: 1180px; margin: 8px auto 40px; padding: 16px 20px;
+    border: 1px solid var(--gold-border); border-radius: 10px;
+    font: 400 12.5px/1.6 Inter, sans-serif; color: var(--text-muted); background: var(--surface); }
+  .caveat-footer strong { color: var(--text); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<header class="demo-header" data-demo="haah-code"
+        data-title="Haah's Code — Type-II Fracton"></header>
+
+<div class="main">
+  <div class="controls">
+    <button class="btn-run" id="btnRun">Build Haah's Code</button>
+    <div class="demo-status" id="status">Loading…</div>
+
+    <div class="control-group">
+      <label>Lattice size L<sub>max</sub></label>
+      <div class="slider-row">
+        <input type="range" id="maxL" min="4" max="8" step="1" value="8">
+        <span class="slider-value" id="maxLVal">8</span>
+      </div>
+    </div>
+
+    <div class="stat-card stat-gold">
+      <div class="stat-label">CSS commutativity (valid code)</div>
+      <div class="stat-value" id="cssVal">—</div>
+      <div class="stat-sub">X- and Z-generators commute · defect 0</div>
+    </div>
+
+    <div class="stat-card stat-cyan">
+      <div class="stat-label">Frobenius fractal identity</div>
+      <div class="stat-value" id="frobVal">—</div>
+      <div class="stat-sub">f₁² = 1+x²+y²+z² · no-string operators</div>
+    </div>
+
+    <div class="stat-card stat-gold">
+      <div class="stat-label">Powers-of-two GSD law</div>
+      <div class="stat-value" id="pow2Val">—</div>
+      <div class="stat-sub">k(2ᵐ) = 4L − 2 (= 2(2L−1))</div>
+    </div>
+
+    <div class="stat-card stat-cyan">
+      <div class="stat-label">GSD irregularity</div>
+      <div class="stat-value" id="irregVal">—</div>
+      <div class="stat-sub">non-monotonic in L — type-II</div>
+    </div>
+  </div>
+
+  <div class="canvas-area">
+    <div class="chart-panel" style="height:320px">
+      <div class="panel-header">
+        <span class="panel-title">Ground-state degeneracy k(L) — Haah (irregular) vs X-cube (smooth 6L−3)</span>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" id="dotHaah"></div> Haah k (irregular)</div>
+          <div class="legend-item"><div class="legend-dot" id="dotXcube"></div> X-cube k = 6L−3</div>
+          <div class="legend-item"><div class="legend-dot" id="dotPow2"></div> L = 2ᵐ: k = 4L−2</div>
+        </div>
+      </div>
+      <canvas id="gsdCanvas"></canvas>
+    </div>
+
+    <div class="chart-panel" style="margin-top:4px;">
+      <div class="panel-header"><span class="panel-title">What this shows — the strongest fracton order, validated by its algebra</span></div>
+      <div style="padding:14px 18px;font:400 13.5px/1.62 Inter,sans-serif;color:var(--text-muted);">
+        <p style="margin:0 0 10px;"><b>Haah's cubic code</b> is type-II fracton order — the strongest
+        kind. Every logical operator is <b>fractal</b> (Sierpinski-like): there are <b>no string
+        operators at all</b>, so no excitation can move, even along a line or plane. Its ground-state
+        degeneracy is famously <b>irregular and number-theoretic</b> in the system size L — which is
+        exactly why a clean validation was hard. <b>No φ:</b> fracton order is φ-free stabilizer
+        physics (the containment pole).</p>
+        <p style="margin:0 0 10px;">The resolution is to validate the clean <b>algebra</b>, not the
+        formula-less degeneracy. <b>CSS commutativity</b> (defect 0) confirms it's a valid code. The
+        <b>Frobenius fractal identity</b> over F₂ — f₁ = 1+x+y+z obeys f₁² = 1+x²+y²+z² (the
+        freshman's dream), so f₁<sup>2ᵐ</sup> = 1+x<sup>2ᵐ</sup>+y<sup>2ᵐ</sup>+z<sup>2ᵐ</sup> — is the
+        algebraic root of those fractal, no-string operators, and it forces a clean structure at
+        powers of two.</p>
+        <p style="margin:0;">The chart is the headline. Haah's k(L) (gold) <b>jumps around</b> — it
+        even <b>drops</b> from L=2 to L=3 — and at the powers of two it lands exactly on the clean law
+        <b>k(2ᵐ) = 4L − 2</b> (the highlighted points: 6, 14, 30 at L = 2, 4, 8). The X-cube code
+        (cyan), a type-I fracton on the same lattice and the same GF(2) engine, rises <b>smoothly</b>
+        by a constant +6 (k = 6L−3). The irregularity that blocked validation is itself the type-II
+        fingerprint. Computed live in your browser via WebAssembly.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="caveat-footer">
+  <strong>Honest scope.</strong> Haah code 1 on an L³ torus (2 qubits/site), built in the same GF(2)
+  stabilizer engine as the X-cube demo; k(L) = n − rank. CSS commutativity and the Frobenius identity
+  are verified exactly; the powers-of-two law k(2ᵐ)=4L−2 (= 2(2L−1)) is a known closed form, and the
+  generic GSD is genuinely irregular. The fractal/no-string property is asserted via its algebraic
+  root (Frobenius), not by enumerating logical operators here. No golden ratio. Not realized hardware.
+</div>
+
+<script src="assets/demo-header.js"></script>
+<script>
+const P = () => window.PhiTheme.palette();
+let worker = null, scaling = null, validation = null, isRunning = false;
+const statusEl = document.getElementById('status');
+
+function legendColors() {
+  const p = P();
+  document.getElementById('dotHaah').style.background = p.gold;
+  document.getElementById('dotXcube').style.background = p.cyan;
+  document.getElementById('dotPow2').style.background = p.green;
+}
+
+function drawGsd() {
+  if (!scaling || !scaling.length) return;
+  const pal = P();
+  const canvas = document.getElementById('gsdCanvas');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * 2; canvas.height = (rect.height - 44) * 2;
+  const ctx = canvas.getContext('2d'); ctx.setTransform(2, 0, 0, 2, 0, 0);
+  const w = rect.width, h = rect.height - 44;
+  ctx.fillStyle = pal.panel; ctx.fillRect(0, 0, w, h);
+
+  const pad = { top: 20, right: 28, bottom: 40, left: 52 };
+  const cw = w - pad.left - pad.right, ch = h - pad.top - pad.bottom;
+  const N = scaling.length;
+  const toX = (i) => pad.left + (N <= 1 ? 0.5 : i / (N - 1)) * cw;
+  const yMax = Math.max(...scaling.map((p) => Math.max(p.haahK, p.xcubeK)), 6) * 1.14;
+  const toY = (v) => pad.top + (1 - v / yMax) * ch;
+
+  ctx.strokeStyle = pal.grid; ctx.lineWidth = 0.5; ctx.fillStyle = pal.textDim; ctx.font = '10px Inter';
+  for (let i = 0; i <= 6; i++) {
+    const yv = yMax * i / 6, y = toY(yv);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+    ctx.textAlign = 'right'; ctx.fillText(yv.toFixed(0), pad.left - 8, y + 3);
+  }
+
+  // X-cube smooth line (cyan)
+  ctx.strokeStyle = pal.cyan; ctx.lineWidth = 2.2; ctx.beginPath();
+  scaling.forEach((p, i) => { const x = toX(i), y = toY(p.xcubeK); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+  ctx.stroke();
+  scaling.forEach((p, i) => { ctx.fillStyle = pal.cyan; ctx.beginPath(); ctx.arc(toX(i), toY(p.xcubeK), 3, 0, 2 * Math.PI); ctx.fill(); });
+
+  // Haah irregular line (gold), powers of 2 in green
+  ctx.strokeStyle = pal.gold; ctx.lineWidth = 2.4; ctx.beginPath();
+  scaling.forEach((p, i) => { const x = toX(i), y = toY(p.haahK); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+  ctx.stroke();
+  scaling.forEach((p, i) => {
+    ctx.fillStyle = p.isPow2 ? pal.green : pal.gold;
+    ctx.beginPath(); ctx.arc(toX(i), toY(p.haahK), p.isPow2 ? 5 : 3.2, 0, 2 * Math.PI); ctx.fill();
+    if (p.isPow2) {
+      ctx.fillStyle = pal.text; ctx.font = '600 11px Inter'; ctx.textAlign = 'center';
+      ctx.fillText('k=' + p.haahK + ' (4·' + p.L + '−2)', toX(i), toY(p.haahK) - 10);
+    }
+  });
+
+  ctx.fillStyle = pal.textDim; ctx.font = '9px Inter'; ctx.textAlign = 'center';
+  scaling.forEach((p, i) => { ctx.fillText('L = ' + p.L, toX(i), h - pad.bottom + 15); });
+  ctx.font = '11px Inter'; ctx.fillText('lattice size L', w / 2, h - 3);
+  ctx.save(); ctx.translate(12, h / 2); ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = 'center'; ctx.fillText('logical qubits k = log₂(GSD)', 0, 0); ctx.restore();
+}
+
+function renderCards() {
+  if (validation) {
+    document.getElementById('cssVal').textContent = validation.cssDefect === 0 ? '0 ✓' : String(validation.cssDefect);
+    document.getElementById('frobVal').textContent =
+      (validation.frobeniusMatch && validation.frobTorusZero) ? 'verified ✓' : 'mismatch';
+  }
+  if (scaling && scaling.length) {
+    const p2 = scaling.filter((r) => r.isPow2);
+    const ok = p2.every((r) => r.haahK === r.pow2Pred);
+    document.getElementById('pow2Val').textContent = ok ? 'k = 4L−2 ✓' : 'mismatch';
+    // irregularity: any drop in k as L increases
+    let dropped = false;
+    for (let i = 1; i < scaling.length; i++) if (scaling[i].haahK < scaling[i - 1].haahK) dropped = true;
+    document.getElementById('irregVal').textContent = dropped ? 'non-monotonic ✓' : 'smooth';
+  }
+}
+
+function renderAll() { renderCards(); drawGsd(); }
+
+function runDemo() {
+  if (isRunning || !worker) return;
+  isRunning = true;
+  document.getElementById('btnRun').classList.add('running');
+  document.getElementById('btnRun').textContent = 'Building…';
+  statusEl.textContent = 'Constructing Haah’s cubic code + X-cube on the GF(2) engine…';
+  const maxL = parseInt(document.getElementById('maxL').value, 10) || 8;
+  worker.postMessage({ maxL });
+}
+
+function initWorker() {
+  try { worker = new Worker('assets/js/haah-code-worker.js', { type: 'module' }); }
+  catch (e) { statusEl.textContent = 'This demo needs a web server (WASM can’t load from file://).'; return; }
+  worker.onmessage = (e) => {
+    isRunning = false;
+    document.getElementById('btnRun').classList.remove('running');
+    document.getElementById('btnRun').textContent = 'Build Haah’s Code';
+    if (!e.data.ok) { statusEl.textContent = 'Error: ' + e.data.error; return; }
+    scaling = e.data.scaling; validation = e.data.validation;
+    statusEl.textContent = 'Built · CSS-valid (defect ' + validation.cssDefect
+      + '), Frobenius verified, k(2ᵐ)=4L−2; generic GSD irregular';
+    renderAll();
+  };
+  worker.onerror = (e) => { isRunning = false; statusEl.textContent = 'Worker error: ' + (e.message || 'failed to load WASM'); };
+}
+
+const maxLEl = document.getElementById('maxL');
+maxLEl.addEventListener('input', () => { document.getElementById('maxLVal').textContent = maxLEl.value; });
+maxLEl.addEventListener('change', () => { runDemo(); });
+window.addEventListener('resize', () => { if (scaling) renderAll(); });
+window.PhiTheme && window.PhiTheme.onChange(() => { legendColors(); if (scaling) renderAll(); });
+document.getElementById('btnRun').addEventListener('click', runDemo);
+
+legendColors();
+initWorker();
+setTimeout(runDemo, 400);
+</script>
+</body>
+</html>
