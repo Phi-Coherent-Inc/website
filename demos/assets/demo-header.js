@@ -21,6 +21,7 @@
     { id: 'trapped-ion-qec',      file: 'trapped-ion-qec.html',      name: 'Trapped-Ion QEC Companion' },
     { id: 'string-net-qec',       file: 'string-net-qec.html',       name: 'String-Net QEC' },
     { id: 'tee-signature',        file: 'tee-signature.html',        name: 'Topological Entropy γ' },
+    { id: 'mipt',                 file: 'mipt.html',                 name: 'Measurement Transition' },
     { id: 'modular-data',         file: 'modular-data.html',         name: 'Modular Data & Universality' },
     { id: 'dual-mode-core',       file: 'dual-mode-core.html',       name: 'Dual-Mode Yoga Core' },
     { id: 'anyon-braiding',       file: 'anyon-braiding.html',       name: 'Anyon Braiding' },
