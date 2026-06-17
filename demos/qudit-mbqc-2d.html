@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>φCoherent — 2D Qudit Measurement-Based Computation</title>
+<meta name="description" content="Interactive demo: a real two-qudit circuit computed entirely by single-qudit measurements on a 2D qudit cluster (d-level systems). Vertical CZ_d links make it entangling — remove them and the cluster factorizes into two independent computations. Despite random measurement outcomes and a different byproduct correction every branch, the result is exact: fidelity 1 versus the target. Computed live in your browser via WebAssembly. No golden ratio.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://phicoherent.com/demos/qudit-mbqc-2d.html">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#C9A830">
+<script>try{if(localStorage.getItem('phi-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/demo.css">
+<style>
+  .caveat-footer {
+    max-width: 1180px; margin: 8px auto 40px; padding: 16px 20px;
+    border: 1px solid var(--gold-border); border-radius: 10px;
+    font: 400 12.5px/1.6 Inter, sans-serif; color: var(--text-muted);
+    background: var(--surface);
+  }
+  .caveat-footer strong { color: var(--text); font-weight: 600; }
+  .dseg { display: flex; gap: 6px; }
+  .dseg button {
+    flex: 1; padding: 8px 0; border: 1px solid var(--gold-border);
+    border-radius: 8px; background: var(--surface); color: var(--text-muted);
+    font: 600 14px Inter, sans-serif; cursor: pointer;
+  }
+  .dseg button.active { background: var(--gold); color: #1C1810; border-color: var(--gold); }
+</style>
+</head>
+<body>
+
+<header class="demo-header" data-demo="qudit-mbqc-2d"
+        data-title="2D Qudit Measurement-Based Computation"></header>
+
+<div class="main">
+  <div class="controls">
+    <button class="btn-run" id="btnRun">Run 2D Qudit MBQC</button>
+    <div class="demo-status" id="status">Loading…</div>
+
+    <div class="control-group">
+      <label>Qudit dimension d (prime)</label>
+      <div class="dseg" id="dseg">
+        <button data-d="2">d = 2</button>
+        <button data-d="3" class="active">d = 3</button>
+        <button data-d="5">d = 5</button>
+      </div>
+    </div>
+
+    <div class="stat-card stat-gold">
+      <div class="stat-label">One-way fidelity (worst over 120 branches)</div>
+      <div class="stat-value" id="fidVal">—</div>
+      <div class="stat-sub">vs the directly-composed target unitary</div>
+    </div>
+
+    <div class="stat-card stat-cyan">
+      <div class="stat-label">Distinct feed-forward corrections</div>
+      <div class="stat-value" id="corrVal">—</div>
+      <div class="stat-sub">random outcomes, exact computation</div>
+    </div>
+
+    <div class="stat-card stat-gold">
+      <div class="stat-label">Entangling power — with vertical links</div>
+      <div class="stat-value" id="linkVal">—</div>
+      <div class="stat-sub">entropy of U|0,0⟩, up to ln d</div>
+    </div>
+
+    <div class="stat-card stat-cyan">
+      <div class="stat-label">Anti-wash — no links</div>
+      <div class="stat-value" id="noLinkVal">—</div>
+      <div class="stat-sub">cluster factorizes, entropy 0</div>
+    </div>
+  </div>
+
+  <div class="canvas-area">
+    <div class="chart-panel" style="height:280px">
+      <div class="panel-header">
+        <span class="panel-title">The link is load-bearing — entangling power of the two-qudit circuit vs depth</span>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" id="dotLink"></div> with CZ_d links</div>
+          <div class="legend-item"><div class="legend-dot" id="dotNoLink"></div> no links (factorizes)</div>
+        </div>
+      </div>
+      <canvas id="entCanvas"></canvas>
+    </div>
+
+    <div class="chart-panel" style="height:280px;margin-top:4px">
+      <div class="panel-header">
+        <span class="panel-title">Random measurement outcomes → a different byproduct correction every branch (fidelity stays 1.000)</span>
+        <span class="panel-tag tag-phi">randomness in, determinism out</span>
+      </div>
+      <canvas id="branchCanvas"></canvas>
+    </div>
+
+    <div class="chart-panel" style="margin-top:4px;">
+      <div class="panel-header"><span class="panel-title">What this shows — a real two-qudit algorithm, run only by measuring</span></div>
+      <div style="padding:14px 18px;font:400 13.5px/1.62 Inter,sans-serif;color:var(--text-muted);">
+        <p style="margin:0 0 10px;">This is genuine <b>2D</b> measurement-based computation: an actual
+        <b>two-qudit</b> circuit
+        <span style="white-space:nowrap;">U = ∏ CZ_d<sup>link</sup>·(J_d(α<sup>A</sup>)⊗J_d(α<sup>B</sup>))</span>
+        carried out entirely by measuring a 2D qudit cluster one qudit at a time — no logical gate is
+        ever applied to the data. Two horizontal rails give single-qudit gates; <b>vertical CZ_d
+        links</b> between them supply the entangler. Generalized from qubits to d-level systems,
+        d = 2, 3, 5. <b>No φ:</b> measurement × entanglement physics.</p>
+        <p style="margin:0 0 10px;">The <b>upper chart</b> is the anti-wash. The entangling power of the
+        realized circuit (the entanglement of U applied to a product input) is <b>nonzero with the
+        vertical links</b> — up to the maximum ln d — and <b>identically zero without them</b>: strip
+        the links and the cluster factorizes into two independent single-qudit one-way computations.
+        The link is doing the 2D work.</p>
+        <p style="margin:0;">The <b>lower chart</b> is the surprise of the one-way model. Every run
+        measures the cluster in a random order of outcomes, so the leftover <b>byproduct</b> — the
+        local generalized-Pauli correction read off the measurement record — is <b>different on every
+        branch</b> (the scatter). Yet after that classically-controlled correction the output matches
+        the target with <b>fidelity 1.000</b>, on every single branch. The existence of such a local
+        correction, for every outcome, <em>is</em> the one-way computation theorem. Computed live in
+        your browser via WebAssembly.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="caveat-footer">
+  <strong>Honest scope.</strong> Exact state-vector simulation of a two-logical-qudit cluster, slice
+  by slice. Per-rail measurement-angle feed-forward (including the cross-rail Z-coupling each CZ_d
+  link induces, CZ_d(X<sub>d</sub><sup>x</sup>⊗I)=(X<sub>d</sub><sup>x</sup>⊗Z<sub>d</sub><sup>x</sup>)CZ_d)
+  keeps the realized unitary fixed across branches; the residual local generalized-Pauli is located
+  against the target by a d⁴ search — in hardware it is the classically-controlled feed-forward. A
+  non-cluster state would admit no such local correction, so fidelity 1 is meaningful. d ∈ {2,3,5};
+  depth ≤ 4 (chart) / 3 (branches). No golden ratio; d = 2 reduces to the qubit one-way model. Not
+  realized hardware.
+</div>
+
+<script src="assets/demo-header.js"></script>
+<script>
+// ============================================================
+// Real computation: runQudit2dEntangling (entangling power of the target two-
+// qudit circuit vs depth, with vs without the vertical CZ_d links — the
+// anti-wash) + runQudit2dBranches (one-way computation across many Born
+// branches: random byproduct correction each branch, fidelity 1 throughout) —
+// run off the UI thread in a module Web Worker (assets/js/qudit-mbqc-2d-
+// worker.js). A real two-qudit algorithm computed purely by measurement; no φ.
+// ============================================================
+
+const P = () => window.PhiTheme.palette();
+
+let worker = null;
+let entangling = null;  // [{ depth, linkD2, noLinkD2, ... }]
+let branches = null;    // [{ branch, fidelity, correction }]
+let selD = 3;
+let lnD = Math.log(3);
+let isRunning = false;
+
+const statusEl = document.getElementById('status');
+
+function legendColors() {
+  const p = P();
+  document.getElementById('dotLink').style.background = p.gold;
+  document.getElementById('dotNoLink').style.background = p.cyan;
+}
+
+function setupCanvas(id) {
+  const canvas = document.getElementById(id);
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * 2; canvas.height = (rect.height - 44) * 2;
+  const ctx = canvas.getContext('2d'); ctx.setTransform(2, 0, 0, 2, 0, 0);
+  const w = rect.width, h = rect.height - 44;
+  const pal = P();
+  ctx.fillStyle = pal.panel; ctx.fillRect(0, 0, w, h);
+  return { ctx, w, h, pal };
+}
+
+function linkKey() { return 'linkD' + selD; }
+function noLinkKey() { return 'noLinkD' + selD; }
+
+// ── entangling power vs depth: with-link (gold) vs no-link (cyan, flat 0) ──────
+function drawEnt() {
+  if (!entangling || !entangling.length) return;
+  const { ctx, w, h, pal } = setupCanvas('entCanvas');
+  const pad = { top: 22, right: 64, bottom: 40, left: 56 };
+  const cw = w - pad.left - pad.right, ch = h - pad.top - pad.bottom;
+  const N = entangling.length;
+  const toX = (i) => pad.left + (N <= 1 ? 0.5 : i / (N - 1)) * cw;
+  const yMax = lnD * 1.16;
+  const toY = (v) => pad.top + (1 - v / yMax) * ch;
+
+  ctx.strokeStyle = pal.grid; ctx.lineWidth = 0.5; ctx.fillStyle = pal.textDim; ctx.font = '10px Inter';
+  for (let i = 0; i <= 6; i++) {
+    const yv = yMax * i / 6, y = toY(yv);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+    ctx.textAlign = 'right'; ctx.fillText(yv.toFixed(2), pad.left - 8, y + 3);
+  }
+  // ln d reference (maximal entanglement)
+  ctx.strokeStyle = pal.textDim; ctx.setLineDash([4, 4]); ctx.lineWidth = 1; ctx.beginPath();
+  ctx.moveTo(pad.left, toY(lnD)); ctx.lineTo(w - pad.right, toY(lnD)); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = pal.textDim; ctx.font = '9px Inter'; ctx.textAlign = 'left';
+  ctx.fillText('ln d (max)', pad.left + 4, toY(lnD) - 4);
+
+  const series = [
+    { key: linkKey(),   color: pal.gold, label: 'with links' },
+    { key: noLinkKey(), color: pal.cyan, label: 'no links' },
+  ];
+  series.forEach((s) => {
+    ctx.strokeStyle = s.color; ctx.lineWidth = 2.4; ctx.beginPath();
+    entangling.forEach((p, i) => { const x = toX(i), y = toY(Math.max(0, p[s.key])); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ctx.stroke();
+    entangling.forEach((p, i) => {
+      ctx.fillStyle = s.color;
+      ctx.beginPath(); ctx.arc(toX(i), toY(Math.max(0, p[s.key])), 3.2, 0, 2 * Math.PI); ctx.fill();
+    });
+  });
+
+  ctx.fillStyle = pal.textDim; ctx.font = '9px Inter'; ctx.textAlign = 'center';
+  entangling.forEach((p, i) => { ctx.fillText('depth ' + p.depth, toX(i), h - pad.bottom + 15); });
+  ctx.font = '11px Inter';
+  ctx.fillText('two-qudit circuit depth', (pad.left + w - pad.right) / 2, h - 3);
+  ctx.save(); ctx.translate(12, h / 2); ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = 'center'; ctx.fillText('entangling entropy (nats)', 0, 0); ctx.restore();
+}
+
+// ── branches: byproduct-correction scatter (random) + fidelity=1 annotation ───
+function drawBranches() {
+  if (!branches || !branches.length) return;
+  const { ctx, w, h, pal } = setupCanvas('branchCanvas');
+  const pad = { top: 22, right: 24, bottom: 40, left: 56 };
+  const cw = w - pad.left - pad.right, ch = h - pad.top - pad.bottom;
+  const N = branches.length;
+  const maxCorr = Math.pow(selD, 4);
+  const toX = (i) => pad.left + (N <= 1 ? 0.5 : i / (N - 1)) * cw;
+  const toY = (v) => pad.top + (1 - v / maxCorr) * ch;   // correction index 0..d⁴
+
+  ctx.strokeStyle = pal.grid; ctx.lineWidth = 0.5; ctx.fillStyle = pal.textDim; ctx.font = '10px Inter';
+  for (let i = 0; i <= 5; i++) {
+    const yv = maxCorr * i / 5, y = toY(yv);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+    ctx.textAlign = 'right'; ctx.fillText(yv.toFixed(0), pad.left - 8, y + 3);
+  }
+
+  // correction-index scatter (gold) — visibly random across branches.
+  ctx.fillStyle = pal.gold;
+  branches.forEach((b) => {
+    ctx.beginPath(); ctx.arc(toX(b.branch), toY(b.correction), 2.6, 0, 2 * Math.PI); ctx.fill();
+  });
+
+  // fidelity = 1.000 band (green) at the top, with label — every branch is exact.
+  const worst = branches.reduce((m, b) => Math.min(m, b.fidelity), 1);
+  ctx.strokeStyle = pal.green; ctx.lineWidth = 2; ctx.beginPath();
+  ctx.moveTo(pad.left, pad.top - 6); ctx.lineTo(w - pad.right, pad.top - 6); ctx.stroke();
+  ctx.fillStyle = pal.green; ctx.font = '600 11px Inter'; ctx.textAlign = 'left';
+  ctx.fillText('fidelity = ' + worst.toFixed(3) + ' for all ' + N + ' branches', pad.left + 6, pad.top - 10);
+
+  ctx.fillStyle = pal.textDim; ctx.font = '11px Inter'; ctx.textAlign = 'center';
+  ctx.fillText('Born branch (random measurement record)', (pad.left + w - pad.right) / 2, h - 3);
+  ctx.save(); ctx.translate(12, h / 2); ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = 'center'; ctx.fillText('byproduct correction index (0…d⁴)', 0, 0); ctx.restore();
+}
+
+function fmtSci(x) {
+  if (x === 0) return '0';
+  if (Math.abs(x) < 1e-6) return x.toExponential(1).replace('e', '×10^');
+  return x.toFixed(4);
+}
+
+function renderCards() {
+  if (branches && branches.length) {
+    const worst = branches.reduce((m, b) => Math.min(m, b.fidelity), 1);
+    const distinct = new Set(branches.map((b) => b.correction)).size;
+    document.getElementById('fidVal').textContent = worst.toFixed(6);
+    document.getElementById('corrVal').textContent = distinct + ' / ' + Math.pow(selD, 4);
+  }
+  if (entangling && entangling.length) {
+    const d3 = entangling.find((r) => r.depth === 3) || entangling[entangling.length - 1];
+    document.getElementById('linkVal').textContent =
+      Math.max(0, d3[linkKey()]).toFixed(3) + ' / ' + lnD.toFixed(3);
+    document.getElementById('noLinkVal').textContent = fmtSci(Math.abs(d3[noLinkKey()]) < 1e-9 ? 0 : d3[noLinkKey()]);
+  }
+}
+
+function renderAll() { renderCards(); drawEnt(); drawBranches(); }
+
+function runDemo() {
+  if (isRunning || !worker) return;
+  isRunning = true;
+  document.getElementById('btnRun').classList.add('running');
+  document.getElementById('btnRun').textContent = 'Computing…';
+  statusEl.textContent = 'Running the two-qudit one-way computation across Born branches (d = ' + selD + ')…';
+  worker.postMessage({ d: selD, maxDepth: 4, branches: 120 });
+}
+
+function initWorker() {
+  try {
+    worker = new Worker('assets/js/qudit-mbqc-2d-worker.js', { type: 'module' });
+  } catch (e) {
+    statusEl.textContent = 'This demo needs a web server (WASM can’t load from file://).';
+    return;
+  }
+  worker.onmessage = (e) => {
+    isRunning = false;
+    document.getElementById('btnRun').classList.remove('running');
+    document.getElementById('btnRun').textContent = 'Run 2D Qudit MBQC';
+    if (!e.data.ok) { statusEl.textContent = 'Error: ' + e.data.error; return; }
+    entangling = e.data.entangling; branches = e.data.branches; lnD = e.data.lnD;
+    const worst = branches.reduce((m, b) => Math.min(m, b.fidelity), 1);
+    const distinct = new Set(branches.map((b) => b.correction)).size;
+    statusEl.textContent = 'Computed · d = ' + selD + ' · ' + branches.length
+      + ' branches, ' + distinct + ' distinct corrections, one-way fidelity ' + worst.toFixed(3);
+    renderAll();
+  };
+  worker.onerror = (e) => {
+    isRunning = false;
+    statusEl.textContent = 'Worker error: ' + (e.message || 'failed to load WASM');
+  };
+}
+
+document.getElementById('dseg').addEventListener('click', (ev) => {
+  const b = ev.target.closest('button[data-d]'); if (!b) return;
+  selD = parseInt(b.getAttribute('data-d'), 10);
+  lnD = Math.log(selD);
+  document.querySelectorAll('#dseg button').forEach((x) => x.classList.toggle('active', x === b));
+  runDemo();
+});
+
+window.addEventListener('resize', () => { if (entangling) renderAll(); });
+window.PhiTheme && window.PhiTheme.onChange(() => { legendColors(); if (entangling) renderAll(); });
+
+document.getElementById('btnRun').addEventListener('click', runDemo);
+
+legendColors();
+initWorker();
+setTimeout(runDemo, 400);
+</script>
+</body>
+</html>
