@@ -23,6 +23,7 @@
     { id: 'tee-signature',        file: 'tee-signature.html',        name: 'Topological Entropy γ' },
     { id: 'mipt',                 file: 'mipt.html',                 name: 'Measurement Transition' },
     { id: 'fracton',              file: 'fracton.html',              name: 'Fracton Order' },
+    { id: 'qudit-mbqc',           file: 'qudit-mbqc.html',           name: 'Qudit MBQC' },
     { id: 'modular-data',         file: 'modular-data.html',         name: 'Modular Data & Universality' },
     { id: 'dual-mode-core',       file: 'dual-mode-core.html',       name: 'Dual-Mode Yoga Core' },
     { id: 'anyon-braiding',       file: 'anyon-braiding.html',       name: 'Anyon Braiding' },
