@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>φCoherent — Topological Entanglement Entropy γ</title>
+<meta name="description" content="Interactive demo: the topological entanglement entropy γ — a measured invariant — is log(2 + φ) for the Fibonacci string-net and log 2 for Z₂, and collapses to zero unless the full entanglement spectrum is kept. Computed live in your browser via WebAssembly.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://phicoherent.com/demos/tee-signature.html">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#C9A830">
+<script>try{if(localStorage.getItem('phi-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/demo.css">
+<style>
+  .caveat-footer {
+    max-width: 1180px; margin: 8px auto 40px; padding: 16px 20px;
+    border: 1px solid var(--gold-border); border-radius: 10px;
+    font: 400 12.5px/1.6 Inter, sans-serif; color: var(--text-muted);
+    background: var(--surface);
+  }
+  .caveat-footer strong { color: var(--text); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<header class="demo-header" data-demo="tee-signature"
+        data-title="Topological Entanglement Entropy γ"></header>
+
+<div class="main">
+  <div class="controls">
+    <button class="btn-run" id="btnRun">Run TEE Measurement</button>
+    <div class="demo-status" id="status">Loading…</div>
+
+    <div class="stat-card stat-gold">
+      <div class="stat-label">Fibonacci string-net</div>
+      <div class="stat-value" id="fibGammaVal">—</div>
+      <div class="stat-sub">γ = log(2 + φ) ≈ 1.292</div>
+    </div>
+
+    <div class="stat-card stat-red">
+      <div class="stat-label">Z₂ toric (surface-equivalent)</div>
+      <div class="stat-value" id="z2GammaVal">—</div>
+      <div class="stat-sub">γ = log 2 ≈ 0.693</div>
+    </div>
+
+    <div class="stat-card stat-cyan">
+      <div class="stat-label">Model-swap shift</div>
+      <div class="stat-value" id="shiftVal">—</div>
+      <div class="stat-sub">γ<sub>fib</sub> − γ<sub>Z₂</sub> = log((2+φ)/2)</div>
+    </div>
+
+    <div class="stat-card stat-green">
+      <div class="stat-label">Full-rank recovery</div>
+      <div class="stat-value" id="recoverVal">—</div>
+      <div class="stat-sub">γ vs analytic at full χ</div>
+    </div>
+  </div>
+
+  <div class="canvas-area">
+    <div class="chart-panel" style="height:280px">
+      <div class="panel-header">
+        <span class="panel-title">Measured γ — Fibonacci log(2 + φ) vs Z₂ log 2</span>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" id="dotFib"></div> Fibonacci (d = φ)</div>
+          <div class="legend-item"><div class="legend-dot" id="dotZ2"></div> Z₂ toric</div>
+          <div class="legend-item"><div class="legend-dot" id="dotRef" style="background:transparent;border:1px dashed currentColor"></div> analytic reference</div>
+        </div>
+      </div>
+      <canvas id="barCanvas"></canvas>
+    </div>
+
+    <div class="chart-panel" style="height:280px;margin-top:4px">
+      <div class="panel-header">
+        <span class="panel-title">Spectrum Collapse — γ vs kept bond dimension χ (full-spectrum invariant)</span>
+        <span class="panel-tag tag-phi">topological order = compositional</span>
+      </div>
+      <canvas id="collapseCanvas"></canvas>
+    </div>
+
+    <div class="chart-panel" style="margin-top:4px;">
+      <div class="panel-header"><span class="panel-title">What this shows — φ in a measured invariant</span></div>
+      <div style="padding:14px 18px;font:400 13.5px/1.62 Inter,sans-serif;color:var(--text-muted);">
+        <p style="margin:0 0 10px;">The <b>topological entanglement entropy</b> γ is the universal
+        constant subtracted off the area law of the entanglement entropy:
+        S(A) = α·|∂A| − γ. It is a <b>measured</b> fingerprint of topological order — γ = log D,
+        where D is the total quantum dimension. For the <b>Fibonacci string-net</b>,
+        D = √(1 + φ²) so <b>γ = log(2 + φ) ≈ 1.292</b>; for the <b>Z₂ toric code</b>,
+        D = 2 so <b>γ = log 2 ≈ 0.693</b>. The bars show the computed γ landing on the dashed
+        analytic reference, and the <b>model-swap shift</b> γ<sub>fib</sub> − γ<sub>Z₂</sub> =
+        log((2 + φ)/2) is exactly the golden-ratio signature.</p>
+        <p style="margin:0 0 10px;"><b>The collapse</b> (lower chart) is the deeper point: γ is a
+        <b>full-spectrum</b> quantity. As you truncate the entanglement spectrum to bond dimension χ, γ
+        <b>collapses toward 0</b> — at χ = 1 (a product state) there is no topological order at all, and
+        the true log(2 + φ) is recovered <i>only</i> at full rank. (χ = 0 here denotes the full,
+        untruncated spectrum — the rightmost point.)</p>
+        <p style="margin:0;"><b>Where φ is load-bearing:</b> in the value of the <b>measured invariant</b>
+        itself — log(2 + φ) is golden, log 2 is not. And the collapse makes the honest scope explicit:
+        topological order is a <b>compositional, full-spectrum property</b>, not something any single
+        truncated number captures. Computed live in your browser via WebAssembly.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="caveat-footer">
+  <strong>Honest scope.</strong> Both string-nets are simulated. γ is extracted from the exact
+  entanglement spectrum; the analytic references are γ = log(2 + φ) (Fibonacci) and γ = log 2 (Z₂). The
+  collapse curve is a controlled truncation of that spectrum, not measurement noise — it demonstrates
+  that γ is a property of the <em>whole</em> spectrum, recovered only at full rank. Not realized hardware.
+</div>
+
+<script src="assets/demo-header.js"></script>
+<script>
+// ============================================================
+// Real computation: runTee (measured γ vs analytic, both models) +
+// runTeeCollapse (γ as the entanglement spectrum is truncated to
+// bond dimension χ), run off the UI thread in a module Web Worker
+// (assets/js/tee-worker.js). γ = log D is a measured invariant;
+// log(2+φ) is golden, and it is a full-spectrum (compositional) fact.
+// ============================================================
+
+const P = () => window.PhiTheme.palette();
+
+let worker = null;
+let tee = null;       // { fibGamma, fibAnalytic, z2Gamma, z2Analytic }
+let collapse = null;  // [{ chi, gamma }]  (chi=0 means FULL rank)
+let isRunning = false;
+
+const statusEl = document.getElementById('status');
+
+function legendColors() {
+  const p = P();
+  document.getElementById('dotFib').style.background = p.gold;
+  document.getElementById('dotZ2').style.background = p.red;
+}
+
+// ── two bars (Fibonacci γ, Z₂ γ) with dashed analytic reference lines ──────────
+function drawBars() {
+  if (!tee) return;
+  const pal = P();
+  const canvas = document.getElementById('barCanvas');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * 2; canvas.height = (rect.height - 44) * 2;
+  const ctx = canvas.getContext('2d'); ctx.setTransform(2, 0, 0, 2, 0, 0);
+  const w = rect.width, h = rect.height - 44;
+  ctx.fillStyle = pal.panel; ctx.fillRect(0, 0, w, h);
+
+  const pad = { top: 20, right: 28, bottom: 44, left: 56 };
+  const cw = w - pad.left - pad.right, ch = h - pad.top - pad.bottom;
+  const yMax = Math.max(tee.fibGamma, tee.fibAnalytic, 1.5) * 1.12;
+  const toY = (v) => pad.top + (1 - v / yMax) * ch;
+
+  ctx.strokeStyle = pal.grid; ctx.lineWidth = 0.5; ctx.fillStyle = pal.textDim; ctx.font = '10px Inter';
+  const gridN = 6;
+  for (let i = 0; i <= gridN; i++) {
+    const yv = yMax * i / gridN, y = toY(yv);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+    ctx.textAlign = 'right'; ctx.fillText(yv.toFixed(2), pad.left - 8, y + 3);
+  }
+
+  const rows = [
+    { name: 'Fibonacci', gamma: tee.fibGamma, ref: tee.fibAnalytic, color: pal.gold,
+      sub: 'γ = log(2 + φ)' },
+    { name: 'Z₂ toric',  gamma: tee.z2Gamma,  ref: tee.z2Analytic,  color: pal.red,
+      sub: 'γ = log 2' },
+  ];
+  const slot = cw / rows.length, barW = Math.min(90, slot * 0.4);
+  const y0 = toY(0);
+  rows.forEach((r, i) => {
+    const cx = pad.left + slot * (i + 0.5);
+    const yb = toY(r.gamma);
+    ctx.fillStyle = r.color; ctx.fillRect(cx - barW / 2, yb, barW, y0 - yb);
+    // dashed analytic reference
+    const yr = toY(r.ref);
+    ctx.strokeStyle = r.color; ctx.globalAlpha = 0.85; ctx.lineWidth = 1.4; ctx.setLineDash([6, 4]);
+    ctx.beginPath(); ctx.moveTo(cx - barW / 2 - 14, yr); ctx.lineTo(cx + barW / 2 + 14, yr); ctx.stroke();
+    ctx.setLineDash([]); ctx.globalAlpha = 1;
+    // value on top of bar
+    ctx.fillStyle = pal.text; ctx.font = '600 14px Inter'; ctx.textAlign = 'center';
+    ctx.fillText(r.gamma.toFixed(3), cx, yb - 7);
+    // name + sub
+    ctx.font = '600 12px Inter'; ctx.fillText(r.name, cx, h - pad.bottom + 16);
+    ctx.fillStyle = pal.textDim; ctx.font = '10px Inter';
+    ctx.fillText(r.sub + ' · analytic ' + r.ref.toFixed(3), cx, h - pad.bottom + 30);
+  });
+
+  ctx.save(); ctx.translate(12, h / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillStyle = pal.textDim; ctx.font = '11px Inter'; ctx.textAlign = 'center';
+  ctx.fillText('topological entropy γ', 0, 0); ctx.restore();
+}
+
+// ── collapse: γ vs χ; chi=0 (full rank) is plotted as the rightmost point ──────
+function drawCollapse() {
+  if (!collapse || !collapse.length) return;
+  const pal = P();
+  const canvas = document.getElementById('collapseCanvas');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * 2; canvas.height = (rect.height - 44) * 2;
+  const ctx = canvas.getContext('2d'); ctx.setTransform(2, 0, 0, 2, 0, 0);
+  const w = rect.width, h = rect.height - 44;
+  ctx.fillStyle = pal.panel; ctx.fillRect(0, 0, w, h);
+
+  const pad = { top: 20, right: 26, bottom: 40, left: 54 };
+  const cw = w - pad.left - pad.right, ch = h - pad.top - pad.bottom;
+
+  // Order points: ascending χ, with χ=0 ("full") pushed to the far right.
+  const finite = collapse.filter((p) => p.chi > 0).sort((a, b) => a.chi - b.chi);
+  const full = collapse.filter((p) => p.chi === 0);
+  const maxChi = finite.length ? finite[finite.length - 1].chi : 1;
+  // slot indices: 0..k-1 for finite, then one extra slot for "full"
+  const ordered = finite.map((p) => ({ ...p, label: String(p.chi) }))
+    .concat(full.map((p) => ({ ...p, label: 'full' })));
+  const N = ordered.length;
+  const toX = (i) => pad.left + (N <= 1 ? 0.5 : i / (N - 1)) * cw;
+
+  const gammaTarget = (full.length ? full[0].gamma : (finite.length ? finite[finite.length - 1].gamma : 1));
+  const yMax = Math.max(gammaTarget, ...ordered.map((p) => p.gamma), 1.4) * 1.12;
+  const toY = (v) => pad.top + (1 - v / yMax) * ch;
+
+  ctx.strokeStyle = pal.grid; ctx.lineWidth = 0.5; ctx.fillStyle = pal.textDim; ctx.font = '10px Inter';
+  const gridN = 6;
+  for (let i = 0; i <= gridN; i++) {
+    const yv = yMax * i / gridN, y = toY(yv);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+    ctx.textAlign = 'right'; ctx.fillText(yv.toFixed(2), pad.left - 8, y + 3);
+  }
+
+  // analytic target line log(2+φ)
+  ctx.strokeStyle = pal.gold; ctx.globalAlpha = 0.8; ctx.lineWidth = 1.4; ctx.setLineDash([6, 4]);
+  const yt = toY(gammaTarget);
+  ctx.beginPath(); ctx.moveTo(pad.left, yt); ctx.lineTo(w - pad.right, yt); ctx.stroke();
+  ctx.setLineDash([]); ctx.globalAlpha = 0.9; ctx.fillStyle = pal.gold; ctx.font = '9px Inter';
+  ctx.textAlign = 'left'; ctx.fillText('log(2 + φ) ≈ ' + gammaTarget.toFixed(3), pad.left + 4, yt - 4);
+  ctx.globalAlpha = 1;
+
+  // curve
+  ctx.strokeStyle = pal.gold; ctx.lineWidth = 2.2; ctx.beginPath();
+  ordered.forEach((p, i) => { const x = toX(i), y = toY(p.gamma); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+  ctx.stroke();
+  ordered.forEach((p, i) => {
+    const x = toX(i), y = toY(p.gamma);
+    ctx.fillStyle = (p.label === 'full') ? pal.green : pal.gold;
+    ctx.beginPath(); ctx.arc(x, y, p.label === 'full' ? 4 : 3, 0, 2 * Math.PI); ctx.fill();
+    ctx.fillStyle = pal.textDim; ctx.font = '9px Inter'; ctx.textAlign = 'center';
+    ctx.fillText(p.label, x, h - pad.bottom + 15);
+  });
+
+  ctx.fillStyle = pal.textDim; ctx.font = '11px Inter'; ctx.textAlign = 'center';
+  ctx.fillText('kept bond dimension χ  (χ = 1 product state → no topological order; "full" = untruncated)',
+               w / 2, h - 3);
+  ctx.save(); ctx.translate(12, h / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillText('measured γ', 0, 0); ctx.restore();
+}
+
+function renderCards() {
+  if (!tee) return;
+  document.getElementById('fibGammaVal').textContent = tee.fibGamma.toFixed(3);
+  document.getElementById('z2GammaVal').textContent = tee.z2Gamma.toFixed(3);
+  document.getElementById('shiftVal').textContent = (tee.fibGamma - tee.z2Gamma).toFixed(3);
+  const err = Math.abs(tee.fibGamma - tee.fibAnalytic);
+  document.getElementById('recoverVal').innerHTML = 'Δ = ' + err.toExponential(1);
+}
+
+function renderAll() { renderCards(); drawBars(); drawCollapse(); }
+
+function runTee() {
+  if (isRunning || !worker) return;
+  isRunning = true;
+  document.getElementById('btnRun').classList.add('running');
+  document.getElementById('btnRun').textContent = 'Measuring…';
+  statusEl.textContent = 'Extracting γ from the entanglement spectrum (both models + collapse)…';
+  worker.postMessage({});
+}
+
+function initWorker() {
+  try {
+    worker = new Worker('assets/js/tee-worker.js', { type: 'module' });
+  } catch (e) {
+    statusEl.textContent = 'This demo needs a web server (WASM can’t load from file://).';
+    return;
+  }
+  worker.onmessage = (e) => {
+    isRunning = false;
+    document.getElementById('btnRun').classList.remove('running');
+    document.getElementById('btnRun').textContent = 'Run TEE Measurement';
+    if (!e.data.ok) { statusEl.textContent = 'Error: ' + e.data.error; return; }
+    tee = e.data.tee;
+    collapse = e.data.collapse;
+    statusEl.textContent = 'γ measured · Fibonacci log(2 + φ) ≈ ' + tee.fibGamma.toFixed(3)
+      + ' vs Z₂ log 2 ≈ ' + tee.z2Gamma.toFixed(3);
+    renderAll();
+  };
+  worker.onerror = (e) => {
+    isRunning = false;
+    statusEl.textContent = 'Worker error: ' + (e.message || 'failed to load WASM');
+  };
+}
+
+window.addEventListener('resize', () => { if (tee) renderAll(); });
+window.PhiTheme && window.PhiTheme.onChange(() => { legendColors(); if (tee) renderAll(); });
+
+legendColors();
+initWorker();
+setTimeout(runTee, 400);
+</script>
+</body>
+</html>

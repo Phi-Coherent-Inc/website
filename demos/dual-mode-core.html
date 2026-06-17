@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>φCoherent — Dual-Mode Yoga Core: One Intent, Two Modes</title>
+<meta name="description" content="Interactive demo: one quantum intent compiled to two backends at once — the circuit (gate) mode and the anyonic (braiding) mode — reaching the same target with the same fidelity, computed live in your browser from phi-quantum-core-cpp via WebAssembly. φ is load-bearing only in the braiding mode.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://phicoherent.com/demos/dual-mode-core.html">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#C9A830">
+<script>try{if(localStorage.getItem('phi-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/demo.css">
+<style>
+  .badge-card { margin-top: 4px; }
+  .badge-row {
+    display: flex; justify-content: space-between; gap: 12px;
+    padding: 5px 0; border-bottom: 1px solid var(--row-border);
+    font: 400 13px/1.5 Inter, sans-serif;
+  }
+  .badge-row:last-child { border-bottom: none; }
+  .badge-row b { font-variant-numeric: tabular-nums; }
+  .yes { color: var(--demo-green); font-weight: 600; }
+  .no  { color: var(--demo-red);   font-weight: 600; }
+  .caveat-footer {
+    max-width: 1180px; margin: 8px auto 40px; padding: 16px 20px;
+    border: 1px solid var(--gold-border); border-radius: 10px;
+    font: 400 12.5px/1.6 Inter, sans-serif; color: var(--text-muted);
+    background: var(--surface);
+  }
+  .caveat-footer strong { color: var(--text); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<header class="demo-header" data-demo="dual-mode-core"
+        data-title="Dual-Mode Yoga Core — One Intent, Two Modes"></header>
+
+<div class="main">
+  <div class="controls">
+    <button class="btn-run" id="btnRun">Run Dual-Mode Core</button>
+    <div class="demo-status" id="status">Loading…</div>
+
+    <div class="stat-card stat-gold">
+      <div class="stat-label">One intent · two backends</div>
+      <div class="stat-value" id="agreeVal">—</div>
+      <div class="stat-sub">circuit ↔ anyonic agreement</div>
+    </div>
+
+    <div class="stat-card stat-green">
+      <div class="stat-label">Anyonic invariant</div>
+      <div class="stat-value" id="dimVal">—</div>
+      <div class="stat-sub">total quantum dim D = √(1 + φ²)</div>
+    </div>
+
+    <div class="stat-card stat-cyan badge-card">
+      <div class="stat-label">Entangler — certification</div>
+      <div id="entanglerBadge" style="margin-top:8px">—</div>
+    </div>
+
+    <div class="stat-card stat-red">
+      <div class="stat-label">Worst braid error (any target)</div>
+      <div class="stat-value" id="braidErrVal">—</div>
+      <div class="stat-sub">1 − anyonic fidelity</div>
+    </div>
+  </div>
+
+  <div class="canvas-area">
+    <div class="chart-panel" style="height:300px">
+      <div class="panel-header">
+        <span class="panel-title">Per-Target Fidelity — circuit vs anyonic (zoomed near 1.0)</span>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" id="dotCircuit"></div> circuit (gate) mode</div>
+          <div class="legend-item"><div class="legend-dot" id="dotAnyonic"></div> anyonic (braiding) mode</div>
+        </div>
+      </div>
+      <canvas id="chartCanvas"></canvas>
+    </div>
+
+    <div class="chart-panel" style="height:240px;margin-top:4px">
+      <div class="panel-header">
+        <span class="panel-title">Braiding Cost &amp; Agreement — 1 − fidelity (log) per target</span>
+        <span class="panel-tag tag-phi">φ load-bearing here</span>
+      </div>
+      <canvas id="errorCanvas"></canvas>
+    </div>
+
+    <div class="chart-panel" style="margin-top:4px;">
+      <div class="panel-header"><span class="panel-title">What this shows</span></div>
+      <div style="padding:14px 18px;font:400 13.5px/1.62 Inter,sans-serif;color:var(--text-muted);">
+        <p style="margin:0 0 10px;">The <b>dual-mode yoga core</b> compiles a single quantum
+        <i>intent</i> — a Hadamard, a T-gate, a φ-pseudo-Haar twirl — to <b>two backends at once</b>:
+        the familiar <b>circuit (gate) mode</b>, and the <b>anyonic (braiding) mode</b> that realizes the
+        same unitary by braiding Fibonacci anyons on a shared weave. Both reach the target at
+        fidelity ≈ 1.0; the only difference is a tiny residual <b>braiding error</b> from compiling the
+        target into a finite braid word.</p>
+        <p style="margin:0 0 10px;">The top chart zooms the y-axis right up against 1.0 so the two
+        modes are distinguishable; the lower chart plots <b>1 − fidelity</b> on a log axis so the braid
+        error — invisible at full scale — becomes legible, annotated with each target's
+        <b>braid length</b> and the cross-mode <b>agreement</b>.</p>
+        <p style="margin:0;"><b>Where φ is load-bearing:</b> only in the <b>anyonic mode</b>. The braiding
+        backend lives on the Fibonacci anyon theory whose total quantum dimension is exactly
+        <b>D = √(1 + φ²) ≈ 1.902</b> — that golden-ratio fact is what makes braiding alone universal. In
+        the circuit mode φ plays no special role; it is one gate set among many. Everything here is
+        computed live in your browser from <code>phi-quantum-core-cpp</code> via WebAssembly.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="caveat-footer">
+  <strong>Honest scope.</strong> Both modes are simulated. The circuit mode is exact gate algebra; the
+  anyonic mode is the Fibonacci-anyon braid representation on a small fusion space — not realized
+  hardware. The headline is structural: <em>one API, two interchangeable modes, the same target</em>.
+  The golden ratio is load-bearing <em>only</em> in the braiding mode (via the anyon's quantum dimension);
+  in the gate mode it is decorative.
+</div>
+
+<script src="assets/demo-header.js"></script>
+<script>
+// ============================================================
+// Real computation: core::runDualModeQubit / runDualModeEntangler /
+// fibTotalQuantumDim, run off the UI thread in a module Web Worker
+// (assets/js/dual-mode-worker.js). One intent compiled to both the
+// circuit (gate) and anyonic (braiding) backend on a shared weave.
+// ============================================================
+
+const P = () => window.PhiTheme.palette();
+const TARGET_NAMES = ['Hadamard', 'T-gate', 'φ-pseudo-Haar'];
+
+let worker = null;
+let qubit = null;        // [{ target, circuitFid, anyonicFid, braidError, braidLength, modeAgreement }]
+let entangler = null;    // { leakage, cnotDistance, maxNegativity, schmidtRank, certified }
+let totalDim = null;     // ~1.902
+let isRunning = false;
+
+const statusEl = document.getElementById('status');
+
+function legendColors() {
+  const p = P();
+  document.getElementById('dotCircuit').style.background = p.blue;
+  document.getElementById('dotAnyonic').style.background = p.gold;
+}
+
+// ── grouped bars: circuit vs anyonic fidelity, y-axis zoomed near 1.0 ──────────
+function drawChart() {
+  if (!qubit) return;
+  const pal = P();
+  const canvas = document.getElementById('chartCanvas');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * 2; canvas.height = (rect.height - 44) * 2;
+  const ctx = canvas.getContext('2d'); ctx.setTransform(2, 0, 0, 2, 0, 0);
+  const w = rect.width, h = rect.height - 44;
+  ctx.fillStyle = pal.panel; ctx.fillRect(0, 0, w, h);
+
+  const pad = { top: 18, right: 24, bottom: 44, left: 58 };
+  const cw = w - pad.left - pad.right, ch = h - pad.top - pad.bottom;
+
+  // y-axis zoomed: floor a touch below the worst fidelity so bars are visible.
+  let lo = 1.0;
+  qubit.forEach((r) => { lo = Math.min(lo, r.circuitFid, r.anyonicFid); });
+  const yMin = Math.min(0.999, lo - (1 - lo) * 0.6 - 1e-4), yMax = 1.0;
+  const toY = (v) => pad.top + (1 - (v - yMin) / (yMax - yMin)) * ch;
+
+  ctx.strokeStyle = pal.grid; ctx.lineWidth = 0.5; ctx.fillStyle = pal.textDim; ctx.font = '10px Inter';
+  const gridN = 5;
+  for (let i = 0; i <= gridN; i++) {
+    const yv = yMin + (yMax - yMin) * i / gridN, y = toY(yv);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+    ctx.textAlign = 'right'; ctx.fillText(yv.toFixed(5), pad.left - 8, y + 3);
+  }
+
+  const n = qubit.length;
+  const slot = cw / n, barW = Math.min(46, slot * 0.30), gap = 6;
+  qubit.forEach((r, i) => {
+    const cx = pad.left + slot * (i + 0.5);
+    const bx1 = cx - barW - gap / 2, bx2 = cx + gap / 2;
+    const y1 = toY(r.circuitFid), y2 = toY(r.anyonicFid), y0 = toY(yMin);
+    ctx.fillStyle = pal.blue; ctx.fillRect(bx1, y1, barW, y0 - y1);
+    ctx.fillStyle = pal.gold; ctx.fillRect(bx2, y2, barW, y0 - y2);
+    // labels
+    ctx.fillStyle = pal.text; ctx.font = '600 11px Inter'; ctx.textAlign = 'center';
+    ctx.fillText(TARGET_NAMES[r.target] || ('target ' + r.target), cx, h - pad.bottom + 16);
+    ctx.fillStyle = pal.textDim; ctx.font = '9px Inter';
+    ctx.fillText('braid len ' + r.braidLength + ' · agree ' + r.modeAgreement.toFixed(3),
+                 cx, h - pad.bottom + 30);
+  });
+
+  ctx.save(); ctx.translate(13, h / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillStyle = pal.textDim; ctx.font = '11px Inter'; ctx.textAlign = 'center';
+  ctx.fillText('fidelity to target', 0, 0); ctx.restore();
+}
+
+// ── 1 − fidelity on a log axis so the tiny braid error is visible ──────────────
+function drawError() {
+  if (!qubit) return;
+  const pal = P();
+  const canvas = document.getElementById('errorCanvas');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * 2; canvas.height = (rect.height - 44) * 2;
+  const ctx = canvas.getContext('2d'); ctx.setTransform(2, 0, 0, 2, 0, 0);
+  const w = rect.width, h = rect.height - 44;
+  ctx.fillStyle = pal.panel; ctx.fillRect(0, 0, w, h);
+
+  const pad = { top: 18, right: 24, bottom: 40, left: 58 };
+  const cw = w - pad.left - pad.right, ch = h - pad.top - pad.bottom;
+
+  // log10 scale of (1 − fidelity); clamp a tiny floor so exact-1.0 still plots.
+  const FLOOR = 1e-12;
+  const vals = [];
+  qubit.forEach((r) => {
+    vals.push(Math.max(FLOOR, 1 - r.circuitFid));
+    vals.push(Math.max(FLOOR, 1 - r.anyonicFid));
+    vals.push(Math.max(FLOOR, r.braidError));
+  });
+  let maxV = Math.max(...vals);
+  const logHi = Math.ceil(Math.log10(maxV) + 0.0001);
+  const logLo = logHi - 8;                     // 8 decades of headroom
+  const toY = (v) => {
+    const l = Math.log10(Math.max(FLOOR, v));
+    const c = Math.max(0, Math.min(1, (l - logLo) / (logHi - logLo)));
+    return pad.top + (1 - c) * ch;
+  };
+
+  ctx.strokeStyle = pal.grid; ctx.lineWidth = 0.5; ctx.fillStyle = pal.textDim; ctx.font = '10px Inter';
+  for (let l = logLo; l <= logHi + 0.001; l++) {
+    const y = pad.top + (1 - (l - logLo) / (logHi - logLo)) * ch;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+    ctx.textAlign = 'right'; ctx.fillText('1e' + l, pad.left - 8, y + 3);
+  }
+
+  const n = qubit.length;
+  const slot = cw / n, barW = Math.min(36, slot * 0.24), gap = 5;
+  const y0 = pad.top + ch;
+  qubit.forEach((r, i) => {
+    const cx = pad.left + slot * (i + 0.5);
+    const bx1 = cx - barW - gap / 2, bx2 = cx + gap / 2;
+    const eC = Math.max(FLOOR, 1 - r.circuitFid), eA = Math.max(FLOOR, r.braidError || (1 - r.anyonicFid));
+    const y1 = toY(eC), y2 = toY(eA);
+    ctx.fillStyle = pal.blue; ctx.fillRect(bx1, y1, barW, y0 - y1);
+    ctx.fillStyle = pal.gold; ctx.fillRect(bx2, y2, barW, y0 - y2);
+    ctx.fillStyle = pal.text; ctx.font = '600 11px Inter'; ctx.textAlign = 'center';
+    ctx.fillText(TARGET_NAMES[r.target] || ('target ' + r.target), cx, h - pad.bottom + 16);
+    ctx.fillStyle = pal.textDim; ctx.font = '9px Inter';
+    ctx.fillText('braid err ' + eA.toExponential(1), cx, h - pad.bottom + 29);
+  });
+
+  ctx.save(); ctx.translate(13, h / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillStyle = pal.textDim; ctx.font = '11px Inter'; ctx.textAlign = 'center';
+  ctx.fillText('1 − fidelity (log)', 0, 0); ctx.restore();
+}
+
+function renderCards() {
+  if (!qubit) return;
+  let worstBraid = 0, worstAgree = 1;
+  qubit.forEach((r) => {
+    worstBraid = Math.max(worstBraid, r.braidError || (1 - r.anyonicFid));
+    worstAgree = Math.min(worstAgree, r.modeAgreement);
+  });
+  document.getElementById('agreeVal').textContent = worstAgree.toFixed(4);
+  document.getElementById('braidErrVal').textContent = worstBraid.toExponential(2);
+  if (totalDim !== null) document.getElementById('dimVal').textContent = totalDim.toFixed(3);
+
+  if (entangler) {
+    const tick = (b) => b ? '<span class="yes">YES ✓</span>' : '<span class="no">no ✗</span>';
+    document.getElementById('entanglerBadge').innerHTML =
+        '<div class="badge-row"><span>certified entangling</span><span>' + tick(entangler.certified) + '</span></div>'
+      + '<div class="badge-row"><span>max negativity</span><b>' + entangler.maxNegativity.toFixed(3) + '</b></div>'
+      + '<div class="badge-row"><span>Schmidt rank</span><b>' + entangler.schmidtRank + '</b></div>'
+      + '<div class="badge-row"><span>CNOT distance</span><b>' + entangler.cnotDistance.toExponential(1) + '</b></div>'
+      + '<div class="badge-row"><span>leakage</span><b>' + entangler.leakage.toExponential(1) + '</b></div>';
+  }
+}
+
+function renderAll() { renderCards(); drawChart(); drawError(); }
+
+function runCore() {
+  if (isRunning || !worker) return;
+  isRunning = true;
+  document.getElementById('btnRun').classList.add('running');
+  document.getElementById('btnRun').textContent = 'Running…';
+  statusEl.textContent = 'Compiling one intent to both modes (circuit + anyonic)…';
+  worker.postMessage({});
+}
+
+function initWorker() {
+  try {
+    worker = new Worker('assets/js/dual-mode-worker.js', { type: 'module' });
+  } catch (e) {
+    statusEl.textContent = 'This demo needs a web server (WASM can’t load from file://).';
+    return;
+  }
+  worker.onmessage = (e) => {
+    isRunning = false;
+    document.getElementById('btnRun').classList.remove('running');
+    document.getElementById('btnRun').textContent = 'Run Dual-Mode Core';
+    if (!e.data.ok) { statusEl.textContent = 'Error: ' + e.data.error; return; }
+    qubit = e.data.qubit;
+    entangler = e.data.entangler;
+    totalDim = e.data.totalDim;
+    statusEl.textContent = 'One intent → two modes · both reach the target · '
+      + (entangler && entangler.certified ? 'entangler certified' : 'entangler check complete');
+    renderAll();
+  };
+  worker.onerror = (e) => {
+    isRunning = false;
+    statusEl.textContent = 'Worker error: ' + (e.message || 'failed to load WASM');
+  };
+}
+
+window.addEventListener('resize', () => { if (qubit) renderAll(); });
+window.PhiTheme && window.PhiTheme.onChange(() => { legendColors(); if (qubit) renderAll(); });
+
+legendColors();
+initWorker();
+setTimeout(runCore, 400);
+</script>
+</body>
+</html>

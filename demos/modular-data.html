@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>φCoherent — Modular Data &amp; the Universality Gap</title>
+<meta name="description" content="Interactive demo: the Fibonacci and Ising anyon theories both have perfectly consistent modular data (S, T) — yet only Fibonacci braiding is universal. φ is load-bearing in universality, not in consistency. Computed live in your browser via WebAssembly.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://phicoherent.com/demos/modular-data.html">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#C9A830">
+<script>try{if(localStorage.getItem('phi-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/demo.css">
+<style>
+  .light-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 6px 0; border-bottom: 1px solid var(--row-border);
+    font: 400 13px/1.4 Inter, sans-serif; color: var(--text);
+  }
+  .light-row:last-child { border-bottom: none; }
+  .light-dot {
+    width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0;
+    box-shadow: 0 0 7px currentColor;
+  }
+  .light-row .lr-readout { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--text-muted); }
+  .yes { color: var(--demo-green); } .no { color: var(--demo-red); }
+  .caveat-footer {
+    max-width: 1180px; margin: 8px auto 40px; padding: 16px 20px;
+    border: 1px solid var(--gold-border); border-radius: 10px;
+    font: 400 12.5px/1.6 Inter, sans-serif; color: var(--text-muted);
+    background: var(--surface);
+  }
+  .caveat-footer strong { color: var(--text); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<header class="demo-header" data-demo="modular-data"
+        data-title="Modular Data & the Universality Gap"></header>
+
+<div class="main">
+  <div class="controls">
+    <button class="btn-run" id="btnRun">Run Modular Checks</button>
+    <div class="demo-status" id="status">Loading…</div>
+
+    <div class="stat-card stat-green">
+      <div class="stat-label">Consistency lights</div>
+      <div id="lights" style="margin-top:8px">—</div>
+    </div>
+
+    <div class="stat-card stat-gold">
+      <div class="stat-label">Quantum dimension d<sub>τ</sub> from S</div>
+      <div class="stat-value" id="dTauVal">—</div>
+      <div class="stat-sub">= φ (golden ratio)</div>
+    </div>
+
+    <div class="stat-card stat-cyan">
+      <div class="stat-label">Chiral central charge c</div>
+      <div class="stat-value" id="cVal">—</div>
+      <div class="stat-sub">= 14/5 (mod 8)</div>
+    </div>
+
+    <div class="stat-card stat-gold">
+      <div class="stat-label">Universality verdict</div>
+      <div class="stat-value" id="verdict">—</div>
+      <div class="stat-sub">distance to the T-gate</div>
+    </div>
+  </div>
+
+  <div class="canvas-area">
+    <div class="chart-panel" style="height:300px">
+      <div class="panel-header">
+        <span class="panel-title">Distance to the T-gate — Fibonacci reaches it, Ising is blocked</span>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" id="dotFib"></div> Fibonacci braiding (universal)</div>
+          <div class="legend-item"><div class="legend-dot" id="dotIsing"></div> Ising braiding (Clifford, blocked)</div>
+        </div>
+      </div>
+      <canvas id="chartCanvas"></canvas>
+    </div>
+
+    <div class="chart-panel" style="margin-top:4px;">
+      <div class="panel-header"><span class="panel-title">What this shows — consistency is not universality</span></div>
+      <div style="padding:14px 18px;font:400 13.5px/1.62 Inter,sans-serif;color:var(--text-muted);">
+        <p style="margin:0 0 10px;">Every anyon theory carries <b>modular data</b> — an S-matrix and a
+        T-matrix — that must satisfy hard algebraic consistency conditions: S is symmetric and unitary,
+        S² = (charge conjugation) so S² = I here, and the <b>Verlinde formula</b> reproduces the fusion
+        rules (for the non-trivial anyon, τ × τ = 1 + τ). The lights on the left show these all pass for
+        the Fibonacci theory, and the S-matrix readout gives <b>d<sub>τ</sub> = φ</b> and chiral central
+        charge <b>c = 14/5</b>.</p>
+        <p style="margin:0 0 10px;"><b>The headline anti-wash</b> is the bar chart: the smallest distance
+        a braid word (up to a fixed length) can get to the single-qubit <b>T-gate</b>. <b>Fibonacci</b>
+        braiding gets <i>arbitrarily close</i> — it is dense in the unitary group, hence
+        <b>universal</b>. <b>Ising</b> braiding is pinned far away — it generates only the
+        <b>Clifford group</b>, so the T-gate is provably <b>out of reach by braiding alone</b>.</p>
+        <p style="margin:0;"><b>The point:</b> the Ising theory has <i>equally consistent</i> modular data —
+        a perfectly valid S and T. Consistency does not buy you universality. <b>φ is load-bearing in the
+        universality gap</b> (the Fibonacci anyon's quantum dimension d = φ is exactly what makes its
+        braid group dense), <b>not</b> in the bare consistency of the modular data. Everything here is
+        computed live in your browser via WebAssembly.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="caveat-footer">
+  <strong>Honest scope.</strong> Both theories are simulated. The consistency checks are exact algebra on
+  the S/T data; the &ldquo;distance to T&rdquo; is the minimum over braid words up to a fixed length
+  (here 8) — a finite search, so the Fibonacci number is a small positive residual that shrinks with
+  length, not literally zero, while the Ising number is a genuine floor it can never beat. Anyons are
+  not realized hardware.
+</div>
+
+<script src="assets/demo-header.js"></script>
+<script>
+// ============================================================
+// Real computation: runModularConsistency (exact S/T algebra) +
+// runUniversality(maxlen) (braid-word search for the T-gate),
+// run off the UI thread in a module Web Worker
+// (assets/js/modular-data-worker.js). Both Fibonacci and Ising
+// have consistent modular data; only Fibonacci braiding is dense.
+// ============================================================
+
+const P = () => window.PhiTheme.palette();
+const MAXLEN = 8;
+
+let worker = null;
+let consistency = null;  // { sSymmetric, sUnitary, sSquaredIdentity, verlindeTtt, verlindeTt1, dTauFromS, centralCharge }
+let universality = null; // { fibMinDist, isingMinDist, fibReaches, isingBlocked }
+let isRunning = false;
+
+const statusEl = document.getElementById('status');
+
+function legendColors() {
+  const p = P();
+  document.getElementById('dotFib').style.background = p.gold;
+  document.getElementById('dotIsing').style.background = p.red;
+}
+
+// ── distance-to-T bars: Fibonacci tiny (reaches), Ising large (blocked) ────────
+function drawChart() {
+  if (!universality) return;
+  const pal = P();
+  const canvas = document.getElementById('chartCanvas');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * 2; canvas.height = (rect.height - 44) * 2;
+  const ctx = canvas.getContext('2d'); ctx.setTransform(2, 0, 0, 2, 0, 0);
+  const w = rect.width, h = rect.height - 44;
+  ctx.fillStyle = pal.panel; ctx.fillRect(0, 0, w, h);
+
+  const pad = { top: 22, right: 28, bottom: 48, left: 60 };
+  const cw = w - pad.left - pad.right, ch = h - pad.top - pad.bottom;
+
+  const fib = universality.fibMinDist, ising = universality.isingMinDist;
+  const xMax = Math.max(ising * 1.15, fib * 1.15, 0.1);
+  const toX = (v) => pad.left + (v / xMax) * cw;
+
+  // x grid
+  ctx.strokeStyle = pal.grid; ctx.lineWidth = 0.5; ctx.fillStyle = pal.textDim; ctx.font = '10px Inter';
+  const gridN = 5;
+  for (let i = 0; i <= gridN; i++) {
+    const xv = xMax * i / gridN, x = toX(xv);
+    ctx.beginPath(); ctx.moveTo(x, pad.top); ctx.lineTo(x, h - pad.bottom); ctx.stroke();
+    ctx.textAlign = 'center'; ctx.fillText(xv.toFixed(3), x, h - pad.bottom + 16);
+  }
+  // T-gate reference (distance 0) at the left edge
+  ctx.strokeStyle = pal.green; ctx.globalAlpha = 0.55; ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(toX(0), pad.top); ctx.lineTo(toX(0), h - pad.bottom); ctx.stroke();
+  ctx.setLineDash([]); ctx.globalAlpha = 0.85; ctx.fillStyle = pal.green; ctx.font = '9px Inter';
+  ctx.textAlign = 'left'; ctx.fillText('T-gate (distance 0)', toX(0) + 4, pad.top + 11); ctx.globalAlpha = 1;
+
+  const rows = [
+    { name: 'Fibonacci',  v: fib,   color: pal.gold, reaches: universality.fibReaches,
+      note: universality.fibReaches ? 'reaches T → universal' : 'near T' },
+    { name: 'Ising',      v: ising, color: pal.red,  reaches: false,
+      note: universality.isingBlocked ? 'blocked (Clifford only)' : '' },
+  ];
+  const slot = ch / rows.length, barH = Math.min(46, slot * 0.42);
+  rows.forEach((r, i) => {
+    const cy = pad.top + slot * (i + 0.5);
+    const x0 = toX(0), x1 = toX(r.v);
+    ctx.fillStyle = r.color; ctx.fillRect(x0, cy - barH / 2, x1 - x0, barH);
+    // end-cap marker
+    ctx.beginPath(); ctx.arc(x1, cy, 4, 0, 2 * Math.PI); ctx.fill();
+    // labels
+    ctx.fillStyle = pal.text; ctx.font = '600 12px Inter'; ctx.textAlign = 'left';
+    ctx.fillText(r.name, x0 + 6, cy - barH / 2 - 6);
+    ctx.fillStyle = pal.textDim; ctx.font = '10px Inter';
+    ctx.fillText('min distance ' + r.v.toFixed(4) + ' · ' + r.note, x1 + 8, cy + 3);
+  });
+
+  ctx.fillStyle = pal.textDim; ctx.font = '11px Inter'; ctx.textAlign = 'center';
+  ctx.fillText('operator distance to the T-gate (smaller = closer; braid words up to length ' + MAXLEN + ')',
+               w / 2, h - 4);
+}
+
+function renderLights() {
+  if (!consistency) return;
+  const c = consistency, pal = P();
+  const dot = (ok) => '<span class="light-dot" style="color:' + (ok ? pal.green : pal.red) + '">●</span>';
+  const tT = (c.verlindeTtt === 1 && c.verlindeTt1 === 1);
+  const rows = [
+    ['S symmetric (Sᵀ = S)', c.sSymmetric, ''],
+    ['S unitary (S S† = I)', c.sUnitary, ''],
+    ['S² = I (self-dual)', c.sSquaredIdentity, ''],
+    ['Verlinde: τ × τ = 1 + τ', tT,
+       'N_ττ^τ=' + c.verlindeTtt + ' · N_ττ^1=' + c.verlindeTt1],
+  ];
+  document.getElementById('lights').innerHTML = rows.map(([label, ok, ro]) =>
+    '<div class="light-row"><span class="light-dot" style="color:' + (ok ? pal.green : pal.red) + '">●</span>'
+    + '<span>' + label + '</span>'
+    + '<span class="lr-readout">' + (ro || (ok ? '✓' : '✗')) + '</span></div>'
+  ).join('');
+
+  document.getElementById('dTauVal').textContent = c.dTauFromS.toFixed(4);
+  document.getElementById('cVal').textContent = c.centralCharge.toFixed(2);
+}
+
+function renderVerdict() {
+  if (!universality) return;
+  document.getElementById('verdict').innerHTML = universality.fibReaches
+    ? 'Fibonacci <span class="yes">universal ✓</span>'
+    : 'Fibonacci near-universal';
+}
+
+function renderAll() { renderLights(); renderVerdict(); drawChart(); }
+
+function runChecks() {
+  if (isRunning || !worker) return;
+  isRunning = true;
+  document.getElementById('btnRun').classList.add('running');
+  document.getElementById('btnRun').textContent = 'Checking…';
+  statusEl.textContent = 'Verifying modular data and searching braid words up to length ' + MAXLEN + '…';
+  worker.postMessage({ maxlen: MAXLEN });
+}
+
+function initWorker() {
+  try {
+    worker = new Worker('assets/js/modular-data-worker.js', { type: 'module' });
+  } catch (e) {
+    statusEl.textContent = 'This demo needs a web server (WASM can’t load from file://).';
+    return;
+  }
+  worker.onmessage = (e) => {
+    isRunning = false;
+    document.getElementById('btnRun').classList.remove('running');
+    document.getElementById('btnRun').textContent = 'Run Modular Checks';
+    if (!e.data.ok) { statusEl.textContent = 'Error: ' + e.data.error; return; }
+    consistency = e.data.consistency;
+    universality = e.data.universality;
+    statusEl.textContent = 'Both theories consistent · only Fibonacci braiding reaches the T-gate';
+    renderAll();
+  };
+  worker.onerror = (e) => {
+    isRunning = false;
+    statusEl.textContent = 'Worker error: ' + (e.message || 'failed to load WASM');
+  };
+}
+
+window.addEventListener('resize', () => { if (universality) renderAll(); });
+window.PhiTheme && window.PhiTheme.onChange(() => { legendColors(); if (universality) renderAll(); });
+
+legendColors();
+initWorker();
+setTimeout(runChecks, 400);
+</script>
+</body>
+</html>
