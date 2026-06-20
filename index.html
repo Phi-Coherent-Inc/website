@@ -1085,7 +1085,7 @@ footer {
         <div class="card reveal reveal-delay-2">
           <span class="card-label">Pillar II</span>
           <h3>Cryptography</h3>
-          <p>A post-quantum cryptographic standard on two independent assumptions — hash-based (φSign) and lattice-based (φKEM · φDSA), with hybrid modes binding both. Quantum-resistant by construction, not by patch. Native across the full stack.</p>
+          <p>A post-quantum cryptographic standard built on two independent assumptions: hash-based (φSign) and lattice-based (φKEM · φDSA), with hybrid modes binding both. Quantum-resistant by construction, not by patch. Native across the full stack.</p>
         </div>
         <div class="card reveal reveal-delay-3">
           <span class="card-label">Pillar III</span>
@@ -1149,7 +1149,7 @@ footer {
         <div class="stat-card reveal reveal-delay-1">
           <div class="stat-num">2</div>
           <div class="stat-title">Independent post-quantum assumptions</div>
-          <div class="stat-body">Hash collision/preimage resistance (φSign) <em>and</em> Module-LWE (φKEM · φDSA) — two unrelated foundations, built co-equally. A break in one family does not break the other; hybrid modes bind both, so the suite survives the loss of either.</div>
+          <div class="stat-body">Two unrelated foundations, built co-equally: hash collision and preimage resistance (φSign), <em>and</em> Module-LWE (φKEM · φDSA). A break in one family does not break the other, and hybrid modes bind both, so the suite survives the loss of either.</div>
         </div>
         <div class="stat-card reveal reveal-delay-2">
           <div class="stat-num">φCrypt</div>
@@ -1159,12 +1159,12 @@ footer {
         <div class="stat-card reveal reveal-delay-3">
           <div class="stat-num">φKEM·φDSA</div>
           <div class="stat-title">NIST-aligned lattice arm</div>
-          <div class="stat-body">A Module-LWE KEM (φKEM) and an ML-DSA-87 signature (φDSA). Security is gated on a <em>computed</em> lattice-reduction estimate — φ-KEM-304 reaches a quantum core-SVP cost of ≈ 387, beyond NIST Category 5's ≈ 232 — not on test vectors.</div>
+          <div class="stat-body">A Module-LWE KEM (φKEM) and an ML-DSA-87 signature (φDSA). Security rests on a <em>computed</em> lattice-reduction estimate, not on test vectors. φ-KEM-304 reaches a quantum core-SVP cost of about 387, well beyond NIST Category 5's 232.</div>
         </div>
         <div class="stat-card reveal reveal-delay-4">
           <div class="stat-num">0</div>
-          <div class="stat-title">Algebraic assumptions — hash-only mode</div>
-          <div class="stat-body">Prefer the conservative path? Run φSign · φHash · φCipher standalone: no lattice, no curves, no factoring — security rests on hash collision resistance alone. The lattice arm is an option, never a requirement.</div>
+          <div class="stat-title">Algebraic assumptions, hash-only mode</div>
+          <div class="stat-body">Prefer the conservative path? Run φSign · φHash · φCipher standalone. No lattice, no curves, no factoring; security rests on hash collision resistance alone. The lattice arm is an option, never a requirement.</div>
         </div>
         <div class="stat-card reveal reveal-delay-1">
           <div class="stat-num">Drop-in</div>
@@ -1174,19 +1174,19 @@ footer {
         <div class="stat-card reveal reveal-delay-2">
           <div class="stat-num">Native</div>
           <div class="stat-title">Ecosystem-wide adoption</div>
-          <div class="stat-body">φQuic · φNet · φRPC · φSQLVFS · φAGI · React Native — every layer of the stack implements φCrypt natively, from transport to storage to identity to mobile.</div>
+          <div class="stat-body">φQuic · φNet · φRPC · φSQLVFS · φAGI · React Native. Every layer of the stack implements φCrypt natively, from transport to storage to identity to mobile.</div>
         </div>
         <div class="stat-card reveal reveal-delay-1" style="grid-column: 1 / -1;">
           <div class="stat-num" style="font-size:1.1rem; letter-spacing:.08em; color: var(--accent, #c8a95a);">Quantum Cryptography Validated</div>
           <div class="stat-title">Simulation-proven quantum resistance across the attack surface</div>
           <div class="stat-body">
             Our quantum simulation suite stress-tested φCrypt against the principal known quantum attack vectors.
-            The strongest hash level achieves <strong>304-bit post-Grover security</strong> — NIST Category 5 (equivalent to AES-256 against a quantum adversary). The fastest tier reaches 116-bit post-Grover (NIST Category 3), so Category 5 deployments use the balanced tier or higher.
+            The strongest hash level achieves <strong>304-bit post-Grover security</strong>, NIST Category 5 (equivalent to AES-256 against a quantum adversary). The fastest tier reaches 116-bit post-Grover (NIST Category 3), so Category 5 deployments use the balanced tier or higher.
             Simon's algorithm and quantum period-finding (noiseless simulation) found no exploitable algebraic structure in hash outputs.
             A full-scale quantum preimage attack on the strongest tier would require <strong>~1 million physical qubits</strong> and an estimated <strong>10<sup>85</sup> years</strong> on the most capable available hardware.
             The lattice arm (φKEM · φDSA) reduces to Module-LWE; its parameters are held to a <strong>computed core-SVP / BKZ estimate</strong>, not to test vectors.
             End-to-end quantum key distribution integrated with φCrypt: verified 0% QBER on a noiseless simulated channel, with reliable eavesdropper detection above the 11% QBER error threshold.
-            <a href="demos/quantum-cryptography.html" style="display:inline-block; margin-top:14px; color:var(--accent,#c8a95a); font-weight:500; text-decoration:none;">Verify it yourself — interactive demo <span aria-hidden="true">→</span></a>
+            <a href="demos/quantum-cryptography.html" style="display:inline-block; margin-top:14px; color:var(--accent,#c8a95a); font-weight:500; text-decoration:none;">Verify it yourself in the interactive demo <span aria-hidden="true">→</span></a>
           </div>
         </div>
       </div>
