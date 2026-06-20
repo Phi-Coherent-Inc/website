@@ -1085,12 +1085,12 @@ footer {
         <div class="card reveal reveal-delay-2">
           <span class="card-label">Pillar II</span>
           <h3>Cryptography</h3>
-          <p>A post-quantum cryptographic standard. Hash-based throughout — no algebraic hardness assumptions. Quantum-resistant by construction, not by patch. Native across the full stack.</p>
+          <p>A post-quantum cryptographic standard on two independent assumptions — hash-based (φSign) and lattice-based (φKEM · φDSA), with hybrid modes binding both. Quantum-resistant by construction, not by patch. Native across the full stack.</p>
         </div>
         <div class="card reveal reveal-delay-3">
           <span class="card-label">Pillar III</span>
           <h3>Quantum Computing</h3>
-          <p>Production-grade quantum simulation — statevector, stabilizer, MPS, and photonic — together with a genuine 2D Fibonacci string-net topological code (d_τ = φ) that is competitive with the surface code on a fair, same-metric comparison, exact time-reversal recovery for characterized errors, and proved closed-form channel analytics. Benchmarked against published noise specifications for 6 devices: IBM Heron R2, IBM Eagle R3, Google Willow, IonQ Forte, IonQ Aria, and Quantinuum H2. And a complete, patent-pending design for the physical machine itself — from the qubit chip to the cryogenic cooling pump.</p>
+          <p>Production-grade quantum simulation across statevector, stabilizer, MPS, and photonic methods, together with a genuine 2D Fibonacci string-net topological code (d_τ = φ) that holds its own against the industry-standard surface code on a fair, like-for-like comparison. It adds exact time-reversal recovery for known error types and proven closed-form analytics, and it is benchmarked against the published specifications of 6 real devices: IBM Heron R2, IBM Eagle R3, Google Willow, IonQ Forte, IonQ Aria, and Quantinuum H2. It also includes a complete, patent-pending design for the physical machine itself: a neutral-atom quantum processor that is reconfigured entirely in software.</p>
         </div>
         <div class="card reveal reveal-delay-4">
           <span class="card-label">Pillar IV</span>
@@ -1147,21 +1147,31 @@ footer {
       </h2>
       <div class="stat-grid">
         <div class="stat-card reveal reveal-delay-1">
-          <div class="stat-num">0</div>
-          <div class="stat-title">Algebraic hardness assumptions</div>
-          <div class="stat-body">No lattice problems. No elliptic curves. No factoring. Security rests on hash collision resistance alone.</div>
+          <div class="stat-num">2</div>
+          <div class="stat-title">Independent post-quantum assumptions</div>
+          <div class="stat-body">Hash collision/preimage resistance (φSign) <em>and</em> Module-LWE (φKEM · φDSA) — two unrelated foundations, built co-equally. A break in one family does not break the other; hybrid modes bind both, so the suite survives the loss of either.</div>
         </div>
         <div class="stat-card reveal reveal-delay-2">
           <div class="stat-num">φCrypt</div>
           <div class="stat-title">Unified cryptographic standard</div>
-          <div class="stat-body">A single coherent primitive family covering signing, key exchange, and authenticated encryption. Derived, not assembled.</div>
+          <div class="stat-body">One coherent family: signatures (φSign · φDSA), key encapsulation (φKEM), public-key encryption (KEM-DEM), and a mutually-authenticated, forward-secret handshake (φAKE). Derived, not assembled.</div>
         </div>
         <div class="stat-card reveal reveal-delay-3">
+          <div class="stat-num">φKEM·φDSA</div>
+          <div class="stat-title">NIST-aligned lattice arm</div>
+          <div class="stat-body">A Module-LWE KEM (φKEM) and an ML-DSA-87 signature (φDSA). Security is gated on a <em>computed</em> lattice-reduction estimate — φ-KEM-304 reaches a quantum core-SVP cost of ≈ 387, beyond NIST Category 5's ≈ 232 — not on test vectors.</div>
+        </div>
+        <div class="stat-card reveal reveal-delay-4">
+          <div class="stat-num">0</div>
+          <div class="stat-title">Algebraic assumptions — hash-only mode</div>
+          <div class="stat-body">Prefer the conservative path? Run φSign · φHash · φCipher standalone: no lattice, no curves, no factoring — security rests on hash collision resistance alone. The lattice arm is an option, never a requirement.</div>
+        </div>
+        <div class="stat-card reveal reveal-delay-1">
           <div class="stat-num">Drop-in</div>
           <div class="stat-title">OpenSSL provider</div>
           <div class="stat-body">A native φCrypt provider for OpenSSL. Existing applications gain post-quantum cryptography without code changes.</div>
         </div>
-        <div class="stat-card reveal reveal-delay-4">
+        <div class="stat-card reveal reveal-delay-2">
           <div class="stat-num">Native</div>
           <div class="stat-title">Ecosystem-wide adoption</div>
           <div class="stat-body">φQuic · φNet · φRPC · φSQLVFS · φAGI · React Native — every layer of the stack implements φCrypt natively, from transport to storage to identity to mobile.</div>
@@ -1174,19 +1184,24 @@ footer {
             The strongest hash level achieves <strong>304-bit post-Grover security</strong> — NIST Category 5 (equivalent to AES-256 against a quantum adversary). The fastest tier reaches 116-bit post-Grover (NIST Category 3), so Category 5 deployments use the balanced tier or higher.
             Simon's algorithm and quantum period-finding (noiseless simulation) found no exploitable algebraic structure in hash outputs.
             A full-scale quantum preimage attack on the strongest tier would require <strong>~1 million physical qubits</strong> and an estimated <strong>10<sup>85</sup> years</strong> on the most capable available hardware.
+            The lattice arm (φKEM · φDSA) reduces to Module-LWE; its parameters are held to a <strong>computed core-SVP / BKZ estimate</strong>, not to test vectors.
             End-to-end quantum key distribution integrated with φCrypt: verified 0% QBER on a noiseless simulated channel, with reliable eavesdropper detection above the 11% QBER error threshold.
             <a href="demos/quantum-cryptography.html" style="display:inline-block; margin-top:14px; color:var(--accent,#c8a95a); font-weight:500; text-decoration:none;">Verify it yourself — interactive demo <span aria-hidden="true">→</span></a>
           </div>
         </div>
       </div>
       <div class="tags reveal">
-        <span class="tag">Hash-based signatures</span>
+        <span class="tag">Two independent PQ assumptions</span>
+        <span class="tag">φKEM (Module-LWE KEM)</span>
+        <span class="tag">φDSA (ML-DSA-87)</span>
+        <span class="tag">φAKE handshake · forward secrecy</span>
+        <span class="tag">Hybrid KEM + hybrid signature</span>
+        <span class="tag">Hash-based signatures (φSign)</span>
+        <span class="tag">Hash-only mode: zero algebraic assumptions</span>
         <span class="tag">OpenSSL provider</span>
         <span class="tag">φQuic · φNet · φRPC · φSQLVFS · φAGI · React Native</span>
-        <span class="tag">Quantum-resistant by construction</span>
-        <span class="tag">No algebraic assumptions</span>
-        <span class="tag">Quantum cryptography validated</span>
         <span class="tag">NIST Category 5 (balanced tier+)</span>
+        <span class="tag">Quantum cryptography validated</span>
         <span class="tag">AGPL + commercial license</span>
       </div>
     </div>
@@ -1268,23 +1283,42 @@ footer {
         compiled to WebAssembly — real surface-code decoding, real time-reversal recovery,
         and a real variational eigensolver, computed live as you adjust the controls.
       </p>
+      <h3 class="reveal reveal-delay-1" style="font:600 13px/1.3 Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--accent,#c8a95a);margin:14px 2px 2px;">Qudit Architecture</h3>
+      <p class="reveal reveal-delay-1" style="font:400 14.5px/1.6 Newsreader,serif;color:var(--text-muted);margin:0 2px 14px;max-width:60ch;">The SU(d) qudit core, end to end — the first-class d-level register, the dual-mode (gate ↔ braid) engine, Fibonacci-anyon braiding, the fusion algebra, and qudit measurement-based computation. Ordered most-impactful first.</p>
       <div class="demo-grid">
-        <a class="card demo-card reveal reveal-delay-1" href="demos/trapped-ion-qec.html">
-          <span class="card-label">Companion · trapped-ion QEC</span>
-          <h3>Trapped-Ion QEC Companion</h3>
-          <p>Alongside Microsoft + Quantinuum's trapped-ion error correction — not a competitor, a companion sandbox. Run their abelian code class and our non-abelian Fibonacci string-net (d_τ = φ) on identical machinery under real Quantinuum H2 / IonQ Aria noise, and see the frontier their work doesn't cover: Fibonacci is braiding-universal, so its magic-state distillation cost drops to zero. Honest, code-capacity, computed live.</p>
+        <a class="card demo-card reveal reveal-delay-1" href="demos/qudit-register.html">
+          <span class="card-label">SU(d) substrate · d = 10 / 12</span>
+          <h3>First-Class Qudit Register</h3>
+          <p>The flexible building block itself, hands-on. Set up a register on a single atom in either a 10-state or 12-state mode, chosen in software, then drive it with the full set of operations and watch the strength and phase of every state respond live. Link two of them into an entangled pair and see the entanglement measured exactly. The ordinary qubit is just the special case. Computed live, no φ.</p>
           <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
         </a>
-        <a class="card demo-card reveal reveal-delay-1" href="demos/string-net-qec.html">
-          <span class="card-label">String-Net QEC · d_τ = φ</span>
-          <h3>String-Net QEC vs Surface</h3>
-          <p>A genuine 2D Levin-Wen Fibonacci code — a real topological code with a logical qubit, not a 1D surrogate — compared fairly against the surface code on identical machinery: same lattice, noise, decoder, metric. On that honest axis the Fibonacci code is competitive, a touch better. Computed live, with its scope stated plainly.</p>
+        <a class="card demo-card reveal reveal-delay-3" href="demos/dual-mode-core.html">
+          <span class="card-label">Architecture · yoga core</span>
+          <h3>Dual-Mode Yoga Core</h3>
+          <p>The substrate-agnostic core: one logical intent carried in two modes behind a single API — a gate on the state-vector backend, or a Fibonacci anyon braid synthesized live — agreeing to the braid-approximation error. Plus a certified entangling weave (entanglement proven by negativity and Schmidt rank) and the synthesis frontier. The φ-load-bearing core the corpus itself can't supply.</p>
           <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
         </a>
-        <a class="card demo-card reveal reveal-delay-2" href="demos/anyon-braiding.html">
+        <a class="card demo-card reveal reveal-delay-2" href="demos/fibonacci-anyons.html">
           <span class="card-label">Topological · d_τ = φ</span>
-          <h3>Fibonacci-Anyon Braiding</h3>
-          <p>Where the golden ratio is genuinely load-bearing: a Fibonacci anyon's quantum dimension is exactly φ, making it universal by braiding alone — no magic-state distillation. Braid the worldlines, watch the fusion space evolve, and measure a live threshold, with the honest off-φ Ising comparator alongside.</p>
+          <h3>Fibonacci Anyons: Braiding &amp; Universality</h3>
+          <p>Where the golden ratio is genuinely load-bearing, in two views. <b>Braiding:</b> a Fibonacci anyon's quantum dimension is exactly φ, making it universal by braiding alone — no magic-state distillation; braid the worldlines and watch fidelity decay under real superconducting noise, with the honest off-φ Ising comparator alongside. <b>Modular data:</b> the Fibonacci S/T matrices, S²=I, Verlinde recovering τ×τ=1+τ, and φ read straight off the S-matrix — with the twist that both Fibonacci and Ising have <em>consistent</em> modular data; what separates them is universality, not consistency.</p>
+          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card demo-card reveal reveal-delay-3" href="demos/qudit-mbqc.html">
+          <span class="card-label">Measurement-based · qudit cluster (1D + 2D)</span>
+          <h3>Qudit Measurement-Based Computation</h3>
+          <p>Measurement <em>is</em> the computation, generalized from qubits to d-level systems (d = 2, 3, 5) — now in one place, with a 1D/2D toggle. <b>1D:</b> a qudit cluster resource state whose entanglement is the graph cut times ln d (a flat area law), and one-way J_d-chains that realize any single-qudit unitary at fidelity 1. <b>2D:</b> a real two-qudit algorithm run purely by measurement — vertical CZ_d links make it genuinely entangling (strip them and it factorizes), and every random-outcome branch corrects back to an exact result. Computed live, no φ.</p>
+          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
+        </a>
+      </div>
+
+      <h3 class="reveal reveal-delay-1" style="font:600 13px/1.3 Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--accent,#c8a95a);margin:14px 2px 2px;">Topological Order, Error Correction &amp; Beyond</h3>
+      <p class="reveal reveal-delay-1" style="font:400 14.5px/1.6 Newsreader,serif;color:var(--text-muted);margin:0 2px 14px;max-width:60ch;">String-net &amp; surface-code QEC, measurement-induced transitions, fracton orders, time-reversal recovery, the variational eigensolver, golden-ratio tunneling, post-quantum cryptography, and the φ-pyramid device.</p>
+      <div class="demo-grid">
+        <a class="card demo-card reveal reveal-delay-1" href="demos/topological-qec.html">
+          <span class="card-label">Topological QEC · d_τ = φ · 2 views</span>
+          <h3>Topological QEC: Fibonacci vs Surface</h3>
+          <p>Non-abelian Fibonacci (d_τ = φ) error correction on identical machinery to the abelian baselines, in two tabs. <em>Trapped-ion companion</em> — alongside Microsoft + Quantinuum's trapped-ion QEC, run their abelian code class and our Fibonacci string-net under real Quantinuum H2 / IonQ Aria noise; Fibonacci is braiding-universal, so its distillation cost drops to zero. <em>String-net vs surface</em> — a genuine 2D Levin-Wen Fibonacci code compared fairly against the surface code: same lattice, noise, decoder, metric. Honest, code-capacity, computed live.</p>
           <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
         </a>
         <a class="card demo-card reveal reveal-delay-2" href="demos/tee-signature.html">
@@ -1293,58 +1327,16 @@ footer {
           <p>φ appears in a <em>measured</em> quantity: the doubled-Fibonacci string-net's topological entanglement entropy is γ = log(2+φ), against the Z₂ toric code's γ = log 2 — through the identical code path. Swapping the model shifts γ by exactly log((2+φ)/2). Then watch γ collapse to zero under Schmidt-rank truncation: topological order lives in the full entanglement spectrum. Computed live.</p>
           <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
         </a>
-        <a class="card demo-card reveal reveal-delay-2" href="demos/mipt.html">
-          <span class="card-label">Measurement · phase transition</span>
+        <a class="card demo-card reveal reveal-delay-2" href="demos/measurement-transition.html">
+          <span class="card-label">Measurement · phase transition · 3 views</span>
           <h3>Measurement-Induced Transition</h3>
-          <p>The measurement pole made a bulk effect: a chain of entangling gates competing with projective measurements at rate p. Below a critical rate the entanglement wins and the half-chain entropy is volume-law; above it, repeated collapse forces an area-law, disentangled state. Sweep p and watch the order parameter fall off a cliff — collapse, the irreducible "ground" of quantum mechanics, reshaping the whole many-body state. Computed live, no φ.</p>
+          <p>The measurement pole made a bulk effect, in three tabs. <em>Bulk:</em> entangling gates compete with projective measurements at rate p — below a critical rate entanglement wins (volume-law), above it repeated collapse forces an area-law; sweep p and watch the order parameter fall off a cliff. <em>Finite-size scaling:</em> the Clifford-tableau route, exact to 20 qubits, where the tripartite-mutual-information curves cross at p_c ≈ 0.15. <em>Data collapse:</em> drag p_c and ν to snap four sizes onto one universal curve and read off the exponent. Computed live, no φ.</p>
           <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
         </a>
-        <a class="card demo-card reveal reveal-delay-2" href="demos/mipt-scaling.html">
-          <span class="card-label">Measurement transition · finite-size scaling</span>
-          <h3>MIPT Finite-Size Scaling</h3>
-          <p>Locating the measurement-induced transition the way it's really done — by finite-size scaling. State-vector simulation washes it out near 14 qubits, so this runs in the Clifford setting on a stabilizer tableau, exact to 20 qubits, with entanglement entropy as a GF(2) matrix rank. The half-chain entropy fans out (volume-law) then collapses (area-law); and the dimensionless tripartite mutual information curves for every system size cross at a single point — p_c ≈ 0.15, the known Clifford-MIPT critical value. Computed live, no φ.</p>
-          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
-        </a>
-        <a class="card demo-card reveal reveal-delay-2" href="demos/mipt-collapse.html">
-          <span class="card-label">Critical exponent · data collapse</span>
-          <h3>MIPT Data Collapse — extract ν</h3>
-          <p>Measure a critical exponent the way physicists actually do it. Drag the p_c and ν sliders and watch the tripartite-mutual-information curves for four system sizes snap onto a single universal scaling curve I₃ = F((p−p_c)·L^(1/ν)). Auto-fit recovers the Clifford-MIPT critical point p_c ≈ 0.15 and an O(1) correlation-length exponent — and proves the collapse is real (many times worse at a wrong exponent). Computed live, no φ.</p>
-          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
-        </a>
-        <a class="card demo-card reveal reveal-delay-2" href="demos/fracton.html">
-          <span class="card-label">Fracton order · containment by immobility</span>
+        <a class="card demo-card reveal reveal-delay-2" href="demos/fracton-order.html">
+          <span class="card-label">Fracton order · X-cube + Haah Type-II</span>
           <h3>Fracton Topological Order</h3>
-          <p>A new class of order beyond anyons: the X-cube model on an L×L×L lattice has a <em>sub-extensive</em> ground-state degeneracy (k = 6L−3 logical qubits, growing with size) and excitations that <em>cannot move</em> in isolation. Built from a from-scratch GF(2) stabilizer engine and contrasted against the 3D toric code (constant k=3, mobile excitations) on the same lattice. Protection by immobility — the containment principle made physical. Computed live, no φ.</p>
-          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
-        </a>
-        <a class="card demo-card reveal reveal-delay-2" href="demos/haah-code.html">
-          <span class="card-label">Type-II fracton · fractal operators</span>
-          <h3>Haah's Code — Type-II Fracton</h3>
-          <p>The strongest fracton order: every logical operator is fractal, with <em>no string operators at all</em>. Its ground-state degeneracy is famously irregular in system size — which is why it was hard to validate. The resolution is to check the clean algebra instead: CSS commutativity, and the Frobenius identity (1+x+y+z)² = 1+x²+y²+z² over F₂ that gives the no-string operators. The degeneracy k(L) jumps around — even dropping from L=2 to L=3 — yet lands exactly on k(2ᵐ)=4L−2 at powers of two, while the X-cube rises smoothly. The irregularity <em>is</em> the type-II fingerprint. Computed live, no φ.</p>
-          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
-        </a>
-        <a class="card demo-card reveal reveal-delay-3" href="demos/qudit-mbqc.html">
-          <span class="card-label">Measurement-based · qudit cluster</span>
-          <h3>Qudit Measurement-Based Computation</h3>
-          <p>Measurement <em>is</em> the computation. Build a 2D qudit cluster state, then compute purely by measuring it qudit-by-qudit with feed-forward — generalized from qubits to d-level systems (d = 2, 3, 5). Its entanglement equals the edges crossing a cut, each carrying ln d, giving a flat area law as the lattice grows; one-way J_d-chains then realize any single-qudit unitary with fidelity 1. The entangling gadget proves its keep: entanglement only with the vertical link, a product state without it. Computed live, no φ.</p>
-          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
-        </a>
-        <a class="card demo-card reveal reveal-delay-3" href="demos/qudit-mbqc-2d.html">
-          <span class="card-label">Two-qudit one-way · entangling cluster</span>
-          <h3>2D Qudit Measurement-Based Computation</h3>
-          <p>A real two-qudit algorithm computed with nothing but measurements. Two cluster rails give single-qudit gates; vertical CZ_d links between them make it genuinely entangling — strip the links and the cluster factorizes into two independent computations (the anti-wash, shown live). And the one-way surprise: every run measures a random record, so the byproduct correction differs on every branch — yet after that classically-controlled correction the output is exact, fidelity 1.000 throughout. Generalized to d = 2, 3, 5. Computed live, no φ.</p>
-          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
-        </a>
-        <a class="card demo-card reveal reveal-delay-3" href="demos/modular-data.html">
-          <span class="card-label">Modular data · universality</span>
-          <h3>Modular Data &amp; the Universality Gap</h3>
-          <p>The fusion algebra made explicit: the Fibonacci S/T matrices, S²=I, the Verlinde formula recovering τ×τ=1+τ, and φ read straight off the S-matrix. The honest twist — both Fibonacci and Ising have <em>consistent</em> modular data; what separates them is braiding universality. The Fibonacci braid reaches any gate (the T-gate to 0.003); the Ising/Clifford braid is pinned a fixed distance away. φ is load-bearing in universality, not consistency.</p>
-          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
-        </a>
-        <a class="card demo-card reveal reveal-delay-3" href="demos/dual-mode-core.html">
-          <span class="card-label">Architecture · yoga core</span>
-          <h3>Dual-Mode Yoga Core</h3>
-          <p>The substrate-agnostic core: one logical intent carried in two modes behind a single API — a gate on the state-vector backend, or a Fibonacci anyon braid synthesized live — agreeing to the braid-approximation error. Plus a certified entangling weave (entanglement proven by negativity and Schmidt rank) and the synthesis frontier. The φ-load-bearing core the corpus itself can't supply.</p>
+          <p>A class of order beyond anyons, in two tabs. <em>X-cube:</em> an L×L×L lattice with <em>sub-extensive</em> ground-state degeneracy (k = 6L−3, growing with size) and excitations that <em>cannot move</em> in isolation — from a from-scratch GF(2) stabilizer engine, contrasted against the 3D toric code. <em>Haah's Type-II:</em> the strongest fracton order, every logical operator fractal with no string operators at all; its irregular degeneracy lands exactly on k(2ᵐ)=4L−2 at powers of two — the type-II fingerprint. Computed live, no φ.</p>
           <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
         </a>
         <a class="card demo-card reveal reveal-delay-2" href="demos/time-reversal.html">
@@ -1368,7 +1360,7 @@ footer {
         <a class="card demo-card reveal reveal-delay-4" href="demos/quantum-cryptography.html">
           <span class="card-label">Post-Quantum</span>
           <h3>Quantum Cryptography</h3>
-          <p>Audit φCrypt's tiers against the NIST PQC categories, run a BB84 key-distribution session and catch an eavesdropper in the act, and stress-test the quantum RNG — computed live from phi-quantum-crypt-cpp.</p>
+          <p>Run the real post-quantum primitives end-to-end: a φ-KEM-304 module-LWE key encapsulation and a φDSA (ML-DSA-87) signature roundtrip from phi-lattice-cpp, with shared-secret agreement, CCA tamper rejection and forgery rejection verified live. Plus audit φCrypt's tiers against the NIST PQC categories, run a BB84 session and catch an eavesdropper, and stress-test the quantum RNG — computed live in WebAssembly.</p>
           <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
         </a>
         <a class="card demo-card reveal reveal-delay-4" href="demos/pyramid-energy.html">
@@ -1390,67 +1382,65 @@ footer {
       </h2>
       <div class="ruled reveal reveal-delay-1"></div>
       <p class="machine-lead reveal reveal-delay-1">
-        Beyond the simulation stack, we have produced a complete architectural design for a
-        <em>topological quantum computer</em> — a machine <em>designed for</em> fault-tolerance and
-        intended to run at 15 millikelvin, colder than deep space. Its distinction is the one that runs
-        through everything we build: <em>every dimension, frequency, material, and mass ratio is fixed by the
-        single identity φ² = φ + 1</em>. From the qubit chip to the cooling pump, nothing is tuned
-        by hand. Zero free parameters — at the scale of an entire machine. The physics that would make it
-        fault-tolerant is an open frontier, not a settled result — see <em>Where it stands</em> below.
+        Beyond the simulation stack, we have designed the machine itself. It is not a superconducting
+        computer like most of the industry is racing to build. Instead, each unit of information lives
+        inside a single atom, held in place by laser light. That one atom behaves as a far richer building
+        block than an ordinary qubit, and a simple change of laser frequency reconfigures it on the fly,
+        entirely in software, with no change to the hardware. The familiar two-state qubit is just its
+        smallest version. The design also makes one claim that sets it apart and that we can stand behind:
+        the golden ratio does real, measurable work in exactly one place, where it stops stray energy from
+        heating and corrupting the atoms. Everywhere else the math is exact and conventional, and every
+        number in the machine traces back to a single mathematical source rather than to hand-tuning.
       </p>
 
       <div class="machine-grid">
         <div class="card reveal reveal-delay-1">
-          <span class="card-label">Quantum Processor</span>
-          <h3>The Fibonacci-Spiral Chip</h3>
-          <p>The qubit chip lays its error-correcting code out as a golden spiral, so the fragile core sits at the centre — physically wrapped and shielded by the most robust outer ring. It is a layout strategy: the geometry places the highest-distance code on the protected outer ring, organising the lattice rather than changing the underlying error-correction scaling.</p>
+          <span class="card-label">The Computing Core</span>
+          <h3>A More Powerful Building Block</h3>
+          <p>Most quantum computers store information in two-state qubits. Ours uses the many internal states of a single atom, so one atom can do the work of several qubits, and how many of those states it uses is set in software. The ordinary qubit is simply the smallest case, reproduced exactly. The control operations are clean and faithful, with no hidden distortion. This part is already built and tested in our software.</p>
         </div>
         <div class="card reveal reveal-delay-2">
-          <span class="card-label">Real-Time Control</span>
-          <h3>Error Correction in Silicon</h3>
-          <p>Most designs decode quantum errors in software, which is too slow to keep qubits alive at scale. Ours burns the decoder directly into a dedicated control chip — correcting errors in nanoseconds, with no software to drift, crash, or fall behind.</p>
+          <span class="card-label">One Source of Truth</span>
+          <h3>One Constant, One Source</h3>
+          <p>Every number the machine depends on comes from a single mathematical source, not from trial and error. The golden ratio is the most familiar member of that family, and the same formula produces the others the design uses. Nothing is hand-tuned, and nothing is hard-coded. This part is already built and tested in our software.</p>
         </div>
         <div class="card reveal reveal-delay-3">
-          <span class="card-label">Master Clock</span>
-          <h3>Tuned to Silence</h3>
-          <p>An atomic caesium clock is divided down by the golden ratio itself, so no electronic frequency anywhere in the machine ever lands on a qubit's frequency. The qubits live in a band of guaranteed quiet — silence engineered by mathematics.</p>
+          <span class="card-label">The Physical Machine</span>
+          <h3>One Atom, Two Machines</h3>
+          <p>Single atoms are held in place by a grid of laser beams. Tuning the control laser switches each atom between two stable settings, giving either a 10-state or a 12-state building block out of the very same hardware. Neighbouring atoms are briefly linked so they can perform operations together. This part is a hardware design we have not yet built.</p>
         </div>
         <div class="card reveal reveal-delay-1">
-          <span class="card-label">Shielding &amp; Cooling</span>
-          <h3>A Magnetically-Invisible Backplane</h3>
-          <p>A custom three-metal alloy — copper, silver, and osmium in golden proportion — is magnetically invisible to the qubits while acting as a superb cold-temperature heat sink, drawing control heat away before it can disturb the quantum core.</p>
+          <span class="card-label">The Control Signal</span>
+          <h3>Tuned to the Most Irrational Number</h3>
+          <p>Stray energy in the control signals is the enemy of any quantum computer, because it heats the atoms and erases the information they hold. By locking those signals to the golden ratio, the design keeps them as far as mathematics allows from the frequencies that cause this heating. This is the one place the golden ratio earns its keep, and the proof behind it runs in our software. The longer stability it produces is backed by published laboratory results.</p>
         </div>
         <div class="card reveal reveal-delay-2">
-          <span class="card-label">Interconnect</span>
-          <h3>Chips That Talk in Light</h3>
-          <p>Instead of fibre-optic cables — which crack and leak heat at cryogenic temperatures — the chips communicate through free-space beams of light across an optical network built into the structure itself.</p>
+          <span class="card-label">Error Protection</span>
+          <h3>Error Protection, Built in Software</h3>
+          <p>Quantum information is fragile, so it has to be guarded against errors. Most designs need exotic hardware to do this. Ours builds the protective structure in software and packs it into each atom's many states, which means fewer atoms are needed for the same result. The control signal does not provide this protection by itself; it simply buys more time between the routine health checks that keep the system stable. The core structure is built and tested.</p>
         </div>
         <div class="card reveal reveal-delay-3">
-          <span class="card-label">Cryogenics</span>
-          <h3>A Pump the Qubits Can't Feel</h3>
-          <p>A golden-ratio-shaped dilution pump cools the machine to 15 millikelvin while shaping its own vibrations into a single harmonic the qubits are blind to — solving the mechanical-noise problem that plagues conventional refrigeration.</p>
-        </div>
-        <div class="card reveal reveal-delay-4">
-          <span class="card-label">Outer Shell</span>
-          <h3>The Magnetic Horizon</h3>
-          <p>The entire stack is sealed inside a bismuth boundary — the last stable element on the periodic table — forming an absolute magnetic horizon that closes the machine off from the outside world.</p>
+          <span class="card-label">Reading the Answer</span>
+          <h3>A Nervous System Made of Light</h3>
+          <p>A network of light channels printed onto a chip carries the control signals to every atom and reads the answers back. The reading is gentle: it senses each atom's state with light without knocking the atom out of place, and turns that into an ordinary electrical signal in millionths of a second. This part is a hardware design we have not yet built.</p>
         </div>
       </div>
 
       <div class="callout reveal">
-        <strong>Where it stands:</strong> This is a complete architectural blueprint — a family of eight patent-pending designs, specified end to end from the qubit chip to the cooling pump. No prototype has yet been fabricated, and it rests on open physics frontiers we state plainly: the intrinsic topological protection needs a naturally-occurring Fibonacci-anyon phase (the candidate ν = 12/5 fractional-quantum-Hall state is experimentally unconfirmed), and at 15 millikelvin that phase's small energy gap does not, on its own, close the fault-tolerance error budget — our own simulations make this explicit (see the feasibility panel in the <a href="demos/anyon-braiding.html">anyon-braiding demo</a>). The design is honest about these frontiers and is ready for fabrication and validation partnerships.
+        <strong>Where it stands:</strong> This is a design, and we are deliberately precise about how far each part has come. Three pieces already run as working, tested software: the flexible computing core, its clean control operations, and the math that makes the golden ratio the best possible choice for keeping the system cool. One piece is documented rather than simulated: the heating suppression is proven on paper inside our code, and the long stability it produces is backed by published laboratory experiments (a 2022 result in the journal <em>Nature</em>). The remaining pieces are hardware we have not yet built: the atom-based chip, the light-based control network, and the most advanced form of the error protection. We claim exactly this much, and no more. You can try the computing core yourself in the live <a href="demos/qudit-register.html">qudit register demo</a>.
       </div>
 
       <div class="tags reveal">
-        <span class="tag">Topological fault-tolerance</span>
-        <span class="tag">15 millikelvin</span>
-        <span class="tag">Fibonacci-spiral QPU</span>
-        <span class="tag">Hardware error-correction ASIC</span>
-        <span class="tag">φ-divided atomic clock</span>
-        <span class="tag">Diamagnetic Lucas-cermet backplane</span>
-        <span class="tag">Fibre-free optical interconnect</span>
-        <span class="tag">Zero free parameters</span>
-        <span class="tag">8 patent-pending designs</span>
+        <span class="tag">Atom-based qubits</span>
+        <span class="tag">Neutral-atom substrate</span>
+        <span class="tag">Software-selectable dimension</span>
+        <span class="tag">Golden-ratio control signal</span>
+        <span class="tag">Longer coherence window</span>
+        <span class="tag">Atom-to-atom entanglement</span>
+        <span class="tag">Software error protection</span>
+        <span class="tag">Integrated photonic backplane</span>
+        <span class="tag">Gentle optical readout</span>
+        <span class="tag">One mathematical source</span>
       </div>
     </div>
   </section>
@@ -1502,7 +1492,7 @@ footer {
   <!-- ── IP PORTFOLIO ───────────────────────────── -->
   <section id="ip" aria-labelledby="ip-h2">
     <div class="container">
-      <span class="overline reveal">The Platform &nbsp;·&nbsp; 8 Methods &nbsp;·&nbsp; 18 Designs</span>
+      <span class="overline reveal">The Platform &nbsp;·&nbsp; 8 Methods &nbsp;·&nbsp; 16 Designs</span>
       <h2 class="section-h2 reveal reveal-delay-1" id="ip-h2">
         Deep IP.<br>Built in parallel.
       </h2>
@@ -1533,12 +1523,13 @@ footer {
             <li>Bearings · Gyroscope · Impeller</li>
             <li>Centrifugal pump · Ram pump · Nozzle</li>
           </ul>
-          <span class="ip-sub-label">Quantum Computer &nbsp;·&nbsp; Eight-Patent Family</span>
+          <span class="ip-sub-label">Quantum Computer &nbsp;·&nbsp; Unified SU(d) Qudit Patent</span>
           <ul class="dot-list">
-            <li>Integrated φCoherent quantum computer — full-system design</li>
-            <li>Fibonacci-spiral QPU · hardware error-correction ASIC</li>
-            <li>φ-divided atomic timing · diamagnetic backplane</li>
-            <li>Free-space optical interposer · optomagnetic drive · cryogenic pump</li>
+            <li>Neutral-atom qudit processor, reconfigured entirely in software</li>
+            <li>Golden-ratio control signal that suppresses heating and extends coherence</li>
+            <li>Error-protection topology built in software (Fibonacci string-net)</li>
+            <li>Integrated photonic control and gentle optical readout</li>
+            <li>One unified patent, 20 claims across six independent statutory branches</li>
           </ul>
           <div class="callout" style="margin-top: 20px;">
             <strong>License structure:</strong> All IP owned by Phi-Coherent Inc. Published under AGPLv3 with commercial licensing available. Revenue flows to Phi-Coherent Inc.
