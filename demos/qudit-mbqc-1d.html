@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>φCoherent · Qudit Measurement-Based Computation</title>
 <meta name="description" content="Interactive demo: measurement-based (one-way) quantum computation generalized to qudits (d-level systems). A 2D qudit cluster state is the resource: its entanglement equals the number of edges crossing a cut, each carrying ln d, giving an area law. One-way J_d-chains then compute any single-qudit unitary by measurement and feed-forward, with fidelity 1. Anti-wash: the entangling gadget produces entanglement only with the vertical link. Computed live in your browser via WebAssembly. No golden ratio.">
@@ -15,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/demo.css">
+<link rel="stylesheet" href="assets/demo.css?v=20260622">
 <style>
   .caveat-footer {
     max-width: 1180px; margin: 8px auto 40px; padding: 16px 20px;
@@ -132,7 +134,7 @@
   qubit one-way computer. Not realized hardware.
 </div>
 
-<script src="assets/demo-header.js"></script>
+<script src="assets/demo-header.js?v=20260622"></script>
 <script>
 // ============================================================
 // Real computation: runQuditAreaLaw (2×M cluster cut entropy = 2·ln d, flat in

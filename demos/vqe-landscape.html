@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>φCoherent · VQE Energy Landscape Demo</title>
 <meta name="description" content="Interactive demo: a real variational energy landscape and optimizer convergence for H₂ and LiH, computed live from phi-quantum-sim-cpp via WebAssembly. Includes the honest golden-ratio result: golden-section (Kiefer-optimal) vs random-momentum search, and the four exact golden pairs of the E8 critical-Ising mass spectrum.">
@@ -15,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/demo.css">
+<link rel="stylesheet" href="assets/demo.css?v=20260622">
 </head>
 <body>
 
@@ -101,9 +103,9 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="assets/demo-header.js"></script>
+<script src="assets/demo-header.js?v=20260622"></script>
 <script type="module">
-import { ready, PhiVQE } from './assets/js/phi-quantum.js';
+import { ready, PhiVQE } from './assets/js/phi-quantum.js?v=20260622';
 
 // Energy surface = ⟨ψ(θ,φ)|H|ψ(θ,φ)⟩ over the real 2-angle ansatz (batched WASM
 // call). Convergence trace + final energy + error come from the real

@@ -19,9 +19,14 @@
 let _module = null;
 let _modulePromise = null;
 
+// Cache-busting: when this wrapper is imported as phi-quantum.js?v=TOKEN, carry the
+// same ?v= onto the WASM glue and the .wasm itself so a new deploy never serves a
+// stale binary. No version ⇒ no query (unchanged behavior).
+const _ver = (() => { try { return new URL(import.meta.url).search || ''; } catch (e) { return ''; } })();
+
 async function loadModule() {
-  const { default: createPhiQuantum } = await import('../wasm/phi_quantum.js');
-  return createPhiQuantum();
+  const { default: createPhiQuantum } = await import('../wasm/phi_quantum.js' + _ver);
+  return createPhiQuantum(_ver ? { locateFile: (path, prefix) => prefix + path + _ver } : undefined);
 }
 
 // Resolve (once) the WASM module; returns the namespace API.

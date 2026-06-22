@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>φCoherent · Telluric-Resonant MHD Demo</title>
 <meta name="description" content="Interactive demo of the φ-pyramid atmospheric-energy device: the DC atmospheric circuit drives a 50 Hz mercury slosh (obelisk parametric feedback), the slosh→MHD makes 50 Hz AC, wirelessly driving a synchronous motor, with the startup and feedback loop computed live from phi-pyramid-cpp via WebAssembly.">
@@ -15,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/demo.css">
+<link rel="stylesheet" href="assets/demo.css?v=20260622">
 <style>
   /* ── Right-side panel grid (controls live in the 280px column, panels here) ── */
   .panels { display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:16px;
@@ -697,9 +699,9 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="assets/demo-header.js"></script>
+<script src="assets/demo-header.js?v=20260622"></script>
 <script type="module">
-import { ready, PhiPyramid } from './assets/js/phi-quantum.js';
+import { ready, PhiPyramid } from './assets/js/phi-quantum.js?v=20260622';
 
 const pal = () => window.PhiTheme.palette();
 const C = (hex) => new THREE.Color(hex);

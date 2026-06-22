@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>φCoherent · Fibonacci-Anyon Braiding Demo</title>
 <meta name="description" content="Interactive demo: Fibonacci anyons (quantum dimension d_τ = φ) compute universally by braiding alone, with no magic-state distillation. Braid worldlines, fusion-space evolution, and a live code-capacity threshold, computed in your browser from phi-quantum-topoqec-cpp via WebAssembly.">
@@ -15,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/demo.css">
+<link rel="stylesheet" href="assets/demo.css?v=20260622">
 <style>
   .caveat-footer {
     max-width: 1180px; margin: 8px auto 40px; padding: 16px 20px;
@@ -162,9 +164,9 @@
   (notional, not measured specs), chosen to size the per-logical-gate error budget.</p>
 </div>
 
-<script src="assets/demo-header.js"></script>
+<script src="assets/demo-header.js?v=20260622"></script>
 <script type="module">
-import { ready, PhiTopo } from './assets/js/phi-quantum.js';
+import { ready, PhiTopo } from './assets/js/phi-quantum.js?v=20260622';
 
 const P = () => window.PhiTheme.palette();
 const braidNSlider = document.getElementById('braidN');

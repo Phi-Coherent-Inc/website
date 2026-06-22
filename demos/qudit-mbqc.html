@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>φCoherent · Qudit Measurement-Based Computation (1D + 2D)</title>
 <meta name="description" content="Interactive demo: measurement-based (one-way) quantum computation generalized to qudits (d-level systems). 1D: a qudit cluster resource state with an area law quantized in ln d and one-way J_d-chains computing any single-qudit unitary at fidelity 1. 2D: a real two-qudit algorithm run purely by measurement, with vertical CZ_d links making it genuinely entangling. Computed live in your browser via WebAssembly. No golden ratio.">
@@ -15,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/demo.css">
+<link rel="stylesheet" href="assets/demo.css?v=20260622">
 <style>
   .tabbar { display:flex; gap:8px; max-width:1180px; margin:20px auto 0; padding:0 24px; flex-wrap:wrap; }
   .tabbar .tab {
@@ -48,7 +50,7 @@
   <div id="frames"><div class="frame-loading" id="loading">Loading…</div></div>
 </div>
 
-<script src="assets/demo-header.js"></script>
+<script src="assets/demo-header.js?v=20260622"></script>
 <script>
 // Unified host: lazy same-origin iframes of the two standalone MBQC demos
 // (loaded with ?embed=1 so each hides its own chrome). Each is created on first

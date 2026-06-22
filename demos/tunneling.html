@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>φCoherent · Quantum Tunneling: Order ⊗ Flow</title>
 <meta name="description" content="Interactive demo: the two principles of quantum tunneling, the golden-ratio Cantor band structure (order) and dissipative tunneling dynamics (flow), joined at the Wick rotation, computed live from phi-quantum-tunnel-cpp via WebAssembly.">
@@ -15,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/demo.css">
+<link rel="stylesheet" href="assets/demo.css?v=20260622">
 </head>
 <body>
 
@@ -156,9 +158,9 @@
   dynamics, nor that e governs the spectrum, nor any speed-up over diagonalization.
 </p>
 
-<script src="assets/demo-header.js"></script>
+<script src="assets/demo-header.js?v=20260622"></script>
 <script type="module">
-import { ready, PhiTunnel } from './assets/js/phi-quantum.js';
+import { ready, PhiTunnel } from './assets/js/phi-quantum.js?v=20260622';
 
 const EMIN = -2.5, EMAX = 2.5, NRES = 520, DT = 0.05;
 const pal = () => window.PhiTheme.palette();
