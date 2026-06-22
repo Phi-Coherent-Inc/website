@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>φCoherent — Pyramid Energy Device Demo</title>
-<meta name="description" content="Interactive demo of the φ-pyramid atmospheric-energy device: the DC atmospheric circuit drives a 50 Hz mercury slosh (obelisk parametric feedback), the slosh→MHD makes 50 Hz AC, wirelessly driving a synchronous motor — the startup and feedback loop computed live from phi-pyramid-cpp via WebAssembly.">
+<title>φCoherent · Telluric-Resonant MHD Demo</title>
+<meta name="description" content="Interactive demo of the φ-pyramid atmospheric-energy device: the DC atmospheric circuit drives a 50 Hz mercury slosh (obelisk parametric feedback), the slosh→MHD makes 50 Hz AC, wirelessly driving a synchronous motor, with the startup and feedback loop computed live from phi-pyramid-cpp via WebAssembly.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://phicoherent.com/demos/pyramid-energy.html">
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -42,23 +42,33 @@
                font-variant-numeric:tabular-nums; transition:color .25s; }
   .stage-item.on .stage-pct { color:var(--gold-dim); }
 
-  /* ── Lightning-strike action button ── */
-  .btn-strike { width:100%; margin-top:8px; padding:11px 14px; cursor:pointer;
-                font-size:13.5px; font-weight:600; letter-spacing:.02em;
-                color:#1a1208; border:1px solid #e8b84b; border-radius:8px;
-                background:linear-gradient(180deg,#ffd97a,#e0a32e);
-                box-shadow:0 0 0 0 rgba(255,210,90,.0); transition:box-shadow .15s, transform .05s; }
+  /* ── Unified action buttons: Cold-Start (primary) · Strike (action) · Storm (toggle).
+     All share geometry; only the fill differs, so they read as one consistent set. ── */
+  .controls .btn-run, .btn-strike, .btn-storm {
+    width:100%; margin-top:8px; padding:11px 16px; cursor:pointer;
+    font-family:'Inter',sans-serif; font-size:13px; font-weight:600;
+    letter-spacing:.03em; text-transform:none; border-radius:8px;
+    border:1px solid transparent;
+    transition:box-shadow .15s, transform .05s, border-color .15s, background .15s; }
+  .controls .btn-run:active:not(:disabled),
+  .btn-strike:active:not(:disabled), .btn-storm:active { transform:translateY(1px); }
+
+  /* Cold-Start — primary, solid gold (overrides demo.css .btn-run) */
+  .controls .btn-run { background:var(--gold); color:#1a1208; border-color:var(--gold); }
+  .controls .btn-run:hover { box-shadow:0 0 16px var(--gold-glow); transform:translateY(-1px); }
+
+  /* Strike — energetic gold gradient, with the flash pulse */
+  .btn-strike { color:#1a1208; border-color:#e8b84b;
+                background:linear-gradient(180deg,#ffd97a,#e0a32e); }
   .btn-strike:hover:not(:disabled) { box-shadow:0 0 18px rgba(255,210,90,.55); }
-  .btn-strike:active:not(:disabled) { transform:translateY(1px); }
   .btn-strike:disabled { opacity:.45; cursor:not-allowed; }
   @keyframes strikePulse { 0%{box-shadow:0 0 0 0 rgba(255,225,120,.9);} 100%{box-shadow:0 0 26px 6px rgba(255,225,120,0);} }
   .btn-strike.flash { animation:strikePulse .5s ease-out; }
   .strike-readout { margin-top:6px; font-size:11.5px; color:var(--text-muted);
                     font-variant-numeric:tabular-nums; }
-  /* storm auto-charge toggle */
-  .btn-storm { width:100%; margin-top:8px; padding:9px 14px; cursor:pointer;
-               font-size:12.5px; font-weight:600; color:var(--text); border-radius:8px;
-               border:1px solid var(--gold-border); background:var(--card); transition:.15s; }
+
+  /* Storm — outlined toggle, fills gold when ON */
+  .btn-storm { background:var(--card); color:var(--text); border-color:var(--gold-border); }
   .btn-storm:hover { border-color:var(--gold); }
   .btn-storm.on { color:#1a1208; border-color:#e8b84b;
                   background:linear-gradient(180deg,#ffd97a,#e0a32e); }
@@ -108,11 +118,31 @@
   @media (max-width:900px){ .startup-cols{ grid-template-columns:1fr; } }
   @media (max-width:760px){ .panels{ grid-template-columns:1fr; } }
 
-  /* ── System selector (Great Pyramid ↔ Obelisk Pair) — prominent, top of controls ── */
-  .system-group { margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--gold-border); }
+  /* ── System selector (Great Pyramid ↔ Obelisk Pair): prominent, top of controls ── */
+  /* margin-bottom negative trims the .controls 22px flex-gap so the divider sits
+     ~14px above EARTH CONDITIONS instead of ~36px. */
+  .system-group { margin-bottom:-8px; padding-bottom:14px; border-bottom:1px solid var(--gold-border); }
+  /* small breathing gap between the System dropdown and its blurb */
+  .system-group #systemBlurb { margin-top:9px !important; }
   .system-group .demo-select { font-weight:600; }
-  /* de-emphasize the pyramid scene/controls while the obelisk system is active */
-  .ob-dimmed { opacity:.32; pointer-events:none; filter:grayscale(.4); transition:opacity .25s; }
+  /* ── Per-system show/hide: each world owns its panels & controls outright ── */
+  body.mode-pyramid .ob-only, body.mode-pyramid .coffer-only { display:none !important; }
+  body.mode-obelisk .py-only, body.mode-obelisk .coffer-only { display:none !important; }
+  body.mode-coffer  .py-only, body.mode-coffer  .ob-only     { display:none !important; }
+  /* ── Coffer component legend (color-keyed to the 3D cut-away) ── */
+  .cof-legend { display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; padding:4px 2px; }
+  .cof-row { display:flex; align-items:flex-start; gap:9px; font-size:12px; line-height:1.45; }
+  .cof-sw { width:13px; height:13px; border-radius:3px; flex-shrink:0; margin-top:2px;
+            border:1px solid rgba(140,140,140,.35); }
+  #cofferPanel { display:none; } #cofferPanel.on { display:block; }
+  /* ── Obelisk day-phase stepper (Night → Dawn → Charging → Firing → Dusk) ── */
+  .ob-phase-list { display:flex; flex-direction:column; gap:6px; margin-top:10px; }
+  .ob-phase { display:flex; align-items:center; gap:9px; padding:6px 11px; font-size:12px;
+              border:1px solid var(--gold-border); border-radius:6px; color:var(--text-muted); transition:.2s; }
+  .ob-phase.on { color:var(--text); border-color:var(--gold); background:var(--card); }
+  .ob-phase .dot { width:8px; height:8px; border-radius:50%; background:var(--text-muted); flex-shrink:0; transition:.2s; }
+  .ob-phase.on .dot { background:var(--gold); box-shadow:0 0 6px var(--gold-glow); }
+  .ob-phase .ph-when { margin-left:auto; font-size:11px; font-variant-numeric:tabular-nums; }
   /* ── Obelisk-pair panel ── */
   #obeliskPanel { display:none; }
   #obeliskPanel.on { display:block; }
@@ -126,70 +156,48 @@
   .ob-verdict-fail { color:#e0703a; font-weight:600; }
 </style>
 </head>
-<body>
+<body class="mode-pyramid">
 
 <header class="demo-header" data-demo="pyramid-energy"
-        data-title="Pyramid Energy Device"></header>
+        data-title="Telluric-Resonant MHD"></header>
 
 <div class="main">
-  <!-- ── Controls (left column — controls only) ── -->
+  <!-- ── Controls (left column, controls only) ── -->
   <div class="controls">
-    <!-- SYSTEM selector — switch between the two independent systems -->
+    <!-- SYSTEM selector: switch between the two independent systems -->
     <div class="control-group system-group">
       <label>System</label>
       <div class="slider-row">
         <select id="systemSelect" class="demo-select">
-          <option value="pyramid" selected>Great Pyramid — energy device</option>
-          <option value="obelisk">Obelisk Pair — coupled system</option>
+          <option value="pyramid" selected>Great Pyramid: energy device</option>
+          <option value="obelisk">Obelisk Pair: coupled system</option>
+          <option value="coffer">Coffer: MHD core (zoom)</option>
         </select>
       </div>
-      <div class="ledger" style="color:var(--text-muted);margin-top:4px">
-        The Obelisk Pair is a <b>self-contained coupled system</b>, separate from the
-        pyramid device — its own dawn-gated harvest, spark-gap dump, and courtyard carrier.
+      <div class="ledger" style="color:var(--text-muted);margin-top:4px" id="systemBlurb">
+        The Great Pyramid as a whole-device energy machine, running end-to-end: apex DC in →
+        50 Hz slosh/MHD in the King's Chamber → the running core chops the telluric ground loop →
+        broadcast out. Cold-start it, trigger lightning to bank the ground/aquifer battery, or run storm mode.
       </div>
     </div>
 
-    <!-- Pyramid controls — dimmed/disabled while the obelisk system is active -->
+    <!-- Pyramid controls: dimmed/disabled while the obelisk system is active -->
     <div id="pyramidControls">
+
+    <!-- Earth conditions are FIXED to factual values / plausible estimates, not tuned. -->
     <div class="control-group">
-      <label>Atmospheric Field (DC drive)</label>
-      <div class="slider-row">
-        <input type="range" id="field" min="0.5" max="3" step="0.1" value="1">
-        <span class="slider-value" id="fieldVal">1.0×</span>
+      <label>Earth Conditions <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0">— fixed defaults</span></label>
+      <div class="ledger" style="color:var(--text-muted);line-height:1.75">
+        Schumann fundamental <b style="color:var(--text)">f₁ = 7.83 Hz</b> (NASA-cited) ·
+        device locks to mode <b style="color:var(--text)">n = 8</b> → φ-corrected
+        <b style="color:var(--text)">f₈ ≈ 50 Hz</b> ·
+        fair-weather atmospheric field <b style="color:var(--text)">~120 V/m</b> (the DC drive) ·
+        parametric pump <b style="color:var(--text)">~1 kV</b> (the cavity's own FM field, plausible estimate).
       </div>
+      <div class="ledger" style="color:var(--text-muted);margin-top:6px" id="cavityNote"></div>
     </div>
 
-    <div class="control-group">
-      <label>Obelisk Pump (parametric feedback)</label>
-      <div class="slider-row">
-        <input type="range" id="obelisk" min="0.2" max="5" step="0.1" value="1">
-        <span class="slider-value" id="obeliskVal">1.0 kV</span>
-      </div>
-    </div>
-
-    <div class="control-group">
-      <label>Schumann Mode (n)</label>
-      <div class="slider-row">
-        <input type="range" id="mode" min="1" max="8" step="1" value="8">
-        <span class="slider-value" id="modeVal">8</span>
-      </div>
-      <div class="ledger" style="color:var(--text-muted);margin-top:4px" id="cavityNote"></div>
-    </div>
-
-    <div class="control-group">
-      <label>Observed Schumann f₁ (Hz) — live lock</label>
-      <div class="slider-row">
-        <input type="range" id="f1" min="7.0" max="8.5" step="0.01" value="7.83">
-        <span class="slider-value" id="f1Val">7.83 Hz</span>
-      </div>
-      <div class="ledger" style="color:var(--text-muted);margin-top:4px">
-        Enter today's value from
-        <a href="https://www.schumann-frequency.com" target="_blank" rel="noopener" style="color:var(--gold)">schumann-frequency.com</a>;
-        the device locks the motor to its harmonic f<sub>n</sub> = f₁·√(n(n+1)/2).
-      </div>
-    </div>
-
-    <div class="control-group">
+    <div class="control-group" style="margin-top:16px">
       <label>Time Scale</label>
       <div class="slider-row">
         <select id="timeScale" class="demo-select">
@@ -202,10 +210,10 @@
     </div>
 
     <button class="btn-run" id="btnRun">Cold-Start the Device</button>
-    <button class="btn-strike" id="btnStrike" title="Inject a lightning strike — the slosh spikes to the mercury cavitation ceiling and the bolt banks ~27.8 kWh into the aquifer store">⚡ Trigger Lightning Strike</button>
-    <button class="btn-storm" id="btnStorm" title="Storm mode — auto-fires strikes so you can watch the battery charge">⛈ Storm (auto-charge): OFF</button>
+    <button class="btn-strike" id="btnStrike" title="Inject a lightning strike: the slosh spikes to the mercury cavitation ceiling and the bolt banks ~27.8 kWh into the aquifer store">⚡ Trigger Lightning Strike</button>
+    <button class="btn-storm" id="btnStorm" title="Storm mode: auto-fires strikes so you can watch the battery charge">⛈ Storm (auto-charge): OFF</button>
 
-    <!-- The lightning battery — visibly charges as strikes bank energy -->
+    <!-- The lightning battery, visibly charges as strikes bank energy -->
     <div class="charge-box">
       <div class="charge-top">
         <span class="charge-title">⚡ Lightning Battery</span>
@@ -213,30 +221,28 @@
       </div>
       <div class="charge-bar"><div class="charge-fill" id="chargeFill"></div></div>
       <div class="charge-sub" id="chargeSub">tap a strike to bank ~27.8 kWh · next: 100 kWh</div>
-      <div class="charge-sub2" id="chargeEquiv">— strikes · — of the 4.38 GWh aquifer</div>
+      <div class="charge-sub2" id="chargeEquiv">… strikes · … of the 4.38 GWh aquifer</div>
     </div>
 
     <div class="control-group" style="margin-top:12px">
-      <label>Connected Load — Houses
+      <label>Connected Load: Houses
         <span class="slider-value" id="housesVal" style="float:right">4</span></label>
       <input type="range" id="houses" min="0" max="8" step="1" value="4">
-      <div class="ledger" id="loadNote" style="color:var(--text-muted);margin-top:4px">—</div>
+      <div class="ledger" id="loadNote" style="color:var(--text-muted);margin-top:4px">…</div>
     </div>
 
     <div class="control-group" style="margin-top:12px">
-      <label>Apex Corona — sharpened capstone point
-        <span class="slider-value" id="tipVal" style="float:right">1.5 mm</span></label>
-      <input type="range" id="tipR" min="1.0" max="2.0" step="0.1" value="1.5">
-      <label style="margin-top:8px">Emission points
+      <label>Apex Corona <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0">— point fixed at 1.5 mm</span></label>
+      <label style="margin-top:4px">Emission points
         <span class="slider-value" id="emitVal" style="float:right">1 · single apex</span></label>
-      <input type="range" id="emit" min="0" max="3" step="1" value="0">
-      <div class="ledger" id="coronaNote" style="color:var(--text-muted);margin-top:4px">—</div>
+      <input type="range" id="emit" min="1" max="10" step="1" value="1">
+      <div class="ledger" id="coronaNote" style="color:var(--text-muted);margin-top:4px">…</div>
     </div>
     <div class="demo-status" id="status">Loading…</div>
     <div class="ledger" style="color:var(--text-muted);margin-top:6px">
       <b style="color:var(--gold)">Idealized model.</b> This is the <b>ideal</b>
       φ-pyramid transducer (loss-bounded steady state), computed live in
-      phi-pyramid-cpp — a faithful upper-bound device, not a built machine.
+      phi-pyramid-cpp: a faithful upper-bound device, not a built machine.
     </div>
 
     <div class="control-group">
@@ -246,83 +252,173 @@
         Each chamber is tuned (length, f=m·c/2L) to one Schumann harmonic. Tuning
         many voids lets the device <b>harvest the AC seed across the spectrum in
         parallel</b> (~2× the strongest single line) so the <b>mercury slosh triggers
-        sooner</b> — this is the AC <i>seed</i> (the trigger), not DC. n=3 &amp; n=7
+        sooner</b>. This is the AC <i>seed</i> (the trigger), not DC. n=3 &amp; n=7
         are <b>predicted</b> voids that complete the ladder.
       </div>
     </div>
     </div><!-- /#pyramidControls -->
 
-    <!-- Obelisk-pair controls — shown only when the Obelisk Pair system is active -->
+    <!-- Obelisk-pair controls: shown only when the Obelisk Pair system is active -->
     <div id="obeliskControls" style="display:none">
       <div class="control-group">
-        <label>Obelisk Separation
-          <span class="slider-value" id="obSepVal" style="float:right">30 m</span></label>
-        <input type="range" id="obSep" min="15" max="75" step="1" value="30">
+        <label>Developed potential
+          <span class="slider-value" id="obVoltVal" style="float:right">1000 V</span></label>
+        <input type="range" id="obVolt" min="1000" max="4000" step="50" value="1000">
         <div class="ledger" style="color:var(--text-muted);margin-top:4px">
-          Sets the transit/slosh <b>bell</b> (30 m → 100 Hz). Wider spacing → lower bell.
-        </div>
-      </div>
-      <div class="control-group">
-        <label>Peak Apex Harvest
-          <span class="slider-value" id="obHarvestVal" style="float:right">2.0 µA</span></label>
-        <input type="range" id="obHarvest" min="0.1" max="5" step="0.05" value="2.0">
-        <div class="ledger" style="color:var(--text-muted);margin-top:4px">
-          The sun-gated atmospheric harvest — the load-bearing
-          <span style="color:var(--gold)">[EST]</span> input. It must beat the leak floor
-          (~0.48 µA) for the system to <b>self-start</b>. Drop it to watch self-start go
-          marginal, then fail.
+          The amplitude obelisk sets the voltage the pair develops. Slide it up: that
+          obelisk <b>grows</b>, the potential arc brightens, and <b>each home's own
+          transformer</b> auto-tunes its ratio to keep that home at 240 V. More volts → more
+          power → more homes. The frequency obelisk stays fixed, locked to the 50 Hz broadcast.
         </div>
       </div>
       <div class="ledger" style="color:var(--text-muted);margin-top:6px">
-        <b style="color:var(--gold)">Self-contained coupled system.</b> The dawn gates a
-        µA atmospheric harvest into a spark-gap accumulator that <b>dumps</b> (a relaxation
-        oscillator) at ~48 Hz by solar noon — a relaxation-<b>dump rate</b>, not a resonance,
-        carried on the ~13.5 MHz courtyard LC carrier. Computed live in phi-pyramid-cpp (WASM).
+        <b style="color:var(--gold)">The receiver (consumer end).</b> The pair locks to the
+        pyramid's telluric broadcast (φ-corrected Schumann mode n=8, ≈ 50 Hz) and develops a
+        high voltage potential; <b>each home's own transformer</b> steps it down to the 240 V service.
+        <b>High volts, low amps is forced</b>: you cannot pull real power through the ground
+        at low voltage (a 24 kW / 240 V tap would need a ~0.6 Ω earth connection, and 100 A
+        through soil bakes it to glass). So the pair runs at kV and only a few amps.
+        Computed live in phi-pyramid-cpp (WASM). The 1000–4000 V and 240 V are
+        <span style="color:var(--gold)">[design]</span> targets; the current, per-home load,
+        and Q are <span style="color:var(--gold)">[EST]</span>.
+      </div>
+    </div>
+
+    <!-- Coffer-core controls: shown only in the Coffer (MHD) zoom -->
+    <div id="cofferControls" style="display:none">
+      <div class="control-group">
+        <label>Reactor power <span class="slider-value" id="cofStateLbl" style="float:right">OFF</span></label>
+        <button id="cofToggle" type="button" style="width:100%;padding:11px;border-radius:8px;cursor:pointer;
+          font-weight:700;font-size:14px;border:1px solid var(--gold-border);background:transparent;color:var(--text)">
+          ▶ Turn the core ON (ignite)
+        </button>
+        <div class="ledger" style="color:var(--text-muted);margin-top:8px;line-height:1.7" id="cofStateNote">
+          <b style="color:var(--gold)">OFF: dormant, sitting unignited.</b> The mercury is cool and still;
+          no plasma, no resonance. The coffer is only being touched by the <b>standard atmospheric DC
+          circuit</b> and the <b>ground/telluric system</b>, the µW–mW ambient that keeps it primed. It
+          stays dormant until a lightning strike ignites the mercury arc. The magnet field is fixed at
+          <b>1.3 T</b> (on-site NdFeB).
+        </div>
+      </div>
+      <div class="control-group">
+        <label>Dam-shunt source resistance R_source
+          <span class="slider-value" id="cofRVal" style="float:right">5 mΩ</span></label>
+        <input type="range" id="cofR" min="1" max="120" step="1" value="5">
+        <div class="ledger" style="color:var(--text-muted);margin-top:4px;line-height:1.7" id="cofRNote">
+          The <b>falsifiable</b> Machine-C knob (only matters when ON). The Giza limestone "dam" forces the
+          regional telluric DC through the pyramid; its source resistance decides everything:
+          <b style="color:var(--gold)">R ≤ 42 mΩ</b> → the gated current pays the 59 kW thermal tax and the
+          chopper broadcasts hundreds of kW; <b>R &gt; 42 mΩ</b> → the current flanks the dam, the supply
+          can't pay the tax, and the reactor <b>STALLS</b> (quenches). A resistivity survey would settle it.
+        </div>
+      </div>
+      <div class="ledger" style="color:var(--text-muted);margin-top:4px;line-height:1.8;
+           border:1px solid var(--gold-border);border-radius:8px;padding:10px 12px">
+        <b style="color:var(--gold)">Fixed at Giza self-started scale</b><br>
+        Slosh: <b id="cofFixVel">2.5 mm/s</b> <span style="color:var(--text-muted)">(≈ <b id="cofFixAmp">8 µm</b> at 50 Hz, v=ωA)</span><br>
+        Mercury fill: <b id="cofFixFill">…</b> → bell <b id="cofFixBell">…</b>
+      </div>
+      <div class="ledger" style="color:var(--text-muted);margin-top:8px">
+        <b style="color:var(--gold)">The sealed coffer as an MHD alternator.</b> Magnets sit
+        <b>outside</b> the granite (field passes through non-magnetic stone); electrodes sit
+        <b>inside</b> on the long walls (current needs contact). Drag to orbit, scroll to zoom
+        into the cut-away. Computed live in phi-pyramid-cpp (WASM).
       </div>
     </div>
   </div>
 
-  <!-- ── Panels (right side — every readout in its own section) ── -->
+  <!-- ── Panels (right side, every readout in its own section) ── -->
   <div class="panels">
 
-    <!-- ── OBELISK PAIR — self-contained coupled system (hidden until selected) ── -->
+    <!-- ── OBELISK PAIR: self-contained coupled system (hidden until selected) ── -->
     <div class="scene-panel span2" id="obeliskPanel">
       <div class="panel-header">
-        <span class="panel-title">Obelisk Pair — a day of the coupled system</span>
-        <span class="panel-tag tag-recover" id="obFireTag">cold before dawn</span>
+        <span class="panel-title">Obelisk Pair · the receiver, locked on</span>
+        <span class="panel-tag tag-recover" id="obFireTag">locked · 50 Hz</span>
       </div>
       <div class="ob-cols">
         <div>
           <div class="ledger" style="color:var(--text-muted);margin-bottom:8px">
-            <span style="color:var(--gold)">━</span> sun (diurnal gate) &nbsp;
-            <span style="color:var(--demo-cyan)">━</span> dump rate (Hz) &nbsp;
-            <span style="color:var(--demo-green)">┊</span> first fire — over the hour of day (0–24 h).
+            <span style="color:var(--demo-cyan)">━</span> receiver response &nbsp;
+            <span style="color:var(--gold)">●</span> lock point, vs frequency around the 50 Hz broadcast.
           </div>
           <canvas id="obDayChart"></canvas>
           <div class="ledger" style="color:var(--text-muted);margin-top:8px;font-size:11px;line-height:1.6">
-            The day plays cold-before-dawn → first fire (~6.9 h) → peak (~48 Hz at solar noon)
-            → cold again. The <b>50/100 Hz</b> figure is the relaxation-<b>dump rate</b> (not a
-            resonance), riding the <b>MHz courtyard carrier</b>. Apex-harvest µA is the
-            load-bearing <span style="color:var(--gold)">[EST]</span> input — so self-start is marginal.
+            The frequency obelisk is fixed-tuned, so the marker sits on the <b>peak</b> of the
+            resonance: the pair couples to the 50 Hz line and ignores the rest. That 50 Hz is
+            the φ-corrected Schumann mode n=8 (the φ-correction is in the broadcast frequency,
+            <b>not</b> the receiver: the receiver is ordinary resonant coupling).
           </div>
         </div>
         <div class="ob-ctrls">
           <div>
-            <div class="panel-tag tag-error" id="obClockTag" style="display:inline-block">t = 0.0 h</div>
-            <div class="ob-readout" style="margin-top:10px">
-              Sun (gate): <b id="obSun">—</b> &nbsp;·&nbsp; Firing: <b id="obFiring">—</b><br>
-              Harvest: <b id="obHarv">—</b> vs leak floor <b id="obLeak">—</b><br>
-              Dump rate: <b id="obDump">—</b><br>
-              <span style="color:var(--text-muted)">Self-start (peak harvest &gt; leak floor):</span>
-              <b id="obSelf">—</b>
+            <div class="panel-tag tag-recover" id="obClockTag" style="display:inline-block">100% lock</div>
+            <div class="ob-readout" style="margin-top:12px;color:var(--text-muted);line-height:1.9">
+              <b style="color:var(--gold)">Develop → step down → deliver</b><br>
+              Developed potential: <b id="obVpair2">…</b><br>
+              Each home's transformer: <b id="obRatio2">…</b><br>
+              Powering: <span id="obHomes2">…</span><br>
+              <span style="color:var(--gold)">From the pyramid broadcast:</span> assumes <b id="obBroadcastW">…</b>
+              available (the pyramid's chopper output) → supports <b id="obHomesTotal">…</b> homes network-wide;
+              this pair draws its share.
             </div>
           </div>
           <div class="ob-readout" style="border-top:1px solid var(--gold-border);padding-top:12px;color:var(--text-muted)">
-            <b style="color:var(--gold)">Static facts</b><br>
-            Separation: <b id="obSep2">—</b> → bell <b id="obBell">—</b><br>
-            EM carrier: <b id="obCarrier">—</b> &nbsp;·&nbsp; Tura-limestone float: <b id="obFloat">—</b><br>
-            First fire: <b id="obFirst">—</b> &nbsp;·&nbsp; Peak dump: <b id="obPeak">—</b>
+            <b style="color:var(--gold)">Why kV, not 240 V at the source</b><br>
+            <span style="color:var(--text-muted)">You can't pull real power through the ground at
+            low voltage: 100 A through soil bakes it to glass. So the pair rings at thousands of
+            volts and a few amps; each home's transformer does the step-down at the door.</span>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── COFFER MHD CORE: components of the cut-away (coffer-only) ── -->
+    <div class="scene-panel span2" id="cofferPanel">
+      <div class="panel-header">
+        <span class="panel-title">Coffer MHD Core · what you're looking at</span>
+        <span class="panel-tag tag-recover" id="cofDimTag">… interior</span>
+      </div>
+      <div class="panel-body">
+        <div class="cof-legend">
+          <div class="cof-row"><span class="cof-sw" style="background:#9a7d56"></span>
+            <span><b>Sealed granite coffer</b>: the Petrie interior (1.98 × 0.68 × 0.87 m), lid on. The mercury is never open to the air.</span></div>
+          <div class="cof-row"><span class="cof-sw" style="background:#bfd3dd"></span>
+            <span><b>Liquid mercury</b>: the conductive working fluid, ~75% fill. Surges along the long axis at 50 Hz (a blur, here slowed).</span></div>
+          <div class="cof-row"><span class="cof-sw" style="background:#c0432f"></span>
+            <span><b>NdFeB magnet, N</b> (under the floor, <b>outside</b>). Field passes up through the non-magnetic granite.</span></div>
+          <div class="cof-row"><span class="cof-sw" style="background:#3f63b0"></span>
+            <span><b>NdFeB magnet, S</b> (over the lid, <b>outside</b>). N→S gives a <b>vertical B</b> through the pool.</span></div>
+          <div class="cof-row"><span class="cof-sw" style="background:#4a4a52"></span>
+            <span><b>Iron / magnetite yoke</b>: the C-frame returning the flux top↔bottom so B stays concentrated.</span></div>
+          <div class="cof-row"><span class="cof-sw" style="background:#e7d9a8"></span>
+            <span><b>Electrum electrodes</b>: <b>inside</b>, on the long walls, wetted by the mercury; the terminals of the mercury-arc <b>gate</b>, carrying the gated telluric current the arc switches (no feedthroughs, the coffer stays sealed).</span></div>
+          <div class="cof-row"><span class="cof-sw" style="background:#cf6f5f"></span>
+            <span><b>B-field lines</b>: vertical, steady (a permanent magnet). The slosh moving through B makes only a few-mV <b>timing signal</b> that switches the gate, the control input, not the output.</span></div>
+          <div class="cof-row"><span class="cof-sw" style="background:#37b0c9"></span>
+            <span><b>Gated telluric current</b>: the regional telluric DC routed through the arc; the gate <b>chops</b> it on and off at 50 Hz → AC. This chopped supply is the output, not the slosh's own motion.</span></div>
+          <div class="cof-row"><span class="cof-sw" style="background:#37b0c9"></span>
+            <span><b>Wireless output</b>: the cyan wavefronts expanding outward: the <b>chopped 50 Hz telluric output</b> (hundreds of kW) couples out through the resonant field (Tesla-style wireless link). No wires, no load box, no penetrations of the sealed coffer.</span></div>
+          <div class="cof-row"><span class="cof-sw" style="background:#49c39a"></span>
+            <span><b>Telluric clock</b>: wavefronts rising from the aquifer/ground: the faint global ~50 Hz reference the chamber phase-locks to (the <b>clock</b>, not the fuel).</span></div>
+          <div class="cof-row"><span class="cof-sw" style="background:#C9A830"></span>
+            <span><b>Resonance (the bell)</b>: the golden shell + three antinode discs: the King's-Chamber standing wave ringing at f₈≈50 Hz with high Q.</span></div>
+          <div class="cof-row"><span class="cof-sw" style="background:#eaf5ff"></span>
+            <span><b>Mercury-arc plasma</b>: the <b>gate</b> itself: a hot arc the slosh switches on and off at 50 Hz to chop the telluric DC; the pool sits at ~517 °C / 1.0 MPa.</span></div>
+          <div class="cof-row"><span class="cof-sw" style="background:#7d6645"></span>
+            <span><b>King's Chamber</b>: the granite room enclosing the coffer (~70 m up inside the pyramid). The <b>room is the resonant cavity</b>: its dimensions set the standing-wave modes the coffer locks to, so its walls ring with the resonance. (Shown ~half true scale so the coffer stays legible.)</span></div>
+          <div class="cof-row"><span class="cof-sw" style="background:#9a7d56"></span>
+            <span><b>Relieving chambers</b>: the five stacked granite voids above the flat 9-beam ceiling: the dielectric <b>capacitor stack</b>, charging in step with the resonance.</span></div>
+          <div class="cof-row"><span class="cof-sw" style="background:#6f8fb0"></span>
+            <span><b>Air shafts</b>: the thin leads leaving the N &amp; S walls: the grounding / antenna conductors.</span></div>
+        </div>
+        <div class="ledger" style="margin-top:12px;color:var(--text-muted)">
+          <b style="color:var(--gold)">The slosh is the switch, not the source.</b> The 50 Hz
+          <b style="color:#C9A830">slosh</b> moving through the vertical <b style="color:#c0432f">B</b> makes
+          only a few-mV <b>timing signal</b> that switches the mercury-arc gate; the gate <b>chops</b> the
+          regional <b style="color:#37b0c9">telluric DC</b>, and that gated supply is the broadcast power.
+          Mercury holds ≈ <b id="cofMass">…</b>; at B = <b id="cofBhead">…</b> the slosh's own v×B EMF is
+          just <b id="cofEmfHead">…</b>, a <b>parasitic byproduct</b>, not the output.
         </div>
       </div>
     </div>
@@ -330,26 +426,50 @@
     <!-- 3D device (one column; spans 2 rows so Energy Loop + Live Readouts stack beside it) -->
     <div class="scene-panel" style="grid-column:1; grid-row:span 2; min-height:420px; position:relative">
       <div class="panel-header">
-        <span class="panel-title">The Device — DC → slosh → AC → motor</span>
+        <span class="panel-title" id="deviceTitle">The Device · DC in → slosh chops the telluric loop → broadcast out</span>
         <span class="panel-tag tag-recover" id="sustainTag" title="scroll to zoom">starting…</span>
       </div>
       <canvas id="deviceCanvas"></canvas>
       <div id="screenFlash"></div>
-      <div class="ledger" style="padding:8px 14px;border-top:1px solid var(--gold-border);color:var(--text-muted);font-size:11px;line-height:1.6">
-        <b style="color:var(--gold)">pyramid</b> + <b style="color:var(--gold)">obelisks</b> (parametric pump) ·
-        <b style="color:#8a6f63">granite apex cap</b> (<b style="color:#e7d9a8">electrum-coated</b>) = the isolated capstone collector, with
-        <b style="color:#e7d9a8">electrum edge down-conductors → base ground ring → central shaft</b> →
-        <b style="color:#6b5a4a">subterranean chamber</b> + <b style="color:#8aa0c0">pit</b> (real, central; purpose unknown — here the conjectured
-        earth electrode to the <b style="color:#3a6ea5">aquifer</b>), carrying a strike to ground (bare stone would flash over) ·
+      <!-- Obelisk-pair legend (shown only in the Obelisk Pair system) -->
+      <div class="ledger ob-only" style="padding:8px 14px;border-top:1px solid var(--gold-border);color:var(--text-muted);font-size:11px;line-height:1.6">
+        <b style="color:var(--gold)">two granite obelisks</b> on a <b style="color:#3a3f4c">basalt court</b>
+        over a <b style="color:#cdbf9a">Tura-limestone float</b> ·
+        <b style="color:var(--demo-cyan)">cyan arcs</b> = the <b>telluric wavefronts</b> arriving from the
+        pyramid · the <b>left</b> obelisk is fixed (the <b>50 Hz frequency lock</b>); the <b>right</b>
+        obelisk <b>grows/shrinks</b> with the voltage tune (the <b>amplitude</b>) ·
+        <b style="color:var(--gold)">gold arc</b> tip↔tip = the <b>voltage potential</b> the pair develops ·
+        the <b style="color:var(--gold)">HV trunk</b> carries it to the homes, where <b>each home's own
+        <span style="color:#caa64a">transformer</span></b> steps it down to its <b style="color:#e0a32e">240 V</b>
+        service · the first <i>homes-powered</i> homes light up.
+        <b style="color:var(--gold)">Scroll to zoom.</b>
+      </div>
+      <div class="ledger py-only" style="padding:8px 14px;border-top:1px solid var(--gold-border);color:var(--text-muted);font-size:11px;line-height:1.6">
+        <b style="color:var(--gold)">pyramid</b> ·
+        <b style="color:#8a6f63">granite apex cap</b> = the isolated capstone collector (the highest point, where the strike lands) ·
+        <b style="color:#bfe3ff">rain-wetted shell flashover</b> = during a storm the rain coats the smooth casing, so when
+        lightning hits the apex it tracks <b>down the four wet faces</b> as a surface arc to the base
+        (no buried metal required; any metal would have been the first thing looted), then spreads into the
+        <b style="color:#3a6ea5">aquifer</b> across the whole <b>~115 m footprint</b> (an excellent earth electrode, R = 1/(2πσa) ≈ 2.8 mΩ),
+        charging it; <b style="color:#bfe3ff">a ring spreads through the water</b> as the charge arrives ·
+        <b style="color:#6b5a4a">subterranean chamber</b> + <b style="color:#8aa0c0">pit</b> = real central features (shown, but NOT the conduction path
+        in this model — the strike enters the earth across the footprint, not via a shaft) ·
         <b style="color:#3a3f4c">dark base slab</b> = the basalt foundation (conductive ground plane, closes the DC loop) ·
         <b style="color:var(--demo-cyan)">small box</b> = mercury coffer in the King's Chamber (sloshes) ·
+        <b style="color:var(--text)">gabled chamber below the KC</b> = the Queen's Chamber (candidate n=4 ≈ 20.6 Hz resonator),
+        on the central axis, linked to the Grand Gallery foot by a horizontal passage ·
         stack above the KC = relieving chambers · inclined corridor = Grand Gallery ·
         <b style="color:var(--demo-cyan)">translucent block above the gallery</b> = Big Void (n=5, 34 Hz resonator) ·
-        <b style="color:var(--demo-cyan)">cyan dashes</b> = wireless AC link ·
-        <b style="color:var(--gold)">wheel</b> = 50 Hz motor (green when locked) ·
+        <b style="color:var(--demo-cyan)">chevron-roofed void behind the north face</b> = the North Face Corridor
+        (≈9 m, ScanPyramids 2023; a structural void above the original entrance, not part of the energy chain) ·
+        <b style="color:#caa64a">small obelisks beside the houses</b> = the <b>endpoint tuners</b> that harvest the
+        broadcast (modeled separately) and feed each home ·
         <b style="color:#ffcf6e">small houses</b> (ring, <b>to scale</b> ≈9 m vs the 146 m pyramid) =
-        the connected load; they light when the battery powers them, go dark when it empties ·
-        <b style="color:#b89cff">violet apex glow</b> = the sharpened point in continuous corona (point discharge).
+        the connected load; they light when powered (via their obelisk), go dark when the ground battery empties ·
+        <b style="color:#b89cff">violet apex glow</b> = the sharpened point in continuous corona (point discharge) ·
+        <b style="color:#49c39a">green rings rising from the aquifer</b> = the <b>telluric ground loop</b> (the dam-shunt
+        DC the running MHD core chops) · <b style="color:var(--demo-cyan)">cyan wavefronts expanding outward</b> = the
+        whole-device <b>broadcast out</b>.
         Chambers near true scale; coffer enlarged ~4× for visibility.
         <b style="color:var(--gold)">Scroll to zoom.</b>
       </div>
@@ -364,10 +484,10 @@
         <div class="stage-list">
           <div class="stage-item" id="stDc"><div class="stage-prog" id="sDc"></div><div class="stage-dot"></div><span class="stage-lbl">DC accumulate</span><span class="stage-pct" id="pDc">0%</span></div>
           <div class="stage-item" id="stSeed"><div class="stage-prog" id="sSeed"></div><div class="stage-dot"></div><span class="stage-lbl">Ladder trigger</span><span class="stage-pct" id="pSeed">0%</span></div>
-          <div class="stage-item" id="stPar"><div class="stage-prog" id="sPar"></div><div class="stage-dot"></div><span class="stage-lbl">Obelisk pump</span><span class="stage-pct" id="pPar">0%</span></div>
+          <div class="stage-item" id="stPar"><div class="stage-prog" id="sPar"></div><div class="stage-dot"></div><span class="stage-lbl">Parametric pump</span><span class="stage-pct" id="pPar">0%</span></div>
           <div class="stage-item" id="stSat"><div class="stage-prog" id="sSat"></div><div class="stage-dot"></div><span class="stage-lbl">Saturate</span><span class="stage-pct" id="pSat">0%</span></div>
           <div class="stage-item" id="stAc"><div class="stage-prog" id="sAc"></div><div class="stage-dot"></div><span class="stage-lbl">AC output</span><span class="stage-pct" id="pAc">0%</span></div>
-          <div class="stage-item" id="stMot"><div class="stage-prog" id="sMot"></div><div class="stage-dot"></div><span class="stage-lbl">Motor lock</span><span class="stage-pct" id="pMot">0%</span></div>
+          <div class="stage-item" id="stMot"><div class="stage-prog" id="sMot"></div><div class="stage-dot"></div><span class="stage-lbl">Endpoint harvest</span><span class="stage-pct" id="pMot">0%</span></div>
         </div>
       </div>
     </div>
@@ -376,71 +496,149 @@
     <div class="scene-panel">
       <div class="panel-header">
         <span class="panel-title">Live Readouts</span>
-        <span class="panel-tag tag-error" id="freqTag">— Hz</span>
+        <span class="panel-tag tag-error" id="freqTag">… Hz</span>
       </div>
-      <div class="panel-body">
+      <div class="panel-body py-only">
+        <div class="stat-card stat-gold" style="margin-bottom:10px">
+          <div class="stat-label">Whole-device output · TELLURIC CHOPPER
+            <span style="float:right;font-weight:700;color:var(--text-muted)" id="pyOpTag">…</span></div>
+          <div class="stat-value" id="pyOpOut">…</div>
+          <div class="stat-sub" id="pyOpSub">the running core chops the telluric DC → broadcast out</div>
+        </div>
         <div class="metric-grid">
           <div class="stat-card stat-gold">
-            <div class="stat-label">Synchronous Motor</div>
-            <div class="stat-value" id="rpm">0 rpm</div>
-            <div class="stat-sub" id="rpmSub">locked to the Schumann mode</div>
+            <div class="stat-label">Endpoint · obelisk harvest</div>
+            <div class="stat-value" id="rpm">… houses</div>
+            <div class="stat-sub" id="rpmSub">obelisks tune into the broadcast</div>
           </div>
           <div class="stat-card stat-green">
             <div class="stat-label">AC Output (50 Hz)</div>
-            <div class="stat-value" id="acOut">—</div>
+            <div class="stat-value" id="acOut">…</div>
             <div class="stat-sub">slosh → MHD alternator</div>
           </div>
         </div>
         <div class="ledger" style="margin-top:14px">
-          Apex collector: <b id="ledApex">—</b> &nbsp;·&nbsp; DC reservoir in: <b id="ledIn">—</b><br>
-          Ground plane (basalt+aquifer): <b id="ledGround">—</b> &nbsp;·&nbsp; DC loop: <b id="ledLoop">—</b><br>
-          Down-conductor (electrum edges): <b id="ledDown">—</b> &nbsp;·&nbsp; strike to ground: <b id="ledStrike">—</b><br>
-          Strike → aquifer (R<sub>tot</sub> <b id="ledEarthR">—</b>): <b id="ledEarth">—</b> <span style="color:var(--text-muted)">(capturing it is the impedance-matched hard part)</span><br>
-          AC out: <b id="ledOut">—</b> &nbsp;·&nbsp; Slosh velocity: <b id="ledV">—</b><br>
+          Apex collector: <b id="ledApex">…</b> &nbsp;·&nbsp; DC reservoir in: <b id="ledIn">…</b><br>
+          Wet-footprint ground electrode (R = 1/2πσa, a≈115 m): <b id="ledGround">…</b> &nbsp;·&nbsp; DC loop: <b id="ledLoop">…</b><br>
+          Rain-shell flashover path (wet faces): <b id="ledDown">…</b> &nbsp;·&nbsp; strike reaches ground: <b id="ledStrike">…</b><br>
+          Strike → aquifer (R<sub>tot</sub> <b id="ledEarthR">…</b>): <b id="ledEarth">…</b> <span style="color:var(--text-muted)">(no metal needed; capturing it is the impedance-matched hard part)</span><br>
+          AC out: <b id="ledOut">…</b> &nbsp;·&nbsp; Slosh velocity: <b id="ledV">…</b><br>
           <span style="color:var(--text-muted)">Energy-conserved: out ≤ in. The device sells <b>coherence</b> (a 50 Hz lock), not bulk watts.</span>
+        </div>
+      </div>
+
+      <!-- Coffer MHD telemetry (shown only in the Coffer zoom) -->
+      <div class="panel-body coffer-only">
+        <div class="stat-card stat-gold" style="margin-bottom:10px">
+          <div class="stat-label">Broadcast output · TELLURIC CHOPPER
+            <span style="color:var(--text-muted)">(Machine C · conditional)</span></div>
+          <div class="stat-value" id="cofrChop">…</div>
+          <div class="stat-sub" id="cofrChopSub">…</div>
+        </div>
+        <div class="metric-grid">
+          <div class="stat-card stat-green">
+            <div class="stat-label">MHD byproduct <span style="color:var(--text-muted)">(Faraday, at 2.5 mm/s)</span></div>
+            <div class="stat-value" id="cofrPow">…</div>
+            <div class="stat-sub" id="cofrPowSub">parasitic slosh→AC, not the broadcast</div>
+          </div>
+          <div class="stat-card stat-gold">
+            <div class="stat-label">EMF × current <span style="color:var(--text-muted)">(MHD byproduct)</span></div>
+            <div class="stat-value" id="cofrEmf">…</div>
+            <div class="stat-sub" id="cofrEmfSub">low V, huge I (µΩ source)</div>
+          </div>
+        </div>
+        <div class="ledger" style="margin-top:14px;border:1px solid var(--gold-border);border-radius:8px;padding:10px 12px;line-height:1.85">
+          <b style="color:var(--gold)" id="cofStateTitle">State…</b><br>
+          <b style="color:#7fbf8f">Ambient (always present):</b> atmospheric DC <b id="cofrAtmDc">…</b> + ground/telluric <b id="cofrGnd">…</b>,
+          the µW–mW primer that keeps the dormant coffer poised.<br>
+          <b style="color:#C9A830">Resonance (the bell):</b> f₈ = <b id="cofrResF">…</b> · Q = <b id="cofrResQ">…</b> ·
+          standing wave holds <b id="cofrResE">…</b>, exchanging <b id="cofrResP">…</b> to ring (high Q).<br>
+          <b style="color:#49c39a">Telluric clock:</b> <b id="cofrTelV">…</b> across the chamber (field <b id="cofrTelF">…</b>),
+          the global ~50 Hz reference the cavity locks to, <b>not</b> the fuel.<br>
+          <b style="color:#bfe3ff">Reactor:</b> mercury vapour <b id="cofrTemp">…</b> at <b id="cofrPres">…</b> ·
+          arc core <b id="cofrArc">…</b> · thermal tax <b id="cofrTax">…</b> (paid by the through-current).
+        </div>
+        <div class="ledger" style="margin-top:14px">
+          Field at pool: <b id="cofrB">…</b> &nbsp;·&nbsp; Slosh: <b id="cofrV">…</b> (fixed) &nbsp;·&nbsp; Short-circuit I: <b id="cofrIsc">…</b><br>
+          Internal resistance (mercury): <b id="cofrR">…</b> &nbsp;·&nbsp; Hartmann: <b id="cofrHa">…</b> <span style="color:var(--text-muted)">(plug flow)</span><br>
+          Lorentz brake σB²: <b id="cofrBrake">…</b> &nbsp;·&nbsp; Mercury mass: <b id="cofrMass">…</b><br>
+          <span style="color:var(--text-muted)"><b style="color:var(--gold)">The slosh is the SWITCH, not the generator.</b>
+          Faraday induction from a 2.5 mm/s slosh can only ever make a tiny <b id="cofrConv">…</b> (needs
+          <b id="cofrDrive">…</b> of mechanical drive at ~50%); that's the parasitic <b>MHD byproduct</b>, not the
+          broadcast. The real output is the <b>CHOPPER</b>: the 50 Hz arc strike/quench gates the massive
+          telluric DC through-current (V = L·di/dt transients), and that, minus the 59 kW thermal tax, is the
+          hundreds of kW that couple out <b>wirelessly</b> via the resonant field. It only delivers if the
+          dam-shunt geology holds (R_source ≤ 42 mΩ); slide R_source to see it sustain or stall.</span>
+        </div>
+      </div>
+
+      <!-- Obelisk receiver live telemetry (shown only in the Obelisk Pair system) -->
+      <div class="panel-body ob-only">
+        <div class="metric-grid">
+          <div class="stat-card stat-gold">
+            <div class="stat-label">Homes powered <span style="color:var(--text-muted)">(avg draw)</span></div>
+            <div class="stat-value" id="obHomeBig">…</div>
+            <div class="stat-sub">≈ <b id="obrPanels">…</b> full 100 A panels at peak</div>
+          </div>
+          <div class="stat-card stat-green">
+            <div class="stat-label">Developed potential</div>
+            <div class="stat-value" id="obVpairBig">…</div>
+            <div class="stat-sub">across the pair (kV-class)</div>
+          </div>
+        </div>
+        <div class="ledger" style="margin-top:14px">
+          Broadcast: <b id="obrBroadcast">…</b> &nbsp;·&nbsp; Lock quality: <b id="obrLock">…</b><br>
+          Developed potential: <b id="obrVpair">…</b> → each home's transformer <b id="obrRatio">…</b>
+          → home rail <b id="obrVhome">…</b><br>
+          Delivered: <b id="obrPower">…</b> &nbsp;·&nbsp; output current <b id="obrIout">…</b>
+          (on the 240 V side)<br>
+          Homes powered: <b id="obrHomes">…</b>
+          <span style="color:var(--text-muted)">(by ~1.5 kW average draw; one full 100 A panel is 24 kW peak).</span><br>
+          <span style="color:var(--text-muted)">One chain: broadcast 50 Hz in → resonant lock →
+          high voltage developed → HV to each home → the home's transformer steps down → 240 V.</span>
         </div>
       </div>
     </div>
 
-    <!-- Atmospheric Energy — where the energy actually is (fair-weather → storm → strike → store) -->
-    <div class="scene-panel span2">
+    <!-- Atmospheric Energy: where the energy actually is (fair-weather → storm → strike → store) -->
+    <div class="scene-panel span2 py-only">
       <div class="panel-header">
-        <span class="panel-title">Atmospheric Energy — where the energy actually is</span>
+        <span class="panel-title">Atmospheric Energy · where the energy actually is</span>
         <span class="panel-tag tag-recover">fair-weather → storm → strike → store</span>
       </div>
       <div class="panel-body">
         <div class="metric-grid energy-grid">
-          <!-- fair-weather DC — the trickle that STARTS it -->
+          <!-- fair-weather DC: the trickle that STARTS it -->
           <div class="stat-card">
             <div class="stat-label">Fair-weather DC <span style="color:var(--text-muted)">(starts it)</span></div>
-            <div class="stat-value" id="enFair">—</div>
-            <div class="stat-sub">steady atmospheric pump — the µW seed</div>
+            <div class="stat-value" id="enFair">…</div>
+            <div class="stat-sub">steady atmospheric pump: the µW seed</div>
           </div>
           <!-- the storm regime -->
           <div class="stat-card stat-gold">
             <div class="stat-label">Storm tap <span style="color:var(--text-muted)">(charges it)</span></div>
-            <div class="stat-value" id="enStorm">—</div>
+            <div class="stat-value" id="enStorm">…</div>
             <div class="stat-sub" id="enStormSub">apex tap ≈ MV · ×vs fair-weather</div>
           </div>
           <!-- the lightning strike -->
           <div class="stat-card stat-gold">
             <div class="stat-label">Lightning strike</div>
-            <div class="stat-value" id="enStrike">—</div>
+            <div class="stat-value" id="enStrike">…</div>
             <div class="stat-sub" id="enStrikeSub">captured into the resonant sink</div>
           </div>
           <!-- the aquifer store -->
           <div class="stat-card stat-green">
             <div class="stat-label">Aquifer store <span style="color:var(--text-muted)">(holds it)</span></div>
-            <div class="stat-value" id="enVrtra">—</div>
-            <div class="stat-sub" id="enVrtraSub">geological capacity — never saturates</div>
+            <div class="stat-value" id="enVrtra">…</div>
+            <div class="stat-sub" id="enVrtraSub">geological capacity, never saturates</div>
           </div>
         </div>
         <div class="ledger" style="margin-top:14px">
-          Banked per storm season: <b id="enBanked">—</b> &nbsp;·&nbsp;
-          Delivered (8 h draw): <b id="enBurst">—</b><br>
+          Banked per storm season: <b id="enBanked">…</b> &nbsp;·&nbsp;
+          Delivered (8 h draw): <b id="enBurst">…</b><br>
           <span style="color:var(--text-muted)">The fair-weather DC <b>starts</b> the machine; each lightning strike
           <b>charges</b> the aquifer electrochemically; the store <b>holds</b> it and meters it
-          out. This is the answer to “where is all the energy?” — not a µW trickle but a lightning-charged
+          out. This is the answer to “where is all the energy?”: not a µW trickle but a lightning-charged
           geological battery. <b>Not free energy</b>: total stays strike-limited; the store buffers the flood,
           it doesn't create it. The strike→aquifer charging coupling is the open frontier
           (<span style="color:var(--gold)">[EST]</span>).</span>
@@ -449,23 +647,23 @@
     </div>
 
     <!-- 50 Hz AC waveform (full width) -->
-    <div class="scene-panel span2">
+    <div class="scene-panel span2 py-only">
       <div class="panel-header">
         <span class="panel-title">50 Hz AC Waveform</span>
         <span class="panel-tag tag-recover">amplitude ∝ slosh</span>
       </div>
       <div class="wf-wrap" style="padding-top:14px"><canvas id="waveform"></canvas></div>
       <div class="wf-wrap ledger" style="color:var(--text-muted)">
-        The oscillating mercury cuts the MHD field → 50 Hz AC, transmitted to a
-        tuned synchronous motor. Computed live in <b>phi-pyramid-cpp</b> (WASM) —
-        no JavaScript physics.
+        The oscillating mercury cuts the MHD field → 50 Hz AC, broadcast out and
+        harvested by tuned endpoint obelisks. Computed live in <b>phi-pyramid-cpp</b> (WASM).
+        No JavaScript physics.
       </div>
     </div>
 
     <!-- Startup sequence (full width: chart left, breakdown + log right) -->
-    <div class="scene-panel span2">
+    <div class="scene-panel span2 py-only">
       <div class="panel-header">
-        <span class="panel-title">Startup Sequence — slosh &amp; AC build-up (live)</span>
+        <span class="panel-title">Startup Sequence · slosh &amp; AC build-up (live)</span>
         <span class="panel-tag tag-error" id="elapsedTag">t = 0 s</span>
       </div>
       <div class="startup-cols">
@@ -473,7 +671,7 @@
           <div class="ledger" style="color:var(--text-muted);margin-bottom:8px">
             <span style="color:var(--gold)">━</span> slosh envelope &nbsp;
             <span style="color:var(--demo-cyan)">━</span> AC output &nbsp;
-            <span style="color:var(--demo-green)">┊</span> first-AC marker — vs simulated time.
+            <span style="color:var(--demo-green)">┊</span> first-AC marker, vs simulated time.
           </div>
           <canvas id="buildupChart"></canvas>
         </div>
@@ -488,7 +686,7 @@
       </div>
       <div class="ledger" style="padding:0 16px 14px;color:var(--text-muted)">
         Startup is the <b>slowest of several physical processes</b>, each a textbook
-        time constant computed from constants &amp; measured chamber dimensions — no
+        time constant computed from constants &amp; measured chamber dimensions, with no
         single number taken on faith. <b>First AC power</b> ≈ max(cavity ring-up,
         bulk-slosh ring-up, air-bias ε₀/σ); <b>full mercury circulation</b> is a
         separate, much slower milestone (the sub-mm/s drift).
@@ -509,7 +707,7 @@ let timeScale = 100;       // sim seconds per wall-clock second (Real-Time / 10�
 
 // Live Schumann lock: the device runs on the n-th harmonic of the OBSERVED
 // fundamental f₁ (entered from a live source). f_n/f₁ = √(n(n+1)/2) is exact
-// Schumann dispersion — the lock frequency tracks the live value; the device
+// Schumann dispersion: the lock frequency tracks the live value; the device
 // MAGNITUDES (slosh, AC, power) are the idealized model from phi-pyramid-cpp.
 let curMode = 8, curF1 = 7.83;
 function liveLock() {
@@ -533,7 +731,8 @@ function buildScene() {
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
   const LOOK = new THREE.Vector3(0, 0.66, 0.5);
-  const SCENE_R = 1.8;                     // bounding radius around LOOK (pyramid+obelisks+motor)
+  let SCENE_R = 1.8;                       // bounding radius around LOOK (pyramid+obelisks+motor)
+  let sceneMode = 'pyramid';               // 'pyramid' | 'obelisk': which world is shown
   let orbitR = 6;                          // recomputed in resize() to FIT that sphere
   let zoom = 1.0;                          // user scroll-wheel zoom (multiplies orbitR)
   camera.position.set(6, 3, 6); camera.lookAt(LOOK);
@@ -554,85 +753,117 @@ function buildScene() {
   const ground = new THREE.Mesh(new THREE.CircleGeometry(3.2, 48), groundMat);
   ground.rotation.x = -Math.PI / 2; scene.add(ground); mats.ground = groundMat;
 
-  // ── BASALT BASE — the foundation slab under the whole structure: the conductive
+  // ── BASALT BASE: the foundation slab under the whole structure: the conductive
   // ground plane that closes the DC return loop (dark, just below the pyramid base).
   const BASALT = '#2b2f3a';
   const basaltMat = new THREE.MeshBasicMaterial({ color: C(BASALT), transparent: true, opacity: 0.6 });
-  // wide enough to carry the obelisks (x=±1.55) — the pavement extends past the base
+  // wide enough to carry the obelisks (x=±1.55); the pavement extends past the base
   const basalt = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.08, 3.5), basaltMat);
   basalt.position.y = -0.04; scene.add(basalt); mats.basalt = basaltMat;
 
-  // ── Pyramid shell (wireframe, TO SCALE — base/height ≈ 1.55, like Giza) ──
-  const pyMat = new THREE.MeshBasicMaterial({ color: C(p.gold), wireframe: true, transparent: true, opacity: 0.4 });
-  const pyramid = new THREE.Mesh(new THREE.ConeGeometry(1.75, 1.6, 4), pyMat);
-  pyramid.rotation.y = Math.PI / 4; pyramid.position.y = 0.8; scene.add(pyramid); mats.py = pyMat;
+  // ── Pyramid shell: LIMESTONE-WHITE outline via EdgesGeometry (only the real arris +
+  //    base edges, NO triangulated cross-lines on the base). A truncated frustum so the
+  //    body stops just BELOW the capstone, leaving the pyramidion uncovered on top. ──
+  const LIMESTONE = '#b5a98e';
+  const pyMat = new THREE.LineBasicMaterial({ color: C(LIMESTONE), transparent: true, opacity: 0.55 });
+  const pyramid = new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.CylinderGeometry(0.17, 1.75, 1.44, 4)), pyMat);
+  pyramid.rotation.y = Math.PI / 4; pyramid.position.y = 0.72; scene.add(pyramid); mats.py = pyMat;
 
-  // The APEX CAPSTONE — the isolated φ-pyramidion DC collector at the apex (y≈1.6).
-  // GRANITE core (the stone pyramidion) with an ELECTRUM (Au–Ag) COATING — the conductor
+  // The APEX CAPSTONE: the isolated φ-pyramidion DC collector at the apex (y≈1.6).
+  // GRANITE core (the stone pyramidion) with an ELECTRUM (Au–Ag) COATING: the conductor
   // / terminal. The strike it gathers reaches ground via the electrum edge down-conductors.
   const GRANITE_C = '#8a6f63';   // granite core
   const ELECTRUM  = '#e7d9a8';   // pale-gold electrum facing
   const capMat = new THREE.MeshBasicMaterial({ color: C(GRANITE_C), transparent: true, opacity: 0.95 });
   const capstone = new THREE.Mesh(new THREE.ConeGeometry(0.17, 0.24, 4), capMat);
   capstone.rotation.y = Math.PI / 4; capstone.position.y = 1.56; scene.add(capstone); mats.cap = capMat;
-  // the electrum coating — a thin pale-gold wireframe shell over the granite core
+  // the electrum coating: a thin pale-gold wireframe shell over the granite core
   const giltMat = new THREE.MeshBasicMaterial({ color: C(ELECTRUM), wireframe: true, transparent: true, opacity: 0.9 });
   const gilt = new THREE.Mesh(new THREE.ConeGeometry(0.185, 0.26, 4), giltMat);
   gilt.rotation.y = Math.PI / 4; gilt.position.y = 1.56; scene.add(gilt); mats.gilt = giltMat;
 
-  // ── ELECTRUM DOWN-CONDUCTORS: the metal facing down the four ARRIS EDGES, apex→base
-  //    corner, overlaying the pyramid edges (cone circumradius 1.75 at the 45° corners).
-  //    They tie into a base GROUND RING (the perimeter "frame") which bonds to the basalt
-  //    pavement and drops to the aquifer earth electrode. The whole path glows while a
-  //    strike conducts the current down to ground (bare stone would flash over).
+  // ── RAIN-WETTED SHELL FLASHOVER (replaces the looted-metal down-conductors) ──
+  //    No metal survives — it would have been the first treasure looted — and none is
+  //    needed. A storm wets the smooth casing; when the strike hits the apex it tracks
+  //    DOWN THE FOUR FACES as a surface arc to the base, then spreads into the huge wet
+  //    footprint (a ~115 m-radius earth electrode, R = 1/(2πσa) ≈ 2.8 mΩ). The faces
+  //    flash with the wet-surface arc during a strike; bare dry stone would not conduct.
   const APEX_PT = new THREE.Vector3(0, 1.60, 0);
-  const downMat = new THREE.LineBasicMaterial({ color: C(ELECTRUM), transparent: true, opacity: 0.55 });
-  const downConductors = [];
+  const APO = 1.237;                                  // face-midpoint distance at base (apothem)
+  const SHELL_ARC = '#bfe3ff';                        // wet surface-arc blue-white
+  const shellMat = new THREE.LineBasicMaterial({ color: C(SHELL_ARC), transparent: true, opacity: 0.0 });
+  const downConductors = [];                          // the strike-glow set: the wet faces + base ring
   const corners = [];
   for (let k = 0; k < 4; k++) {
-    const a = Math.PI / 4 + k * Math.PI / 2;                       // 45°,135°,225°,315° corners
-    const corner = new THREE.Vector3(Math.cos(a) * 1.75, 0.0, Math.sin(a) * 1.75);   // circumradius
-    corners.push(corner);
-    const g = new THREE.BufferGeometry().setFromPoints([APEX_PT, corner]);
-    const line = new THREE.Line(g, downMat.clone()); scene.add(line); downConductors.push(line);
+    const a = Math.PI / 4 + k * Math.PI / 2;          // 45°,135°,225°,315° corners (circumradius 1.75)
+    corners.push(new THREE.Vector3(Math.cos(a) * 1.75, 0.0, Math.sin(a) * 1.75));
   }
-  // the base ground RING (the "frame") connecting the four corners on the basalt pavement
+  // Flashover streaks: a fan down each of the four FACES (not the edges), apex → base edge,
+  // suggesting the sheet of rainwater carrying the surface arc down the smooth casing.
+  const faceAxes = [[1, 0], [-1, 0], [0, 1], [0, -1]];   // +x,−x,+z,−z face normals
+  for (const [nx, nz] of faceAxes) {
+    for (const s of [-0.85, -0.45, 0, 0.45, 0.85]) {     // fan across the wet face width
+      const pxb = nx !== 0 ? nx * APO : s * APO;
+      const pzb = nz !== 0 ? nz * APO : s * APO;
+      const ln = new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([APEX_PT, new THREE.Vector3(pxb, 0, pzb)]),
+        shellMat.clone());
+      scene.add(ln); downConductors.push(ln);
+    }
+  }
+  // base GROUND RING: the wet-footprint perimeter where the sheet current enters the earth
   const ring = new THREE.Line(
     new THREE.BufferGeometry().setFromPoints([corners[0], corners[1], corners[2], corners[3], corners[0]]),
-    downMat.clone()); scene.add(ring); downConductors.push(ring);
-  // a ring SPOKE carrying the collected current inward to the central earth shaft
-  const spoke = new THREE.Line(new THREE.BufferGeometry().setFromPoints(
-    [corners[0], new THREE.Vector3(0, 0, 0)]), downMat.clone());
-  scene.add(spoke); downConductors.push(spoke);
-  mats.down = downMat;
+    shellMat.clone()); scene.add(ring); downConductors.push(ring);
+  mats.down = shellMat;
 
-  // ── THE SUBTERRANEAN CHAMBER + PIT (real, central, below the base; purpose unknown) ──
-  //    Conjecture: the central earth-electrode hub — the down-conductor current converges
-  //    here and the PIT (dug straight down from the chamber floor) is the shaft to the
-  //    water table. Filled now; the wetter early-Holocene water table may have reached it.
+  // ── THE SUBTERRANEAN CHAMBER + PIT (real, central, below the base) ──
+  //    Kept as real features. In the wet-shell model they are NOT the conduction path:
+  //    the strike enters the earth across the whole base footprint, not via a central shaft.
   const SUB_Y = -0.22, PIT_BOT = -0.46;
-  const subMat = new THREE.MeshBasicMaterial({ color: C('#6b5a4a'), wireframe: true, transparent: true, opacity: 0.55 });
+  const subMat = new THREE.MeshBasicMaterial({ color: C('#6b5a4a'), wireframe: true, transparent: true, opacity: 0.5 });
   const subChamber = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.15, 0.26), subMat);
   subChamber.position.set(0, SUB_Y, 0); scene.add(subChamber); mats.sub = subMat;
-  // the central shaft from the base down through the chamber, then the PIT to the aquifer
-  const shaftLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(
-    [new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, SUB_Y + 0.075, 0)]), downMat.clone());
-  scene.add(shaftLine); downConductors.push(shaftLine);
-  const pitMat = new THREE.LineBasicMaterial({ color: C('#8aa0c0'), transparent: true, opacity: 0.75 });
+  const pitMat = new THREE.LineBasicMaterial({ color: C('#8aa0c0'), transparent: true, opacity: 0.5 });
   const pit = new THREE.Line(new THREE.BufferGeometry().setFromPoints(
     [new THREE.Vector3(0, SUB_Y - 0.075, 0), new THREE.Vector3(0, PIT_BOT, 0)]), pitMat);
-  scene.add(pit); downConductors.push(pit);
+  scene.add(pit);
 
-  // ── THE AQUIFER (water table) below the pit: the earth electrode / battery the pit reaches.
+  // ── THE AQUIFER (water table) under the footprint: the earth electrode / battery. ──
   const aquiferMat = new THREE.MeshBasicMaterial({ color: C('#3a6ea5'), transparent: true, opacity: 0.32 });
   const aquifer = new THREE.Mesh(new THREE.CircleGeometry(2.0, 44), aquiferMat);
   aquifer.rotation.x = -Math.PI / 2; aquifer.position.y = -0.47; scene.add(aquifer); mats.aquifer = aquiferMat;
-  // the ENERGY PULSE: apex → edge corner → ring spoke to centre → down the pit → aquifer.
-  const earthPath = [APEX_PT.clone(), corners[0].clone(),
-                     new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, PIT_BOT, 0)];
-  const gpMat = new THREE.MeshBasicMaterial({ color: C('#fff2c8'), transparent: true, opacity: 0 });
+  // a spreading ring on the aquifer: charge entering across the footprint and spreading in the water
+  const aquiferSpreadMat = new THREE.MeshBasicMaterial({ color: C(SHELL_ARC), transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false });
+  const aquiferSpread = new THREE.Mesh(new THREE.RingGeometry(0.12, 0.20, 48), aquiferSpreadMat);
+  aquiferSpread.rotation.x = -Math.PI / 2; aquiferSpread.position.y = -0.46; scene.add(aquiferSpread);
+  // the ENERGY PULSE path: apex → down a wet FACE → into the footprint → aquifer.
+  const earthPath = [APEX_PT.clone(), new THREE.Vector3(APO, 0, 0), new THREE.Vector3(0, PIT_BOT, 0)];
+  const gpMat = new THREE.MeshBasicMaterial({ color: C(SHELL_ARC), transparent: true, opacity: 0 });
   const groundPulse = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 12), gpMat);
   scene.add(groundPulse); mats.gpulse = gpMat;
+
+  // ── WHOLE-DEVICE OPERATION visuals (Stage 10): the device RUNNING & broadcasting ──
+  // (a) TELLURIC GROUND LOOP: green wavefronts rising from the aquifer up into the base:
+  //     the regional telluric DC the dam-shunt forces through the pyramid (the supply the
+  //     slosh chops). Shown when the device is ON & the dam holds (sustains).
+  const pyTel = [];
+  for (let i = 0; i < 4; i++) {
+    const r = new THREE.Mesh(new THREE.RingGeometry(0.5, 0.7, 48),
+      new THREE.MeshBasicMaterial({ color: C('#49c39a'), transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false }));
+    r.rotation.x = -Math.PI / 2; r.position.y = -0.46; r.renderOrder = -2; scene.add(r); pyTel.push(r);
+  }
+  // (b) BROADCAST WAVEFRONTS: cyan rings expanding outward from the King's-Chamber height:
+  //     the 50 Hz chopper output coupling out wirelessly (the whole-device broadcast).
+  //     depthWrite:false + low renderOrder so these translucent sweeps never fight the
+  //     houses/obelisks for depth-sort order (which would flicker as the camera orbits).
+  const pyBcast = [];
+  for (let i = 0; i < 5; i++) {
+    const r = new THREE.Mesh(new THREE.RingGeometry(0.3, 0.42, 64),
+      new THREE.MeshBasicMaterial({ color: C(p.cyan), transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false }));
+    r.rotation.x = -Math.PI / 2; r.position.y = 0.40; r.renderOrder = -2; scene.add(r); pyBcast.push(r);
+  }
 
   // ── APEX CORONA GLOW: the sharpened point in continuous point-discharge (St. Elmo's
   //    fire). A soft violet glow at the tip, always on when the apex is in corona; it
@@ -667,17 +898,33 @@ function buildScene() {
 
   // Internal features are positioned to scale inside the pyramid. The coffer is
   // GENUINELY TINY (≈2 m in a 146 m pyramid); it's enlarged only ~4× so it stays
-  // visible. The Big Void is ≈35 m — large, and shown near true scale.
+  // visible. The Big Void is ≈35 m, large, and shown near true scale.
   const INCL = 26 * Math.PI / 180;    // incline; the gallery ASCENDS up to the KC
                                       // (KC at the high end), descending away from it
 
-  // King's Chamber — the air-acoustic resonator (Q≈300), small wire box
+  // King's Chamber: the air-acoustic resonator (Q≈300), small wire box
   const kcMat = new THREE.MeshBasicMaterial({ color: C(p.axis), wireframe: true, transparent: true, opacity: 0.55 });
   const kc = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.075, 0.09), kcMat);
   kc.position.set(0, 0.40, 0); scene.add(kc); mats.kc = kcMat;
 
-  // Relieving Chambers — the granite-beam support stack DIRECTLY ABOVE the King's
-  // Chamber that carries the weight above it. (This is the known space over the KC —
+  // Queen's Chamber: the smaller chamber on the central axis BELOW the King's
+  // Chamber (real floor ≈ 21 m vs KC ≈ 43 m), with its gabled (corbel) roof. Reached
+  // by the horizontal passage off the foot of the Grand Gallery. A secondary cavity
+  // (candidate n=4 ≈ 20.6 Hz resonator). Wireframe, smaller than the KC.
+  const qcMat = new THREE.MeshBasicMaterial({ color: C(p.axis), wireframe: true, transparent: true, opacity: 0.5 });
+  const qc = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.05, 0.06), qcMat);
+  qc.position.set(0, 0.21, 0); scene.add(qc); mats.qc = qcMat;
+  // its gabled roof (a small ridge prism on top, matching the real corbel gable)
+  const qcRoof = new THREE.Mesh(new THREE.ConeGeometry(0.052, 0.03, 4), qcMat);
+  qcRoof.position.set(0, 0.21 + 0.025 + 0.015, 0); qcRoof.rotation.y = Math.PI / 4; scene.add(qcRoof);
+  // the horizontal passage linking the Queen's Chamber to the Grand Gallery foot
+  const qcPassMat = new THREE.LineBasicMaterial({ color: C(p.axis), transparent: true, opacity: 0.35 });
+  const qcPass = new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+    [new THREE.Vector3(-0.04, 0.21, 0), new THREE.Vector3(-0.13, 0.215, 0)]), qcPassMat);
+  scene.add(qcPass); mats.qcPass = qcPassMat;
+
+  // Relieving Chambers: the granite-beam support stack DIRECTLY ABOVE the King's
+  // Chamber that carries the weight above it. (This is the known space over the KC,
   // NOT the Big Void, which is above the Grand Gallery.)
   const rcMat = new THREE.MeshBasicMaterial({ color: C(p.axis), wireframe: true, transparent: true, opacity: 0.4 });
   for (let i = 0; i < 5; i++) {
@@ -686,7 +933,7 @@ function buildScene() {
   }
   mats.rc = rcMat;
 
-  // Coffer + mercury (the conductor; sloshes horizontally → MHD → AC) — tiny
+  // Coffer + mercury (the conductor; sloshes horizontally → MHD → AC), tiny
   const cofferMat = new THREE.MeshBasicMaterial({ color: C(p.axis), wireframe: true, transparent: true, opacity: 0.85 });
   const coffer = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.04, 0.05), cofferMat);
   coffer.position.set(0, 0.40, 0); scene.add(coffer);
@@ -694,15 +941,39 @@ function buildScene() {
   const mercury = new THREE.Mesh(new THREE.BoxGeometry(0.082, 0.026, 0.045), hgMat);
   mercury.position.set(0, 0.395, 0); scene.add(mercury); mats.hg = hgMat;
 
-  // Grand Gallery — a TALL, NARROW corridor that ASCENDS up to the King's Chamber
+  // Grand Gallery: a TALL, NARROW corridor that ASCENDS up to the King's Chamber
   // (its high end meets the KC; it slopes down and away from there).
   const ggMat = new THREE.MeshBasicMaterial({ color: C(p.axis), wireframe: true, transparent: true, opacity: 0.3 });
   const gg = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.1, 0.045), ggMat);
   gg.position.set(-0.27, 0.30, 0); gg.rotation.z = INCL; scene.add(gg); mats.gg = ggMat;
 
-  // ── THE BIG VOID — the low-density AIR RESONANT CHAMBER just ABOVE THE GRAND
+  // ── NORTH FACE CORRIDOR (NFC / "ScanPyramids Big Void corridor", confirmed 2023):
+  // a ~9 m × 2.1 m × 2.1 m chevron-roofed void hidden just behind the NORTH face,
+  // above the original entrance, running parallel to the face. The chevron blocks
+  // over the original entrance mark its outer end. Highlighted in void-cyan as a
+  // recently-confirmed cavity (not part of the energy chain — a structural void). ──
+  const nfcFill = new THREE.MeshBasicMaterial({ color: C(p.cyan), transparent: true, opacity: 0.12 });
+  const nfcEdge = new THREE.MeshBasicMaterial({ color: C(p.cyan), wireframe: true, transparent: true, opacity: 0.5 });
+  const nfcBox  = new THREE.BoxGeometry(0.105, 0.024, 0.020);   // long along x (parallel to N face)
+  const nfc = new THREE.Group();
+  nfc.add(new THREE.Mesh(nfcBox, nfcFill));
+  nfc.add(new THREE.Mesh(nfcBox, nfcEdge));
+  // chevron (gabled) roof ridge over the corridor — the signature feature
+  const nfcRoof = new THREE.Mesh(new THREE.ConeGeometry(0.016, 0.018, 4), nfcEdge);
+  nfcRoof.position.set(0, 0.020, 0); nfcRoof.rotation.y = Math.PI / 4; nfc.add(nfcRoof);
+  // place just inside the north face (−z), above the entrance height, with the
+  // corridor's slight ascending tilt toward the interior
+  nfc.position.set(0.0, 0.30, -0.90); nfc.rotation.x = -10 * Math.PI / 180;
+  scene.add(nfc); mats.nfcFill = nfcFill; mats.nfcEdge = nfcEdge;
+  // a short marker line down to the original-entrance / descending-passage mouth
+  const nfcEntryMat = new THREE.LineBasicMaterial({ color: C(p.cyan), transparent: true, opacity: 0.4 });
+  const nfcEntry = new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+    [new THREE.Vector3(0, 0.285, -0.90), new THREE.Vector3(0, 0.20, -0.78)]), nfcEntryMat);
+  scene.add(nfcEntry); mats.nfcEntry = nfcEntryMat;
+
+  // ── THE BIG VOID: the low-density AIR RESONANT CHAMBER just ABOVE THE GRAND
   // GALLERY (similar tall-narrow cross-section, ≈30 m / 100 ft; ScanPyramids 2017).
-  // It is the n=5 Schumann resonator (33.8 Hz) — its OWN harmonic, NOT a 50 Hz
+  // It is the n=5 Schumann resonator (33.8 Hz): its OWN harmonic, NOT a 50 Hz
   // flywheel for the coffer (different frequency ⇒ no coupling). It simply resonates. ──
   const voidFill = new THREE.MeshBasicMaterial({ color: C(p.cyan), transparent: true, opacity: 0.14 });
   const voidEdge = new THREE.MeshBasicMaterial({ color: C(p.cyan), wireframe: true, transparent: true, opacity: 0.5 });
@@ -714,51 +985,23 @@ function buildScene() {
   bigVoid.position.set(-0.25, VOID_Y, 0); bigVoid.rotation.z = INCL; scene.add(bigVoid);
   mats.voidFill = voidFill; mats.voidEdge = voidEdge;
 
-  // ── Two obelisks (external parametric pump), to scale (≈30 m) ──
-  const obMat = new THREE.MeshBasicMaterial({ color: C(p.gold), transparent: true, opacity: 0.6 });
-  const obs = [];
-  for (const x of [-1.55, 1.55]) {
-    const o = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.045, 0.4, 4), obMat.clone());
-    o.position.set(x, 0.2, 0); o.rotation.y = Math.PI / 4; scene.add(o);
-    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.09, 4), obMat.clone());
-    tip.position.set(x, 0.445, 0); tip.rotation.y = Math.PI / 4; scene.add(tip);
-    obs.push(o, tip);
-  }
-
-  // ── AC generated at the coffer → beamed WIRELESSLY to the motor ──
-  // Motor sits PERPENDICULAR to the obelisk line (obelisks are along x at z=0; the
-  // motor is on the z-axis, centred between them), so it reads as a separate unit.
-  const linkMat = new THREE.LineDashedMaterial({ color: C(p.cyan), transparent: true, opacity: 0.0, dashSize: 0.1, gapSize: 0.07 });
-  const acSource = new THREE.Vector3(0, 0.42, 0.1), motorPos = new THREE.Vector3(0, 0.41, 1.55);
-  const linkGeo = new THREE.BufferGeometry().setFromPoints([acSource, motorPos]);
-  const link = new THREE.Line(linkGeo, linkMat); link.computeLineDistances(); scene.add(link); mats.link = linkMat;
-  const pulseMat = new THREE.MeshBasicMaterial({ color: C(p.cyan), transparent: true, opacity: 0 });
-  const pulse = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 10), pulseMat); scene.add(pulse); mats.pulse = pulseMat;
-
-  // ── Synchronous motor (rotor + spokes) — the load, at coffer level ──
-  const motor = new THREE.Group(); motor.position.copy(motorPos);
-  const rotorMat = new THREE.MeshBasicMaterial({ color: C(p.gold), wireframe: true });
-  const rotor = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.07, 24), rotorMat);
-  rotor.rotation.x = Math.PI / 2; motor.add(rotor);
-  for (let i = 0; i < 4; i++) {
-    const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.025, 0.025), rotorMat);
-    spoke.rotation.z = i * Math.PI / 4; motor.add(spoke);
-  }
-  scene.add(motor); mats.rotor = rotorMat;
+  // The big obelisks and the synchronous-motor load are GONE: obelisks are not a
+  // parametric pump; they are ENDPOINT tuners that harvest the broadcast (modeled
+  // separately, and shown small beside each house below). The pyramid radiates; the
+  // endpoint obelisks pick it up.
 
   // ── THE LOAD: small houses around the pyramid, TO SCALE. Scene scale ≈ 92 m/unit
-  //    (pyramid base 230 m ↔ 2.48 units), so a ~9 m house ≈ 0.10 units — a speck next
+  //    (pyramid base 230 m ↔ 2.48 units), so a ~9 m house ≈ 0.10 units, a speck next
   //    to the pyramid. Each is wired to the structure (a grid tie) and lights up when
   //    the battery is powering it; goes dark when the battery empties.
   const HOUSE_W = 0.10, HOUSE_BODY_H = 0.05, HOUSE_ROOF_H = 0.035;   // ≈9×4.6 m + 3.2 m roof
   const HOUSE_R = 2.35;                                              // ring radius (outside the base)
   const houseGroup = new THREE.Group(); scene.add(houseGroup);
-  const houseMeshes = [];     // { body, roof, tie }
+  const houseMeshes = [];     // { body, roof, tie, obShaft, obTip }
   function buildHouses(n) {
     while (houseMeshes.length) {                                     // clear existing
       const h = houseMeshes.pop();
-      houseGroup.remove(h.body); houseGroup.remove(h.roof); houseGroup.remove(h.tie);
-      h.body.geometry.dispose(); h.roof.geometry.dispose(); h.tie.geometry.dispose();
+      for (const m of [h.body, h.roof, h.tie, h.obShaft, h.obTip]) { houseGroup.remove(m); m.geometry.dispose(); }
     }
     for (let i = 0; i < n; i++) {
       const a = (i / Math.max(1, n)) * Math.PI * 2 + 0.35;
@@ -769,21 +1012,318 @@ function buildScene() {
       body.position.set(x, HOUSE_BODY_H / 2, z);
       const roof = new THREE.Mesh(new THREE.ConeGeometry(HOUSE_W * 0.82, HOUSE_ROOF_H, 4), roofMat);
       roof.position.set(x, HOUSE_BODY_H + HOUSE_ROOF_H / 2, z); roof.rotation.y = Math.PI / 4;
-      // grid tie: a thin line from the pyramid base toward the house
+      // a small ENDPOINT OBELISK beside each house (just inward, toward the pyramid); it
+      // tunes into & harvests the wireless broadcast; the house draws from it.
+      const ox = Math.cos(a) * (HOUSE_R - 0.14), oz = Math.sin(a) * (HOUSE_R - 0.14);
+      const obMat = new THREE.MeshBasicMaterial({ color: C('#caa64a'), transparent: true, opacity: 0.9 });
+      const obShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.02, 0.085, 4), obMat);
+      obShaft.position.set(ox, 0.0425, oz); obShaft.rotation.y = Math.PI / 4;
+      const obTip = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.03, 4), obMat.clone());
+      obTip.position.set(ox, 0.10, oz); obTip.rotation.y = Math.PI / 4;
+      // feeder: obelisk → house (the harvested power feeding the home)
       const tieMat = new THREE.LineBasicMaterial({ color: C('#e0a32e'), transparent: true, opacity: 0.0 });
       const tieGeo = new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(Math.cos(a) * 1.2, 0.02, Math.sin(a) * 1.2),
+        new THREE.Vector3(ox, 0.05, oz),
         new THREE.Vector3(x, HOUSE_BODY_H * 0.6, z)]);
       const tie = new THREE.Line(tieGeo, tieMat);
       houseGroup.add(body); houseGroup.add(roof); houseGroup.add(tie);
-      houseMeshes.push({ body, roof, tie });
+      houseGroup.add(obShaft); houseGroup.add(obTip);
+      houseMeshes.push({ body, roof, tie, obShaft, obTip });
     }
   }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  //  OBELISK-PAIR SCENE (the RECEIVER): a self-contained world on the SAME canvas,
+  //  hidden until the Obelisk Pair system is selected. Two granite obelisks on a
+  //  basalt court: telluric wavefronts arrive from the pyramid, the pair locks (left
+  //  = fixed 50 Hz, right = amplitude, grows with the tune) and develops a voltage
+  //  potential, each home's own transformer steps it down, and the homes light. Driven by the
+  //  ObeliskPairDemo frame (no JS physics) via scene.updateObelisk().
+  // ════════════════════════════════════════════════════════════════════════════
+  const GRANITE_OB = '#9a7d56';     // Aswan red-granite obelisk body
+  const obGroup = new THREE.Group(); obGroup.visible = false; scene.add(obGroup);
+
+  // The basalt court (conductive pavement) over the lighter Tura-limestone float.
+  const obBasaltMat = new THREE.MeshBasicMaterial({ color: C('#2b2f3a'), transparent: true, opacity: 0.7 });
+  const obCourt = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.07, 1.7), obBasaltMat);
+  obCourt.position.y = -0.035; obGroup.add(obCourt);
+  const obFloatMat = new THREE.MeshBasicMaterial({ color: C('#cdbf9a'), transparent: true, opacity: 0.45 });
+  const obFloat = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.12, 2.0), obFloatMat);
+  obFloat.position.y = -0.13; obGroup.add(obFloat);
+  // a faint earth/aquifer plane the float isolates against
+  const obEarthMat = new THREE.MeshBasicMaterial({ color: C('#3a6ea5'), transparent: true, opacity: 0.16 });
+  const obEarth = new THREE.Mesh(new THREE.CircleGeometry(2.4, 44), obEarthMat);
+  obEarth.rotation.x = -Math.PI / 2; obEarth.position.y = -0.22; obGroup.add(obEarth);
+
+  // The two obelisks: tapered square shafts + pyramidion caps, at x = ±OB_X.
+  //  LEFT  = the FREQUENCY obelisk: a fixed quarter-wave column tuned to the 50 Hz
+  //          broadcast. It holds the lock and NEVER moves.
+  //  RIGHT = the AMPLITUDE obelisk: its effective height sets how much potential the
+  //          pair develops, so it GROWS/SHRINKS as the voltage tune is changed.
+  const OB_X = 0.92, OB_H = 1.18, OB_TIP = 1.30;     // base shaft height, tip apex (freq obelisk)
+  const obShaftMat = new THREE.MeshBasicMaterial({ color: C(GRANITE_OB), transparent: true, opacity: 0.92 });
+  const obEdgeMat  = new THREE.MeshBasicMaterial({ color: C('#e7d9a8'), wireframe: true, transparent: true, opacity: 0.5 });
+  const obParts = [];     // [{ shaft, edge, tip, tipMat, sx, role }] — role 'freq' | 'amp'
+  for (const [sx, role] of [[-OB_X, 'freq'], [OB_X, 'amp']]) {
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.09, OB_H, 4), obShaftMat.clone());
+    shaft.position.set(sx, OB_H / 2, 0); shaft.rotation.y = Math.PI / 4; obGroup.add(shaft);
+    const edge = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.09, OB_H, 4), obEdgeMat.clone());
+    edge.position.copy(shaft.position); edge.rotation.y = Math.PI / 4; obGroup.add(edge);
+    const tipMat = new THREE.MeshBasicMaterial({ color: C('#e7d9a8'), transparent: true, opacity: 0.95 });
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.075, 0.16, 4), tipMat);
+    tip.position.set(sx, OB_H + 0.08, 0); tip.rotation.y = Math.PI / 4; obGroup.add(tip);
+    obParts.push({ shaft, edge, tip, tipMat, sx, role });
+  }
+
+  // INCOMING TELLURIC WAVEFRONTS: the pyramid's broadcast arriving from −z. A train of
+  // bowed arcs that march toward the pair; strength tracks the lock quality.
+  const obWaveMat = new THREE.LineBasicMaterial({ color: C(p.cyan), transparent: true, opacity: 0 });
+  const OB_WAVE_N = 6, OB_WAVE_Z0 = -1.9, OB_WAVE_Z1 = 0.0;   // travel from far −z up to the court
+  const obWaves = [];
+  for (let k = 0; k < OB_WAVE_N; k++) {
+    const pts = [];
+    for (let i = 0; i <= 28; i++) { const t = i / 28; const x = -1.7 + 3.4 * t; const bow = Math.cos((t - 0.5) * Math.PI) * 0.30; pts.push(new THREE.Vector3(x, 0.03, bow)); }
+    const ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), obWaveMat.clone());
+    ln.position.z = OB_WAVE_Z0 + (k / OB_WAVE_N) * (OB_WAVE_Z1 - OB_WAVE_Z0);
+    obGroup.add(ln); obWaves.push(ln);
+  }
+
+  // VOLTAGE POTENTIAL: the developed potential across the pair. A bowed arc tip↔tip
+  // that brightens (gold → white) and bulges with the tuned voltage.
+  const obPotMat = new THREE.LineBasicMaterial({ color: C(p.gold), transparent: true, opacity: 0 });
+  const obPot = new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(-OB_X, OB_TIP, 0), new THREE.Vector3(OB_X, OB_TIP, 0)]), obPotMat);
+  obGroup.add(obPot);
+  // a bright bead riding the arc (the 50 Hz alternation, slowed to be viewable)
+  const obPotBeadMat = new THREE.MeshBasicMaterial({ color: C('#fff3c8'), transparent: true, opacity: 0 });
+  const obPotBead = new THREE.Mesh(new THREE.SphereGeometry(0.035, 12, 12), obPotBeadMat); obGroup.add(obPotBead);
+
+  // HV DISTRIBUTION: the pair develops the high potential; an HV tap + trunk carry it to
+  // the homes. EACH HOME has its OWN transformer that steps it down to 240 V locally —
+  // high volts travel cheaply, the home does the step-down at the door.
+  const OB_TRUNK_Z = 1.30;                                   // the HV distribution trunk line (z)
+  const obTrunkMat = new THREE.LineBasicMaterial({ color: C(p.gold), transparent: true, opacity: 0 });
+  const obTrunk = new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(-1.45, 0.07, OB_TRUNK_Z), new THREE.Vector3(1.45, 0.07, OB_TRUNK_Z)]), obTrunkMat);
+  obGroup.add(obTrunk);
+  // HV tap: from the pair (arc midpoint, lowered) down to the trunk
+  const obTapMat = new THREE.LineBasicMaterial({ color: C(p.gold), transparent: true, opacity: 0.5 });
+  const obTap = new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0, OB_TIP, 0), new THREE.Vector3(0, 0.07, OB_TRUNK_Z)]), obTapMat); obGroup.add(obTap);
+
+  // THE HOMES: a grid behind the trunk, each with its OWN little transformer in front.
+  // When a home is powered: its transformer glows, the HV drop + 240 V service light up.
+  const OB_HOME_MAX = 16;
+  const obHomes = [];
+  for (let i = 0; i < OB_HOME_MAX; i++) {
+    const col = i % 8, row = Math.floor(i / 8);
+    const x = -1.4 + col * 0.40, z = 1.62 + row * 0.42;
+    const bodyMat = new THREE.MeshBasicMaterial({ color: C('#555a66'), transparent: true, opacity: 0.85 });
+    const roofMat = new THREE.MeshBasicMaterial({ color: C('#3c4150'), transparent: true, opacity: 0.85 });
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.08, 0.13), bodyMat);
+    body.position.set(x, 0.04, z);
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(0.105, 0.05, 4), roofMat);
+    roof.position.set(x, 0.105, z); roof.rotation.y = Math.PI / 4;
+    obGroup.add(body); obGroup.add(roof);
+    // the home's OWN transformer: a small cube between the trunk and the house
+    const tz = z - 0.17;
+    const xfmrMat = new THREE.MeshBasicMaterial({ color: C('#3a3f4b'), transparent: true, opacity: 0.8 });
+    const xfmr = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.09, 0.07), xfmrMat);
+    xfmr.position.set(x, 0.045, tz); obGroup.add(xfmr);
+    // HV drop: trunk → this home's transformer (high voltage in)
+    const dropMat = new THREE.LineBasicMaterial({ color: C(p.gold), transparent: true, opacity: 0 });
+    const drop = new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(x, 0.07, OB_TRUNK_Z), new THREE.Vector3(x, 0.07, tz)]), dropMat); obGroup.add(drop);
+    // service drop: transformer → house (240 V out, short)
+    const svcMat = new THREE.LineBasicMaterial({ color: C('#e0a32e'), transparent: true, opacity: 0 });
+    const svc = new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(x, 0.05, tz), new THREE.Vector3(x, 0.05, z)]), svcMat); obGroup.add(svc);
+    obHomes.push({ body, roof, bodyMat, roofMat, xfmrMat, dropMat, svcMat, x, z });
+  }
+
+  let obSceneT = 0;          // obelisk scene wall-clock accumulator
+
+  // ════════════════════════════════════════════════════════════════════════════
+  //  COFFER MHD CORE: a zoomable cut-away of the SEALED mercury coffer as a
+  //  magnetohydrodynamic alternator, true to the Petrie interior proportions.
+  //  Magnets sit OUTSIDE the granite (the field passes through non-magnetic stone);
+  //  electrodes sit INSIDE on the long side walls (a current needs metal contact).
+  //  Vertical B (top/bottom magnets) × horizontal slosh ⇒ transverse EMF to the
+  //  side-wall electrodes. Driven by CofferMHD (no JS physics).
+  // ════════════════════════════════════════════════════════════════════════════
+  const cofGroup = new THREE.Group(); cofGroup.visible = false; scene.add(cofGroup);
+  const CFS = 0.9;                                                  // display scale
+  const cfIL = 1.9827 * CFS, cfIH = 0.8743 * CFS, cfIW = 0.6810 * CFS;  // interior L×H×W (x,y,z)
+  const cfWT = 0.12;                                                // granite wall thickness
+  const cfEL = cfIL + 2 * cfWT, cfEH = cfIH + 2 * cfWT, cfEW = cfIW + 2 * cfWT;  // exterior
+  const cfFillH = 0.75 * cfIH;                                      // mercury depth (75% fill)
+  const cfHgTopY = -cfIH / 2 + cfFillH;                             // mercury surface
+
+  // granite shell: wireframe edges (so the interior is visible) + translucent sealed lid/floor
+  cofGroup.add(new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.BoxGeometry(cfEL, cfEH, cfEW)),
+    new THREE.LineBasicMaterial({ color: C('#9a7d56'), transparent: true, opacity: 0.7 })));
+  const cfGranMat = new THREE.MeshBasicMaterial({ color: C('#8a7256'), transparent: true, opacity: 0.12, side: THREE.DoubleSide });
+  const cfLid   = new THREE.Mesh(new THREE.BoxGeometry(cfEL, cfWT, cfEW), cfGranMat); cfLid.position.y =  cfEH / 2 - cfWT / 2; cofGroup.add(cfLid);
+  const cfFloor = new THREE.Mesh(new THREE.BoxGeometry(cfEL, cfWT, cfEW), cfGranMat); cfFloor.position.y = -cfEH / 2 + cfWT / 2; cofGroup.add(cfFloor);
+
+  // mercury: reflective slab, slosh-animated
+  const cfHgMat = new THREE.MeshBasicMaterial({ color: C('#bfd3dd'), transparent: true, opacity: 0.92 });
+  const cfHg = new THREE.Mesh(new THREE.BoxGeometry(cfIL * 0.99, cfFillH, cfIW * 0.99), cfHgMat);
+  cfHg.position.y = cfHgTopY - cfFillH / 2; cofGroup.add(cfHg);
+
+  // NdFeB magnets: OUTSIDE, N (red) under the floor, S (blue) over the lid ⇒ vertical B
+  const cfMagT = 0.14, cfMagGap = 0.05;
+  const cfMagN = new THREE.Mesh(new THREE.BoxGeometry(cfIL, cfMagT, cfIW), new THREE.MeshBasicMaterial({ color: C('#c0432f') }));
+  cfMagN.position.y = -cfEH / 2 - cfMagGap - cfMagT / 2; cofGroup.add(cfMagN);
+  const cfMagS = new THREE.Mesh(new THREE.BoxGeometry(cfIL, cfMagT, cfIW), new THREE.MeshBasicMaterial({ color: C('#3f63b0') }));
+  cfMagS.position.y =  cfEH / 2 + cfMagGap + cfMagT / 2; cofGroup.add(cfMagS);
+
+  // iron / magnetite YOKE: C-frame at both ends, returning the flux top↔bottom
+  const cfYokeMat = new THREE.MeshBasicMaterial({ color: C('#4a4a52') });
+  const cfYokeH = (cfMagS.position.y - cfMagN.position.y) + cfMagT;
+  for (const sx of [-1, 1]) {
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(0.1, cfYokeH, cfIW), cfYokeMat);
+    bar.position.set(sx * (cfEL / 2 + 0.08), 0, 0); cofGroup.add(bar);
+    for (const my of [cfMagN.position.y - cfMagT / 2 - 0.03, cfMagS.position.y + cfMagT / 2 + 0.03]) {
+      const ret = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.06, cfIW), cfYokeMat);
+      ret.position.set(sx * (cfEL / 2), my, 0); cofGroup.add(ret);
+    }
+  }
+
+  // B field lines: vertical (N bottom → S top) through the mercury, with arrowheads up
+  const cfFieldMat = new THREE.LineBasicMaterial({ color: C('#cf6f5f'), transparent: true, opacity: 0.5 });
+  for (let ix = -1; ix <= 1; ix++) for (let iz = -1; iz <= 1; iz++) {
+    const fx = ix * cfIL * 0.3, fz = iz * cfIW * 0.3;
+    const y0 = cfMagN.position.y + cfMagT / 2, y1 = cfMagS.position.y - cfMagT / 2;
+    cofGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+      [new THREE.Vector3(fx, y0, fz), new THREE.Vector3(fx, y1, fz)]), cfFieldMat.clone()));
+    const head = new THREE.Mesh(new THREE.ConeGeometry(0.028, 0.08, 8),
+      new THREE.MeshBasicMaterial({ color: C('#cf6f5f'), transparent: true, opacity: 0.7 }));
+    head.position.set(fx, y1 - 0.04, fz); cofGroup.add(head);
+  }
+
+  // ELECTRODES: INSIDE, on the two long side walls (z=±), wetted over the fill depth
+  const cfElecMat = [];
+  for (const sz of [-1, 1]) {
+    const m = new THREE.MeshBasicMaterial({ color: C('#e7d9a8'), transparent: true, opacity: 0.95 });
+    const e = new THREE.Mesh(new THREE.BoxGeometry(cfIL * 0.9, cfFillH * 0.96, 0.015), m);
+    e.position.set(0, cfHgTopY - cfFillH / 2, sz * (cfIW / 2 - 0.012)); cofGroup.add(e); cfElecMat.push(m);
+  }
+  // WIRELESS output: NO wires, NO load box: the sealed coffer couples its 50 Hz AC out
+  // through the RESONANT FIELD (Tesla-style wireless link). Cyan wavefronts expand outward.
+  const cfOut = [];
+  for (let i = 0; i < 4; i++) {
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(0.045, 0.055, 56),
+      new THREE.MeshBasicMaterial({ color: C(p.cyan), transparent: true, opacity: 0, side: THREE.DoubleSide }));
+    ring.rotation.x = -Math.PI / 2; ring.position.y = cfHgTopY - cfFillH / 2;   // mid-pool height
+    cofGroup.add(ring); cfOut.push(ring);
+  }
+
+  // axis triad: slosh (x, gold) / B (y, red) / current (z, cyan)
+  const cfTriad = new THREE.Group();
+  cfTriad.position.set(-cfEL / 2 - 0.2, -cfEH / 2 - 0.2, -cfEW / 2 - 0.1); cofGroup.add(cfTriad);
+  cfTriad.add(new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(), 0.42, 0xC9A830));
+  cfTriad.add(new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(), 0.42, 0xc0432f));
+  cfTriad.add(new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(), 0.42, 0x37b0c9));
+
+  // ── RUNNING-STATE visuals: the telluric clock, the resonance (bell), the plasma ──
+  // Telluric "clock" wavefronts: rise from the aquifer/ground (below) up through the floor:
+  // the faint global ~50 Hz reference the chamber phase-locks to (the clock, not the fuel).
+  const cfTel = [];
+  for (let i = 0; i < 4; i++) {
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(cfEL * 0.20, cfEL * 0.30, 48),
+      new THREE.MeshBasicMaterial({ color: C('#49c39a'), transparent: true, opacity: 0, side: THREE.DoubleSide }));
+    ring.rotation.x = -Math.PI / 2; ring.position.y = -cfEH / 2 - 0.6;
+    cofGroup.add(ring); cfTel.push(ring);
+  }
+  // Resonance halo: the coffer rings like a bell at f₈≈50 Hz (high Q): a golden shell that
+  // pulses with the standing wave + three horizontal antinode discs (the (3,0,0)-style mode).
+  const cfHaloMat = new THREE.LineBasicMaterial({ color: C('#C9A830'), transparent: true, opacity: 0 });
+  const cfHalo = new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.BoxGeometry(cfEL * 1.05, cfEH * 1.05, cfEW * 1.05)), cfHaloMat);
+  cofGroup.add(cfHalo);
+  const cfNodes = [];
+  for (let i = 0; i < 3; i++) {
+    const disc = new THREE.Mesh(
+      new THREE.PlaneGeometry(cfIL * 0.96, cfIW * 0.96),
+      new THREE.MeshBasicMaterial({ color: C('#C9A830'), transparent: true, opacity: 0, side: THREE.DoubleSide }));
+    disc.rotation.x = -Math.PI / 2;
+    disc.position.set((i - 1) * cfIL * 0.30, cfHgTopY + 0.006, 0);   // 3 antinodes along the length
+    cofGroup.add(disc); cfNodes.push(disc);
+  }
+  // Mercury-arc plasma gate: a hot flickering core at the antinode + a vertical arc the
+  // slosh switches at 50 Hz; the mercury glows (running at ~517 °C / 1.0 MPa).
+  const cfPlasma = new THREE.Mesh(new THREE.SphereGeometry(0.055, 14, 14),
+    new THREE.MeshBasicMaterial({ color: C('#cfe8ff'), transparent: true, opacity: 0 }));
+  cfPlasma.position.set(0, cfHgTopY - cfFillH * 0.35, 0); cofGroup.add(cfPlasma);
+  const cfArc = new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+    [new THREE.Vector3(0, cfHgTopY, 0), new THREE.Vector3(0, cfHgTopY - cfFillH * 0.7, 0)]),
+    new THREE.LineBasicMaterial({ color: C('#eaf5ff'), transparent: true, opacity: 0 }));
+  cofGroup.add(cfArc);
+
+  // ── KING'S CHAMBER containment ─────────────────────────────────────────────
+  // The coffer is NOT in free space: it sits inside the granite King's Chamber,
+  // ~70 m up inside the Great Pyramid. The ROOM is the resonant cavity: its
+  // dimensions set the standing-wave modes the coffer phase-locks to; the flat
+  // 9-beam granite ceiling + the five stacked "relieving chambers" above are the
+  // dielectric capacitor stack; the air shafts are the grounding / antenna leads.
+  // (Room shown ~half true scale relative to the coffer so the internals stay legible.)
+  const ckHalfL = cfEL * 0.5 + 0.70;                          // room half-length (x)
+  const ckHalfW = cfEW * 0.5 + 0.50;                          // room half-depth  (z)
+  const ckFloorY = cfMagN.position.y - cfMagT / 2 - 0.10;     // floor below the magnet stack
+  const ckCeilY  = cfMagS.position.y + cfMagT / 2 + 0.40;     // flat granite ceiling above
+  const ckH = ckCeilY - ckFloorY, ckCY = (ckCeilY + ckFloorY) / 2;
+  const ckGroup = new THREE.Group(); cofGroup.add(ckGroup);
+
+  // granite walls: wireframe so the coffer stays visible inside
+  const ckWallMat = new THREE.LineBasicMaterial({ color: C('#7d6645'), transparent: true, opacity: 0.45 });
+  const ckBox = new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.BoxGeometry(ckHalfL * 2, ckH, ckHalfW * 2)), ckWallMat);
+  ckBox.position.y = ckCY; ckGroup.add(ckBox);
+  // faint translucent floor slab + the flat 9-beam granite ceiling
+  const ckSlabMat = new THREE.MeshBasicMaterial({ color: C('#8a7256'), transparent: true, opacity: 0.08, side: THREE.DoubleSide });
+  const ckFloorSlab = new THREE.Mesh(new THREE.BoxGeometry(ckHalfL * 2, 0.04, ckHalfW * 2), ckSlabMat);
+  ckFloorSlab.position.y = ckFloorY; ckGroup.add(ckFloorSlab);
+  const ckCeilMat = ckSlabMat.clone(); ckCeilMat.opacity = 0.12;
+  const ckCeilSlab = new THREE.Mesh(new THREE.BoxGeometry(ckHalfL * 2, 0.05, ckHalfW * 2), ckCeilMat);
+  ckCeilSlab.position.y = ckCeilY; ckGroup.add(ckCeilSlab);
+
+  // five RELIEVING CHAMBERS: thin stacked granite voids above the ceiling (the
+  // capacitor stack); capped by a limestone gable. They pulse with the resonance.
+  const ckReliev = [];
+  let ckRY = ckCeilY + 0.05;
+  for (let i = 0; i < 5; i++) {
+    const gap = 0.085 + i * 0.012;
+    const rc = new THREE.LineSegments(
+      new THREE.EdgesGeometry(new THREE.BoxGeometry(ckHalfL * 2 * 0.96, gap, ckHalfW * 2 * 0.96)),
+      new THREE.LineBasicMaterial({ color: C('#9a7d56'), transparent: true, opacity: 0.34 }));
+    rc.position.y = ckRY + gap / 2; ckGroup.add(rc); ckReliev.push(rc);
+    ckRY += gap + 0.025;
+  }
+  // limestone gabled roof over the topmost relieving chamber
+  const ckGable = new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(-ckHalfL, ckRY, 0), new THREE.Vector3(0, ckRY + 0.34, 0), new THREE.Vector3(ckHalfL, ckRY, 0)]),
+    new THREE.LineBasicMaterial({ color: C('#b8b0a0'), transparent: true, opacity: 0.4 }));
+  ckGroup.add(ckGable);
+
+  // two AIR SHAFTS: thin leads leaving the N & S walls at a rising angle
+  // (the grounding / antenna conductors in the Wardenclyffe reading).
+  for (const sz of [-1, 1]) {
+    ckGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(sz * 0.2, cfHgTopY, sz * ckHalfW),
+      new THREE.Vector3(sz * 0.45, ckCeilY + 0.22, sz * (ckHalfW + 0.6))]),
+      new THREE.LineBasicMaterial({ color: C('#6f8fb0'), transparent: true, opacity: 0.5 })));
+  }
+
+  let cfPhase = 0;
 
   let displayPhase = 0, lastW = 0, lastH = 0;
   // Feedback-FREE resize: size from the canvas's own CSS-laid-out box and pass
   // updateStyle=false so setSize never writes the element size back into the layout
-  // (that write-back was growing the canvas every frame — the "zoom"). Only acts on a
+  // (that write-back was growing the canvas every frame, the "zoom"). Only acts on a
   // real size change. orbitR is set to FIT the whole scene at the current aspect.
   function resize() {
     const w = canvas.clientWidth, h = canvas.clientHeight;
@@ -800,47 +1340,36 @@ function buildScene() {
   }
   function recolor() {
     const q = pal(); renderer.setClearColor(C(q.canvas), 1);
-    mats.py.color.set(C(q.gold)); mats.gilt.color.set(C(q.gold)); mats.ground.color.set(C(q.axis));
+    mats.py.color.set(C(q.isDark ? '#cfc7b2' : '#9d8e72')); mats.gilt.color.set(C(q.gold)); mats.ground.color.set(C(q.axis));
     mats.kc.color.set(C(q.axis)); mats.gg.color.set(C(q.axis)); mats.rc.color.set(C(q.axis));
     mats.hg.color.set(C(q.cyan)); mats.voidFill.color.set(C(q.cyan)); mats.voidEdge.color.set(C(q.cyan));
-    mats.link.color.set(C(q.cyan)); mats.pulse.color.set(C(q.cyan));
-    mats.rotor.color.set(C(q.gold));
+    // Queen's Chamber + North Face Corridor (added cavities)
+    mats.qc.color.set(C(q.axis)); mats.qcPass.color.set(C(q.axis));
+    mats.nfcFill.color.set(C(q.cyan)); mats.nfcEdge.color.set(C(q.cyan));
+    mats.nfcEntry.color.set(C(q.cyan));
   }
   function update(frame, dt, now) {
     const q = pal();
     const env = frame.envelope;
     const amp = Math.min(1, env * 3);
     displayPhase += dt * 6.0;
-    // coffer mercury: HORIZONTAL slosh — the surface tilts side to side (tiny coffer)
+    // coffer mercury: HORIZONTAL slosh, the surface tilts side to side (tiny coffer)
     mercury.rotation.z = Math.sin(displayPhase) * 0.34 * amp;
     mercury.position.x = Math.sin(displayPhase) * 0.012 * amp;
     mercury.position.y = 0.395 - Math.abs(Math.sin(displayPhase)) * 0.005 * amp;
     mercury.material.opacity = 0.5 + 0.5 * amp;
-    // Big Void: the n=5 Schumann resonator (33.8 Hz) — it resonates on its own
+    // Big Void: the n=5 Schumann resonator (33.8 Hz), it resonates on its own
     // harmonic (a gentle sway), NOT a 50 Hz flywheel for the coffer.
     bigVoid.rotation.z = INCL + Math.sin(displayPhase * 0.68) * 0.04 * amp;
     bigVoid.position.y = VOID_Y + Math.sin(displayPhase * 0.68) * 0.02 * amp;
     mats.voidFill.opacity = 0.10 + 0.12 * amp;
     mats.voidEdge.opacity = 0.40 + 0.30 * amp;
-    // obelisks glow with the parametric pump stage
-    const glow = 0.4 + 0.6 * frame.stageParametric;
-    obs.forEach((o, i) => { o.material.color.set(C(q.gold)); o.material.opacity = glow * (0.7 + 0.3 * Math.sin(displayPhase * 2 + i)); });
-    // apex capstone: the DC collector is always on — a gentle steady "breathing".
+    // apex capstone: the DC collector is always on, a gentle steady "breathing".
     // Silver body + gold-gilt shell.
     mats.gilt.opacity = 0.7 + 0.25 * Math.sin(now * 2.0) ** 2;
-    // wireless link + traveling pulse (coffer → motor), appears with AC
-    mats.link.opacity = 0.2 + 0.7 * frame.stageAc;
-    const u = (Math.sin(now * 3) * 0.5 + 0.5);
-    pulse.position.lerpVectors(acSource, motorPos, u);
-    mats.pulse.opacity = frame.stageAc * (0.4 + 0.6 * Math.sin(now * 6) ** 2);
-    mats.pulse.color.set(C(q.cyan));
-    // Synchronous motor: dead still until it pulls into resonant lock, then spins at
-    // a rate set by the (frequency-locked) synchronous speed. No idle creep.
-    motor.rotation.z -= (frame.motorLocked ? (0.6 + 3.0 * frame.stageMotor) : 0.0) * dt;
-    mats.rotor.color.set(frame.motorLocked ? C(q.green) : C(q.gold));
-    // ── APEX CORONA GLOW: on when the sharpened tip is in continuous corona; brighter
-    //    and larger with more emission points (log scale). Pulses (the discharge flicker).
-    if (frame.coronaActiveFair) {
+    // ── APEX CORONA GLOW: a lighting effect, so shown ONLY during an active strike or
+    //    while Storm mode is on (not in calm/idle weather). Brighter with emission points.
+    if ((strikeFx > 0 || stormOn) && frame.coronaActiveFair) {
       const pts = Math.max(1, frame.emissionPoints || 1);
       const lvl = 0.25 + 0.18 * (Math.log10(pts));        // 1→0.25, 1000→0.79
       const flick = 0.7 + 0.3 * Math.sin(now * 22) * Math.sin(now * 7);
@@ -848,16 +1377,21 @@ function buildScene() {
       const sc = 0.7 + 0.25 * Math.log10(pts) + 0.12 * Math.sin(now * 9);
       coronaGlow.scale.setScalar(sc);
     } else { coronaMat.opacity = 0; }
-    // ── THE HOUSES (the load): lit warm when the battery is powering them, dark when
-    //    the battery is empty. The grid-tie line glows while drawing.
+    // ── THE HOUSES + their ENDPOINT OBELISKS: the obelisk harvests the broadcast and feeds
+    //    the house. Houses light warm when powered; the obelisk glows + the feeder pulses
+    //    while drawing. Dark when the ground/aquifer battery is empty.
     const powered = frame.housesPowered && frame.numHouses > 0;
     const litBody = C(powered ? '#ffcf6e' : '#555a66');
     const litRoof = C(powered ? '#9a6b22' : '#3c4150');
     const tieGlow = powered ? (0.35 + 0.35 * Math.sin(now * 4) ** 2) : 0.0;
+    const obCol = C(powered ? '#ffd76a' : '#caa64a');
+    const obGlow = powered ? (0.85 + 0.15 * Math.sin(now * 5) ** 2) : 0.65;
     for (const h of houseMeshes) {
       h.body.material.color.copy(litBody); h.roof.material.color.copy(litRoof);
       h.body.material.opacity = powered ? 1.0 : 0.85;
       h.tie.material.opacity = tieGlow;
+      h.obShaft.material.color.copy(obCol); h.obShaft.material.opacity = obGlow;
+      h.obTip.material.color.copy(obCol);   h.obTip.material.opacity = obGlow;
     }
     // ── LIGHTNING STRIKE FX: the bolt flickers and fades over ~1.1 s wall-clock,
     //    the apex lights up white, the capstone flares. Independent of sim timescale.
@@ -868,29 +1402,217 @@ function buildScene() {
       apexLight.intensity = strikeFx * 9.0 * flick;
       mats.cap.color.set(C('#ffffff')); mats.gilt.color.set(C('#ffffff'));
       mats.cap.opacity = 1.0;
-      // the electrum down-conductors carry the strike to ground — flare them bright
-      for (const dc of downConductors) { dc.material.color.set(C('#fff6d8')); dc.material.opacity = strikeFx * flick; }
-      // the ENERGY PULSE travels apex → corner → shaft → aquifer as the flash fades
+      // the rain-wetted faces flash as the surface arc tracks down them to the base
+      for (const dc of downConductors) { dc.material.color.set(C('#dff2ff')); dc.material.opacity = strikeFx * flick; }
+      // the ENERGY PULSE travels apex → down a wet face → into the footprint → aquifer
       const prog = Math.min(0.999, (1 - strikeFx) * 1.25);
-      const nseg = earthPath.length - 1;               // apex→corner→centre→pit
+      const nseg = earthPath.length - 1;               // apex → face base → aquifer
       const seg = Math.floor(prog * nseg), lt = prog * nseg - seg;
       groundPulse.position.lerpVectors(earthPath[seg], earthPath[seg + 1], lt);
       gpMat.opacity = 0.95;
-      // the aquifer flares when the pulse arrives (the strike charge reaches the water)
-      mats.aquifer.opacity = prog > 0.9 ? 0.32 + 0.5 * strikeFx + 0.18 : 0.32;
+      // when the charge reaches the footprint, the aquifer flares and a ring spreads through it
+      mats.aquifer.opacity = prog > 0.6 ? 0.32 + 0.5 * strikeFx + 0.18 : 0.32;
+      if (prog > 0.55) {
+        const sp = (prog - 0.55) / 0.45;               // 0→1 over the final leg
+        aquiferSpread.scale.setScalar(0.4 + sp * 7.0); // expand outward through the water
+        aquiferSpreadMat.opacity = 0.55 * (1 - sp) * (0.5 + 0.5 * flick);
+      } else { aquiferSpreadMat.opacity = 0; }
       if (strikeFx < 0.02) { boltMat.opacity = 0; apexLight.intensity = 0; gpMat.opacity = 0;
         mats.cap.color.set(C('#8a6f63')); mats.gilt.color.set(C('#e7d9a8'));
-        mats.aquifer.opacity = 0.32;
-        for (const dc of downConductors) { dc.material.color.set(C('#e7d9a8')); dc.material.opacity = 0.5; }
+        mats.aquifer.opacity = 0.32; aquiferSpreadMat.opacity = 0;
+        for (const dc of downConductors) { dc.material.color.set(C('#bfe3ff')); dc.material.opacity = 0.0; }
       }
     }
-    // orbit at the fit-distance, scaled by the user's scroll-wheel zoom
+    // ── WHOLE-DEVICE OPERATION (Stage 10): the telluric loop in, the broadcast out ──
+    // No on/off; the MHD core is always running; visuals key off the sustained chopper output.
+    const opSust = !!frame.opSustains;
+    // (a) telluric ground loop: green wavefronts climbing from the aquifer into the base
+    pyTel.forEach((r, i) => {
+      const ph = (now * 0.5 + i / pyTel.length) % 1;
+      r.position.y = -0.46 + ph * 0.46;                 // aquifer (−0.46) → base (0.0)
+      r.scale.setScalar(1.0 - 0.45 * ph);
+      r.material.opacity = opSust ? 0.45 * (1 - ph) : 0.0;
+    });
+    if (opSust) { mats.aquifer.color.set(C('#2f8f6f')); mats.aquifer.opacity = 0.40; }
+    else if (strikeFx <= 0) { mats.aquifer.color.set(C('#3a6ea5')); }
+    // (b) broadcast wavefronts: cyan rings expanding outward (the chopper output, wireless)
+    pyBcast.forEach((r, i) => {
+      const ph = (now * 0.45 + i / pyBcast.length) % 1;
+      r.scale.setScalar(0.6 + ph * 6.5);               // expand outward past the base
+      r.material.color.set(q.cyan);
+      r.material.opacity = opSust ? 0.42 * (1 - ph) : 0.0;
+    });
+    orbitRender(now);
+  }
+
+  // ── Shared camera orbit + render (both worlds) ──
+  function orbitRender(now) {
     const R = orbitR * zoom;
     camera.position.set(R * Math.cos(now * 0.08), R * 0.52, R * Math.sin(now * 0.08));
     camera.lookAt(LOOK);
     renderer.render(scene, camera);
   }
-  return { stub: false, resize, recolor, update, flash, setHouses: buildHouses };
+
+  // ── Switch which world is shown (pyramid ↔ obelisk ↔ coffer) ──
+  function setMode(mode) {
+    sceneMode = mode;
+    for (const ch of scene.children) {
+      if (ch.isLight) continue;                             // lights stay; each world has its own
+      if (ch === obGroup)  { ch.visible = (mode === 'obelisk'); continue; }
+      if (ch === cofGroup) { ch.visible = (mode === 'coffer');  continue; }
+      ch.visible = (mode === 'pyramid');
+    }
+    dl.visible = (mode === 'pyramid');                      // the pyramid key light
+    if (mode === 'obelisk')     { LOOK.set(0, 0.72, 0);  SCENE_R = 2.5;  }
+    else if (mode === 'coffer') { LOOK.set(0, 0.45, 0);  SCENE_R = 2.55; }
+    else                        { LOOK.set(0, 0.66, 0.5); SCENE_R = 1.8;  }
+    lastW = 0;                                              // force resize() to refit orbitR
+  }
+
+  // ── Animate the coffer MHD cut-away (B steady, slosh + polarity + current AC) ──
+  function updateCoffer(f, dt, now, on, sustains) {
+    const q = pal();
+    // ── TELLURIC CLOCK / GROUND SYSTEM: ALWAYS present: the ambient atmospheric+ground
+    //    field touches the coffer whether ignited or not. Wavefronts climb from the aquifer. ──
+    cfTel.forEach((ring, i) => {
+      const ph = (now * (on ? 0.55 : 0.30) + i / cfTel.length) % 1;   // climb (faster when running)
+      ring.position.y = (-cfEH / 2 - 0.6) + ph * 0.6;
+      ring.scale.setScalar(0.6 + ph * 0.8);
+      const beat = on ? (0.45 + 0.55 * (0.5 + 0.5 * Math.cos(cfPhase))) : 0.5;
+      ring.material.opacity = (on ? 0.40 : 0.22) * (1 - ph) * beat;
+    });
+    if (!on) {
+      // ── DORMANT (OFF): cool, still mercury; no slosh, no plasma, no resonance bell ──
+      cfHg.position.x = 0; cfHg.rotation.z = 0;
+      cfHgMat.opacity = 0.9; cfHgMat.color.copy(C('#9fb6c4'));   // cool, settled
+      const base = C('#e7d9a8'); cfElecMat[0].color.copy(base); cfElecMat[1].color.copy(base);
+      cfOut.forEach((r) => { r.material.opacity = 0; });
+      cfHaloMat.opacity = 0; cfNodes.forEach((d) => { d.material.opacity = 0; });
+      cfPlasma.material.opacity = 0; cfArc.material.opacity = 0;
+      // King's Chamber sits quiet; the containment is shown but not resonating
+      ckWallMat.opacity = 0.32; ckReliev.forEach((rc) => { rc.material.opacity = 0.18; });
+      orbitRender(now); return;
+    }
+    // ── RUNNING (ON / ignited): the full reactor ──
+    cfPhase += dt * 4.0;                                    // viewable cadence (represents 50 Hz)
+    const s = Math.sin(cfPhase);
+    // mercury surges along the long axis and its surface tilts
+    cfHg.position.x = s * 0.05 * cfIL; cfHg.rotation.z = s * 0.045;
+    cfHgMat.opacity = 0.85 + 0.12 * Math.abs(s);
+    // electrode polarity follows v×B: a +x surge drives one wall +, the other − (flips at 50 Hz)
+    const hot = C('#ff7a5a'), cold = C('#5a9bff'), base = C('#e7d9a8');
+    cfElecMat[1].color.copy(base.clone().lerp(s > 0 ? hot : cold, Math.min(1, Math.abs(s))));
+    cfElecMat[0].color.copy(base.clone().lerp(s > 0 ? cold : hot, Math.min(1, Math.abs(s))));
+    if (sustains) {
+      // SUSTAINED (R ≤ threshold): full hot reactor: wireless broadcast, bell, hot Hg, plasma
+      // WIRELESS OUTPUT: cyan wavefronts expand outward: the 50 Hz AC couples out (no wires)
+      cfOut.forEach((ring, i) => {
+        const ph = (now * 0.7 + i / cfOut.length) % 1;       // expand 0→1
+        ring.scale.setScalar(1.0 + ph * 34.0);
+        ring.material.color.set(q.cyan);
+        ring.material.opacity = 0.5 * (1 - ph) * (0.5 + 0.5 * Math.abs(s));
+      });
+      // RESONANCE (the bell): golden shell + antinode discs breathe at f₈≈50 Hz, high Q
+      const res = 0.5 + 0.5 * Math.cos(cfPhase);
+      cfHaloMat.opacity = 0.12 + 0.48 * res; cfHalo.scale.setScalar(1.0 + 0.012 * res);
+      cfNodes.forEach((d, i) => { d.material.opacity = 0.05 + 0.34 * res * (i === 1 ? 1.0 : 0.55); });
+      // The KING'S CHAMBER is the cavity: its granite walls ring with the standing wave
+      // and the relieving-chamber capacitor stack charges in step with the resonance.
+      ckWallMat.opacity = 0.42 + 0.34 * res;
+      ckReliev.forEach((rc, i) => { rc.material.opacity = 0.22 + 0.40 * res * (1 - i * 0.13); });
+      cfHgMat.color.copy(C(q.cyan).lerp(C('#ffb060'), 0.22 + 0.26 * res));   // hot glow ~517 °C
+      // PLASMA ARC: hot flickering core + vertical arc: the running mercury-arc reactor
+      const flick = 0.55 + 0.45 * Math.abs(Math.sin(now * 37.0) * Math.sin(now * 13.0));
+      cfPlasma.material.opacity = 0.5 + 0.45 * flick; cfPlasma.scale.setScalar(0.8 + 0.5 * flick);
+      cfArc.material.opacity = 0.28 + 0.6 * flick;
+    } else {
+      // STALLED (ON but R > threshold): the slosh runs, but the arc quenches: cool, no broadcast
+      cfOut.forEach((r) => { r.material.opacity = 0; });
+      cfHaloMat.opacity = 0; cfNodes.forEach((d) => { d.material.opacity = 0; });
+      cfPlasma.material.opacity = 0; cfArc.material.opacity = 0;
+      cfHgMat.color.copy(C('#9fb6c4'));   // cool (quenched)
+      // chamber is energised but not ringing: faint, steady (no standing wave)
+      ckWallMat.opacity = 0.36; ckReliev.forEach((rc) => { rc.material.opacity = 0.20; });
+    }
+    orbitRender(now);
+  }
+
+  // ── Animate the obelisk RECEIVER world from an ObeliskPairDemo frame (no JS physics) ──
+  //    Steady, always-on: broadcast wavefronts in → the pair resonates and develops a
+  //    potential → each home's transformer steps it down → the homes light. The voltage tune
+  //    grows the amplitude obelisk and brightens the potential arc.
+  function updateObelisk(f, dt, now) {
+    const q = pal();
+    obSceneT += dt;
+    const lock = Math.max(0, Math.min(1, f.lockQuality));
+    const amp  = Math.max(0, Math.min(1, f.ampScale));            // 0..1 over 1000..4000 V
+    const vN   = amp;                                             // potential intensity proxy
+
+    // AMPLITUDE OBELISK grows/shrinks with the voltage tune (base stays on the court).
+    const ampPart = obParts[1];
+    const ampH = OB_H * (0.62 + 0.76 * amp);                      // 0.62..1.38 × the base height
+    ampPart.shaft.scale.y = ampH / OB_H; ampPart.shaft.position.y = ampH / 2;
+    ampPart.edge.scale.y  = ampH / OB_H; ampPart.edge.position.y  = ampH / 2;
+    const ampTipY = ampH + 0.08;
+    ampPart.tip.position.y = ampTipY;
+    // both tips glow with the lock (well-locked ⇒ bright pyramidions)
+    obParts.forEach((pt) => {
+      pt.tipMat.color.copy(C('#e7d9a8').lerp(C('#fff6d8'), lock));
+      pt.tipMat.opacity = 0.5 + 0.45 * lock * (0.85 + 0.15 * Math.sin(now * 3));
+    });
+
+    // INCOMING WAVEFRONTS march −z → court, recycling; strength tracks the lock.
+    obWaves.forEach((ln, k) => {
+      let z = ln.position.z + dt * 0.55;                          // travel toward the pair
+      if (z > OB_WAVE_Z1) z = OB_WAVE_Z0;                         // recycle to the far edge
+      ln.position.z = z;
+      const t = (z - OB_WAVE_Z0) / (OB_WAVE_Z1 - OB_WAVE_Z0);     // 0 far … 1 at the pair
+      ln.material.color.set(q.cyan);
+      ln.material.opacity = (0.10 + 0.45 * lock) * Math.sin(Math.min(1, t) * Math.PI);
+    });
+
+    // VOLTAGE POTENTIAL arc tip↔tip: brightness + bulge scale with the tuned voltage.
+    const L = new THREE.Vector3(-OB_X, OB_TIP + 0.06, 0);
+    const R = new THREE.Vector3(OB_X, ampTipY + 0.06, 0);
+    const bow = 0.16 + 0.20 * vN;
+    const arcPts = [];
+    for (let i = 0; i <= 18; i++) { const t = i / 18; const x = L.x + (R.x - L.x) * t; const y = L.y + (R.y - L.y) * t + Math.sin(t * Math.PI) * bow; arcPts.push(new THREE.Vector3(x, y, 0)); }
+    obPot.geometry.setFromPoints(arcPts);
+    obPotMat.color.copy(C('#e0a32e').lerp(C('#fff3c8'), vN));
+    obPotMat.opacity = 0.25 + 0.6 * vN;
+    // the bead rides the arc (the 50 Hz alternation, slowed); index into the arc points
+    const u = 0.5 + 0.5 * Math.sin(now * 4);
+    const bi = Math.max(0, Math.min(arcPts.length - 1, Math.round(u * (arcPts.length - 1))));
+    obPotBead.position.copy(arcPts[bi]);
+    obPotBeadMat.opacity = 0.35 + 0.55 * vN;
+
+    // HV TAP follows the arc midpoint down to the distribution trunk.
+    obTap.geometry.setFromPoints([arcPts[Math.floor(arcPts.length / 2)].clone(), new THREE.Vector3(0, 0.07, OB_TRUNK_Z)]);
+    obTapMat.color.set(q.gold); obTapMat.opacity = 0.3 + 0.4 * vN;
+    // the HV trunk carries the high potential across to the homes.
+    obTrunkMat.color.set(q.gold); obTrunkMat.opacity = 0.15 + 0.55 * vN;
+
+    // THE HOMES: the first `homesPowered` are energised — each home's OWN transformer
+    // glows, its HV drop + 240 V service light, and the house windows come on.
+    const lit = Math.max(0, Math.min(OB_HOME_MAX, f.homesPowered | 0));
+    obHomes.forEach((hm, i) => {
+      const on = i < lit;
+      const flick = 0.85 + 0.15 * Math.sin(now * 5 + i);
+      hm.bodyMat.color.copy(on ? C('#d9c170') : C('#555a66'));
+      hm.roofMat.color.copy(on ? C('#b9962e') : C('#3c4150'));
+      hm.bodyMat.opacity = on ? 0.95 * flick : 0.55;
+      hm.roofMat.opacity = on ? 0.95 : 0.55;
+      hm.xfmrMat.color.copy(on ? C('#caa64a') : C('#3a3f4b'));     // the home's transformer lights
+      hm.xfmrMat.opacity = on ? (0.85 + 0.15 * Math.sin(now * 6 + i)) : 0.7;
+      hm.dropMat.color.set(q.gold); hm.dropMat.opacity = on ? (0.35 + 0.35 * vN) : 0.0;   // HV in
+      hm.svcMat.color.set(C('#e0a32e')); hm.svcMat.opacity = on ? 0.5 : 0.0;              // 240 V out
+    });
+    // the float/earth sit steady (always-on receiver)
+    obEarthMat.opacity = 0.16;
+    orbitRender(now);
+  }
+
+  return { stub: false, resize, recolor, update, updateObelisk, updateCoffer, setMode, flash, setHouses: buildHouses };
 }
 
 // ── AC waveform (2D) ─────────────────────────────────────────────────────────
@@ -925,7 +1647,7 @@ let evLog = [], milestones = {};
 const fmtDur = (s) =>
   s < 90 ? s.toFixed(0) + ' s' : s < 5400 ? (s / 60).toFixed(1) + ' min' : (s / 3600).toFixed(1) + ' h';
 
-// The honest "how long to start" breakdown — every value computed in C++.
+// The honest "how long to start" breakdown: every value computed in C++.
 function renderTau(f) {
   const p = pal();
   const row = (val, label, col) => `<div style="color:${col}"><b>${fmtDur(val)}</b> · ${label}</div>`;
@@ -936,7 +1658,7 @@ function renderTau(f) {
     row(3 * f.tauAcOnline, '⇒ FIRST AC POWER &nbsp;(to ~95%)', p.green) +
     row(f.tauStream, 'FULL mercury circulation &nbsp;N·L/u &nbsp;(sub-mm/s drift)', p.gold) +
     `<div style="color:${p.cyan};margin-top:3px">⚡ Schumann ladder: <b>${f.ladderRungs} rungs</b> harvest the AC ` +
-    `<b>seed</b> in parallel — <b>~${f.ladderSpeedup.toFixed(1)}×</b> the strongest single line — for a faster slosh ` +
+    `<b>seed</b> in parallel (<b>~${f.ladderSpeedup.toFixed(1)}×</b> the strongest single line) for a faster slosh ` +
     `<b>trigger</b>. (Seed, not DC: the DC circuit is the separate pump; resonance can't speed conduction.)</div>`;
 }
 
@@ -950,15 +1672,15 @@ function logEvent(t, msg, ms) {
 }
 function resetSequence() {
   buildup = []; evLog = []; milestones = {};
-  logEvent(0, 'Cold start — DC atmospheric pump engaged; Schumann ladder harvesting the AC seed (trigger).', true);
+  logEvent(0, 'Cold start: DC atmospheric pump engaged; Schumann ladder harvesting the AC seed (trigger).', true);
 }
 function checkMilestones(f) {
   const t = f.t;
   if (!milestones.slosh && f.envelope > 0.02) { milestones.slosh = 1; logEvent(t, 'Mercury slosh ringing up (obelisk parametric feedback).', false); }
-  if (!milestones.ac && f.envelope > 0.5) { milestones.ac = 1; logEvent(t, 'FIRST AC POWER — 50 Hz output online (slosh → MHD alternator).', true); }
-  if (!milestones.sustain && f.selfSustaining) { milestones.sustain = 1; logEvent(t, 'Self-sustaining — slosh saturated at the reservoir-bounded steady state.', true); }
-  if (!milestones.lock && f.motorLocked) { milestones.lock = 1; logEvent(t, 'Resonant lock — AC strong enough; synchronous motor pulls into step (was at rest).', true); }
-  if (!milestones.motor && f.stageMotor > 0.99) { milestones.motor = 1; logEvent(t, 'Motor at full synchronous speed, locked to the Schumann mode.', true); }
+  if (!milestones.ac && f.envelope > 0.5) { milestones.ac = 1; logEvent(t, 'FIRST AC POWER: 50 Hz output online (slosh → MHD alternator).', true); }
+  if (!milestones.sustain && f.selfSustaining) { milestones.sustain = 1; logEvent(t, 'Self-sustaining: slosh saturated at the reservoir-bounded steady state.', true); }
+  if (!milestones.lock && f.motorLocked) { milestones.lock = 1; logEvent(t, 'Resonant lock: the 50 Hz broadcast is phase-locked to the Schumann mode; endpoint obelisks can tune in.', true); }
+  if (!milestones.motor && f.stageMotor > 0.99) { milestones.motor = 1; logEvent(t, 'Endpoint harvest at full strength: the obelisks are locked to the broadcast, feeding the houses.', true); }
   if (!milestones.circ && t >= f.tauStream) { milestones.circ = 1; logEvent(t, 'Full steady mercury circulation established (the slow sub-mm/s drift).', true); }
 }
 
@@ -985,6 +1707,7 @@ function drawBuildup(f) {
 // ── Wire it up ───────────────────────────────────────────────────────────────
 let scene = buildScene();
 let demo = null, frame = null, last = performance.now() / 1000;
+let mhdStarted = false;   // MHD core OFF at cold start; latches ON once the pyramid powers up
 const fmtP = (w) => w >= 1e-3 ? (w * 1e3).toFixed(2) + ' mW' : (w * 1e6).toFixed(1) + ' µW';
 // full-range power (µW … TW) for the storm/discharge regime
 const fmtW = (w) => {
@@ -1030,17 +1753,18 @@ function setStages(f) {
   setStage('Sat', f.stageSaturate); setStage('Ac', f.stageAc); setStage('Mot', f.stageMotor);
 }
 function setReadouts(f) {
-  const { fOp, rpmSync } = liveLock();
-  const rampFrac = f.nSync > 0 ? f.motorRpm / f.nSync : 0;   // C++ startup ramp 0→1
-  const rpmDisp = rpmSync * rampFrac;                        // ramps up, locks to live freq
-  document.getElementById('rpm').textContent = rpmDisp.toFixed(0) + ' rpm';
-  document.getElementById('rpmSub').textContent = f.motorLocked
-    ? 'locked · sync ' + rpmSync.toFixed(0) + ' rpm · ' + fOp.toFixed(2) + ' Hz'
-    : 'awaiting resonant lock (not self-starting) · sync ' + rpmSync.toFixed(0) + ' rpm';
+  setPyOperatingReadout(f);                       // the whole-device chopper output card
+  const { fOp } = liveLock();
+  // Endpoint: small obelisks beside the houses harvest the broadcast (modeled separately).
+  const npow = f.housesPowered && f.numHouses > 0;
+  document.getElementById('rpm').textContent = f.numHouses + (f.numHouses === 1 ? ' house' : ' houses');
+  document.getElementById('rpmSub').textContent = npow
+    ? 'obelisks harvesting → ' + fmtW(f.loadW) + ' delivered'
+    : (f.numHouses > 0 ? 'obelisks idle: ground battery empty' : 'no endpoints connected');
   document.getElementById('acOut').textContent = fmtW(f.acPower);
   document.getElementById('cavityNote').innerHTML =
-    `Cavity index <b>Q=φ=${f.cavityIndex.toFixed(3)}</b> (premise) sets f via 1/√Q · ` +
-    `obelisk pump @ <b>${f.obeliskResonanceHz.toFixed(1)} Hz</b> (2·f<sub>n</sub>).`;
+    `Cavity index <b>Q=φ=${f.cavityIndex.toFixed(3)}</b> (conjectured premise) sets f via 1/√Q · ` +
+    `parametric pump @ <b>${f.obeliskResonanceHz.toFixed(1)} Hz</b> (2·f<sub>n</sub>).`;
   document.getElementById('ledApex').textContent = (f.collectorApexV / 1e3).toFixed(1) + ' kV';
   document.getElementById('ledGround').textContent = f.groundResistanceOhm.toFixed(2) + ' Ω';
   document.getElementById('ledLoop').innerHTML = f.dcLoopClosed
@@ -1057,7 +1781,7 @@ function setReadouts(f) {
   document.getElementById('ledOut').textContent = fmtW(f.acPower);
   document.getElementById('ledV').textContent = f.struck
     ? (f.sloshV).toFixed(3) + ' m/s ⚡' : (f.sloshV * 1e3).toFixed(3) + ' mm/s';
-  // the lightning battery — charge gauge + the connected load (houses) + apex corona
+  // the lightning battery: charge gauge + the connected load (houses) + apex corona
   updateCharge(f);
   updateLoadNote(f);
   updateCoronaNote(f);
@@ -1072,20 +1796,48 @@ function setReadouts(f) {
     '</b> vs fair-weather · apex field ×' + Math.round(f.apexFieldEnhance);
   document.getElementById('enStrike').textContent = fmtE(f.strikeCapturedKwh);
   document.getElementById('enStrikeSub').innerHTML =
-    'from a <b>' + fmtW(f.strikePeakW) + '</b> bolt — captured into the resonant sink';
+    'from a <b>' + fmtW(f.strikePeakW) + '</b> bolt, captured into the resonant sink';
   document.getElementById('enVrtra').textContent = fmtE(f.vrtraCapacityKwh);
-  document.getElementById('enVrtraSub').textContent = 'geological capacity — never saturates';
+  document.getElementById('enVrtraSub').textContent = 'geological capacity, never saturates';
   document.getElementById('enBanked').textContent = fmtE(f.vrtraBankedSeasonKwh) +
     ' (~30 strikes)';
   document.getElementById('enBurst').textContent  = fmtW(f.vrtraBurstPowerW);
 }
 
+// ── Whole-device operating output (Stage 10: the chopper). The pyramid has NO on/off,
+//    but at COLD START the MHD core is OFF: the pyramid must first POWER UP (ring up the
+//    slosh) to the minimum drive (~70% envelope) to KICKSTART the mercury arc. Once started
+//    it is ALWAYS running. The dam-shunt R_source knob lives only in the Coffer MHD view;
+//    here it is held at its sustained default once the core has kickstarted. ──
+const PY_DAM_R_MOHM = 5.0;          // sustained dam-shunt source R (the knob lives in the MHD view)
+const MHD_KICK_ENV  = 0.7;          // envelope (slosh ring-up) needed to kickstart the MHD core
+// Turn the MHD core OFF and re-arm the kickstart (called on cold-start / reconfigure).
+function pyResetMhd() { mhdStarted = false; if (demo && demo.setOperating) frame = demo.setOperating(false, PY_DAM_R_MOHM); }
+function setPyOperatingReadout(f) {                 // the headline whole-device output card
+  const out = document.getElementById('pyOpOut'), sub = document.getElementById('pyOpSub'),
+        tag = document.getElementById('pyOpTag');
+  if (!out) return;
+  if (f.opSustains) {                              // MHD kickstarted → broadcasting
+    out.textContent = fmtW(f.opOutputW);
+    tag.textContent = 'BROADCASTING'; tag.style.color = 'var(--demo-green)';
+    sub.innerHTML = 'the running MHD core chops the telluric DC: ' + fmtW(f.opChopperSupplyW)
+      + ' supply − ' + fmtW(f.opThermalTaxW) + ' thermal tax → broadcast out';
+  } else {                                         // cold/powering up → MHD not yet ignited
+    const pct = Math.round(100 * Math.min(1, (f.envelope || 0) / MHD_KICK_ENV));
+    out.textContent = 'powering up…';
+    tag.textContent = 'MHD OFF'; tag.style.color = 'var(--text-muted)';
+    sub.innerHTML = 'pyramid ringing up to kickstart the MHD core: <b>' + pct + '%</b> of the minimum drive';
+  }
+}
+
 function configure() {
-  const field = parseFloat(document.getElementById('field').value);
-  const ob = parseFloat(document.getElementById('obelisk').value);
-  curMode = parseInt(document.getElementById('mode').value);
-  curF1 = parseFloat(document.getElementById('f1').value);
+  // Earth conditions are FIXED to factual values / plausible estimates (not user-tuned):
+  const field = 1.0;     // fair-weather atmospheric field, ×nominal (~120 V/m) [Earth default]
+  const ob    = 1.0;     // parametric pump, kV (the cavity's own FM field) [plausible estimate]
+  curMode = 8;           // device locks to Schumann mode n=8 → φ-corrected f₈ ≈ 50 Hz
+  curF1   = 7.83;        // observed Schumann fundamental, Hz [NASA-cited]
   frame = demo.configure(field, ob, curMode);
+  pyResetMhd();                                    // reconfigure re-rings the device → MHD re-powers up
   applyHouses();                                   // re-apply the connected load + scene houses
   applyApex();                                     // re-apply the apex corona knobs
   setStages(frame); setReadouts(frame); renderTau(frame);
@@ -1098,11 +1850,12 @@ function applyHouses() {
   if (!scene.stub && scene.setHouses) scene.setHouses(n);
 }
 // Emission-points slider position 0..3 → 1, 10, 100, 1000 (log scale).
-function emitPoints() { return Math.pow(10, parseInt(document.getElementById('emit').value)); }
-// Apply the apex corona knobs (tip radius + emission points) to the C++ corona model.
+function emitPoints() { return parseInt(document.getElementById('emit').value); }   // 1 … 10 directly
+// Apply the apex corona to the C++ corona model. Tip radius is FIXED at 1.5 mm; only
+// the emission-point count (1 … 10) is tunable.
+const APEX_TIP_MM = 1.5;
 function applyApex() {
-  const tip = parseFloat(document.getElementById('tipR').value);
-  if (demo && typeof demo.setApex === 'function') frame = demo.setApex(tip, emitPoints());
+  if (demo && typeof demo.setApex === 'function') frame = demo.setApex(APEX_TIP_MM, emitPoints());
 }
 // Corona readout: onset, continuous-corona status, and fair/storm/leader power vs footprint.
 function updateCoronaNote(f) {
@@ -1123,34 +1876,29 @@ function updateCoronaNote(f) {
 function updateLoadNote(f) {
   const note = document.getElementById('loadNote');
   if (!note) return;
-  if (!f || f.numHouses === 0) { note.innerHTML = 'No load connected — add houses to draw the battery down.'; return; }
+  if (!f || f.numHouses === 0) { note.innerHTML = 'No load connected: add houses to draw the battery down.'; return; }
   const per = (f.houseAvgW / 1e3).toFixed(2);
   const tot = fmtW(f.loadW);
   const status = f.housesPowered
     ? '<b style="color:var(--demo-green)">powered</b> from the battery'
-    : '<b style="color:#e0703a">battery empty — houses dark</b>';
+    : '<b style="color:#e0703a">battery empty: houses dark</b>';
   // hours the current battery would run this load
   const hrs = f.loadW > 0 ? (f.storeKwh * 1e3 / f.loadW) : 0;
   note.innerHTML = `${f.numHouses} houses × ${per} kW (typical) = <b>${tot}</b> · ${status}` +
     (f.storeKwh > 0 ? ` · battery runs them <b>${hrs >= 1 ? hrs.toFixed(1) + ' h' : (hrs * 60).toFixed(0) + ' min'}</b> at this draw` : '');
 }
 
-document.getElementById('field').oninput = function () { document.getElementById('fieldVal').textContent = (+this.value).toFixed(1) + '×'; if (demo) configure(); };
-document.getElementById('obelisk').oninput = function () { document.getElementById('obeliskVal').textContent = (+this.value).toFixed(1) + ' kV'; if (demo) configure(); };
-document.getElementById('mode').oninput = function () { document.getElementById('modeVal').textContent = this.value; if (demo) configure(); };
-document.getElementById('f1').oninput = function () { document.getElementById('f1Val').textContent = (+this.value).toFixed(2) + ' Hz'; curF1 = +this.value; if (frame) setReadouts(frame); };
+// Atmospheric field, parametric pump, Schumann mode, and f₁ are now FIXED Earth
+// defaults (see configure()), so their sliders and oninput handlers are removed.
 document.getElementById('houses').oninput = function () {
   document.getElementById('housesVal').textContent = this.value;
   applyHouses(); if (frame) { setReadouts(frame); }
 };
-document.getElementById('tipR').oninput = function () {
-  document.getElementById('tipVal').textContent = (+this.value).toFixed(1) + ' mm';
-  applyApex(); if (frame) updateCoronaNote(frame);
-};
+// Apex tip is fixed at 1.5 mm (no slider); only emission points are tunable (1 … 10).
 document.getElementById('emit').oninput = function () {
   const pts = emitPoints();
   document.getElementById('emitVal').textContent = pts === 1 ? '1 · single apex'
-    : pts.toLocaleString() + ' · needle array';
+    : pts + ' · needle array';
   applyApex(); if (frame) updateCoronaNote(frame);
 };
 document.getElementById('timeScale').onchange = function () { timeScale = +this.value; updateScaleNote(); };
@@ -1162,8 +1910,8 @@ function updateScaleNote() {
     `First AC ≈ <b>${fmtDur(frame.startupSeconds)}</b> real, full circulation ≈ <b>${fmtDur(frame.tauStream)}</b>; ` +
     `at ${timeScale}× first AC ≈ <b>${wallTxt}</b>. (See the breakdown below.)`;
 }
-document.getElementById('btnRun').addEventListener('click', () => { if (demo) { frame = demo.reset(); setStages(frame); setReadouts(frame); resetSequence(); buildup = []; drawBuildup(frame); } });
-// The lightning battery charge gauge — fills toward the next milestone so each strike
+document.getElementById('btnRun').addEventListener('click', () => { if (demo) { frame = demo.reset(); pyResetMhd(); setStages(frame); setReadouts(frame); resetSequence(); buildup = []; drawBuildup(frame); } });
+// The lightning battery charge gauge: fills toward the next milestone so each strike
 // visibly moves it, with honest equivalence to a city-block and the full aquifer.
 const CHARGE_MS = [100, 1000, 10000, 100000, 1.5e6];   // kWh: 100kWh,1MWh,10MWh,100MWh,1 city-block
 function updateCharge(f) {
@@ -1175,8 +1923,11 @@ function updateCharge(f) {
   const pct = next > prev ? Math.min(100, (s - prev) / (next - prev) * 100) : 100;
   document.getElementById('chargeBig').textContent = fmtE(s);
   document.getElementById('chargeFill').style.width = pct.toFixed(1) + '%';
+  const chargeSrc = f.opSustains
+    ? 'MHD charging' + (f.strikeCount > 0 ? ` (+${f.strikeCount} strike${f.strikeCount === 1 ? '' : 's'})` : '')
+    : `${f.strikeCount} strike${f.strikeCount === 1 ? '' : 's'}`;
   document.getElementById('chargeSub').textContent =
-    `${f.strikeCount} strike${f.strikeCount === 1 ? '' : 's'} · ${pct.toFixed(0)}% to ${fmtE(next)}`;
+    `${chargeSrc} · ${pct.toFixed(0)}% to ${fmtE(next)}`;
   const cityPct = s / 1.5e6 * 100, aqPct = s / aquifer * 100;
   document.getElementById('chargeEquiv').textContent =
     `${cityPct < 1 ? cityPct.toFixed(3) : cityPct.toFixed(1)}% of a 1,500 MWh city-block · ` +
@@ -1195,21 +1946,21 @@ function fireStrike() {
   return true;
 }
 document.getElementById('btnStrike').addEventListener('click', () => {
-  if (!demo) { document.getElementById('status').textContent = 'Still loading — try again in a moment.'; return; }
+  if (!demo) { document.getElementById('status').textContent = 'Still loading; try again in a moment.'; return; }
   if (typeof demo.strike !== 'function') {        // stale cached WASM (pre-strike build)
     document.getElementById('status').textContent =
-      '⚠ Old cached engine detected — hard-refresh the page (Ctrl/Cmd+Shift+R) to enable strikes.';
+      '⚠ Old cached engine detected: hard-refresh the page (Ctrl/Cmd+Shift+R) to enable strikes.';
     return;
   }
   fireStrike();
   logEvent(frame.t,
     `⚡ Lightning strike #${frame.strikeCount}: conducts to the aquifer (${frame.earthChargeC.toFixed(0)} C). ` +
-    `The bolt holds <b>${fmtE(frame.earthStrikeEnergyJ / 3.6e6)}</b> — capturing it is impedance-limited ` +
+    `The bolt holds <b>${fmtE(frame.earthStrikeEnergyJ / 3.6e6)}</b>; capturing it is impedance-limited ` +
     `(~${fmtE(frame.earthCapturableJ / 3.6e6)} at 10%, optimistic). Slosh spikes to ` +
     `${frame.cavitationVMs.toFixed(2)} m/s, AC burst ${fmtW(frame.acPower)}.`, true);
 });
 // Storm mode: auto-fire strikes (~3/s wall-clock) so the battery visibly charges. A
-// storm is many strikes — this is the battery filling, not a new energy source. Driven
+// storm is many strikes: this is the battery filling, not a new energy source. Driven
 // by a real timer (not the rAF loop) so it fires reliably at any time scale.
 let stormOn = false, stormTimer = null;
 document.getElementById('btnStorm').addEventListener('click', function () {
@@ -1218,18 +1969,18 @@ document.getElementById('btnStorm').addEventListener('click', function () {
   this.textContent = '⛈ Storm (auto-charge): ' + (stormOn ? 'ON' : 'OFF');
   if (stormTimer) { clearInterval(stormTimer); stormTimer = null; }
   if (stormOn) {
-    logEvent(frame ? frame.t : 0, '⛈ Storm begins — strikes auto-charging the battery.', true);
+    logEvent(frame ? frame.t : 0, '⛈ Storm begins: strikes auto-charging the battery.', true);
     stormTimer = setInterval(() => {
       if (typeof demo?.strike === 'function') fireStrike();
     }, 333);
   } else {
-    logEvent(frame ? frame.t : 0, '⛈ Storm passes — battery holds ' + (frame ? fmtE(frame.storeKwh) : '—') + '.', true);
+    logEvent(frame ? frame.t : 0, '⛈ Storm passes: battery holds ' + (frame ? fmtE(frame.storeKwh) : '…') + '.', true);
   }
 });
 window.addEventListener('resize', () => { if (!scene.stub) scene.resize(); });
 window.PhiTheme && window.PhiTheme.onChange(() => { if (!scene.stub) scene.recolor(); renderLadder(); if (frame) renderTau(frame); });
 
-// The Schumann harmonic ladder — every void → its tuned harmonic, live from C++.
+// The Schumann harmonic ladder: every void → its tuned harmonic, live from C++.
 function renderLadder() {
   const rungs = PhiPyramid.chamberLadder();
   const p = window.PhiTheme.palette();
@@ -1244,143 +1995,310 @@ function renderLadder() {
   }).join('');
 }
 
-// ── OBELISK PAIR — self-contained coupled system ─────────────────────────────
-// A separate world from the pyramid device: a dawn-gated µA atmospheric harvest
-// fills a spark-gap accumulator that DUMPS (relaxation oscillator) at ~48 Hz by
-// solar noon, carried on the ~13.5 MHz courtyard carrier. All physics is in the
-// phi-pyramid-cpp ObeliskPairDemo — no JS physics. We just march the clock.
-let activeSystem = 'pyramid';     // 'pyramid' | 'obelisk' — only one loop drives
+// ── OBELISK PAIR: the telluric RECEIVER (the consumer end) ───────────────────
+// The pair locks to the pyramid's broadcast (φ-corrected Schumann n=8 ≈ 50 Hz),
+// develops a high voltage potential, and a transformer steps it down to the 240 V
+// home service. All physics is in phi-pyramid-cpp ObeliskPairDemo (no JS physics);
+// the steady operating point is set by the voltage tune, the scene just animates.
+let activeSystem = 'pyramid';     // 'pyramid' | 'obelisk' | 'coffer': only one loop drives
 let pyramidLoopRunning = true;    // re-entrancy guard for the pyramid rAF loop
+let cofDemo = null, cofFrame = null, cofRunning = false, cofLast = performance.now() / 1000;
+let cofOn = false;       // reactor power: OFF (dormant, ambient-only) until ignited
+let cofSustains = false;  // ON and R_source ≤ ~42 mΩ ⇒ the chopper self-heats & broadcasts
 let obDemo = null, obFrame = null, obRunning = false;
-let obDay = [];                   // {h, sun, dumpHz} samples accumulated over the playing day
-let obLastFire = -1;              // captured first-fire hour for the current day pass
-const OB_DT_HOURS = 0.2;          // simulated hours advanced per animation frame
+let obLast = performance.now() / 1000;   // wall-clock for the obelisk scene dt
+
+// Energy-Loop stage labels per system (same 6 bars, re-captioned on switch).
+const PY_STAGE_LABELS  = { Dc:'DC accumulate', Seed:'Ladder trigger', Par:'Parametric pump', Sat:'Saturate', Ac:'AC output', Mot:'Endpoint harvest' };
+const OB_STAGE_LABELS  = { Dc:'Broadcast (50 Hz)', Seed:'Resonant lock', Par:'Develop potential', Sat:'HV distribute', Ac:'Home transformer', Mot:'Homes (240 V)' };
+const COF_STAGE_LABELS = { Dc:'Telluric tap (dam)', Seed:'Slosh clock 50 Hz', Par:'Plasma gate', Sat:'Chop the DC', Ac:'Pay thermal tax', Mot:'Broadcast out' };
+function relabelEnergyLoop(mode) {
+  const L = mode === 'obelisk' ? OB_STAGE_LABELS : mode === 'coffer' ? COF_STAGE_LABELS : PY_STAGE_LABELS;
+  for (const k of ['Dc', 'Seed', 'Par', 'Sat', 'Ac', 'Mot']) {
+    const el = document.querySelector('#st' + k + ' .stage-lbl'); if (el) el.textContent = L[k];
+  }
+}
 
 const obCanvas = document.getElementById('obDayChart');
 const obx = obCanvas.getContext('2d');
 
-function obSeparation() { return parseFloat(document.getElementById('obSep').value); }
-function obHarvest()    { return parseFloat(document.getElementById('obHarvest').value); }
+function obVolt() { return parseFloat(document.getElementById('obVolt').value); }
 
-// (Re)seed the obelisk system from the sliders and reset the day clock + plot.
+// (Re)configure the receiver from the voltage slider and repaint the panels + curve.
 function obConfigure() {
   if (!obDemo) return;
-  obFrame = obDemo.configure(obSeparation(), obHarvest(), 6.0, 12.0);  // sunrise 6h, 12h daylight
-  obDay = []; obLastFire = -1;
-  obDrawDay(); obSetReadouts(obFrame);
+  obFrame = obDemo.configure(obVolt());            // developed potential target (V)
+  obPanels(obFrame); obDrawLock();
 }
 
+// Update every obelisk panel from one frame: panel readouts, Energy Loop, Live Readouts.
+function obPanels(f) { obSetReadouts(f); setObStages(f); setObLive(f); }
+
+// Energy Loop (shared 6 bars) mapped to the receiver chain.
+function setObStages(f) {
+  const powerN = Math.max(0, Math.min(1, f.powerW / 24000));   // vs one full 100 A panel
+  setStage('Dc',   1);                                          // broadcast present
+  setStage('Seed', f.lockQuality);                             // resonant lock
+  setStage('Par',  f.ampScale);                               // develop the potential
+  setStage('Sat',  f.ampScale);                              // HV tap
+  setStage('Ac',   powerN);                                  // transformer throughput
+  setStage('Mot',  Math.min(1, f.homesPowered / 15));        // homes lit
+}
+
+// Live Readouts: the receiver telemetry block (ob-only) + the shared header tags.
+function setObLive(f) {
+  const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+  set('obHomeBig', f.homesPowered);
+  set('obVpairBig', f.vPair.toFixed(0) + ' V');
+  set('obrBroadcast', f.broadcastHz.toFixed(1) + ' Hz');
+  set('obrLock', (f.lockQuality * 100).toFixed(0) + '%');
+  set('obrVpair', f.vPair.toFixed(0) + ' V');
+  set('obrRatio', f.transformerRatio.toFixed(1) + ':1');
+  set('obrVhome', f.vHome.toFixed(0) + ' V');
+  set('obrPower', (f.powerW / 1000).toFixed(1) + ' kW');
+  set('obrIout', f.currentOutA.toFixed(1) + ' A');
+  set('obrHomes', f.homesPowered);
+  set('obrPanels', f.fullPanels.toFixed(2));
+  set('freqTag', f.broadcastHz.toFixed(0) + ' Hz lock');
+  set('sustainTag', 'receiving · ' + (f.powerW / 1000).toFixed(1) + ' kW');
+}
+
+// The panel right column: lock status + the develop → transformer → homes summary.
 function obSetReadouts(f) {
   if (!f) return;
-  document.getElementById('obClockTag').textContent = 't = ' + f.tHour.toFixed(1) + ' h';
-  document.getElementById('obSun').textContent    = (f.sun * 100).toFixed(0) + '%';
-  document.getElementById('obFiring').innerHTML   = f.firing
-    ? '<span class="ob-verdict-go">yes</span>' : 'no';
-  document.getElementById('obHarv').textContent   = f.currentUA.toFixed(3) + ' µA';
-  document.getElementById('obLeak').textContent   = f.leakFloorUA.toFixed(2) + ' µA';
-  document.getElementById('obDump').textContent   = f.firing ? f.dumpHz.toFixed(1) + ' Hz' : '0 Hz (cold)';
-  document.getElementById('obSelf').innerHTML     = f.selfStarts
-    ? '<span class="ob-verdict-go">self-starts</span>'
-    : '<span class="ob-verdict-fail">will not fire</span>';
-  // static facts
-  document.getElementById('obSep2').textContent   = f.separationM.toFixed(0) + ' m';
-  document.getElementById('obBell').textContent   = f.bellHz.toFixed(1) + ' Hz';
-  document.getElementById('obCarrier').textContent = f.carrierMHz.toFixed(2) + ' MHz';
-  document.getElementById('obFloat').textContent  = f.floatMs.toFixed(0) + ' ms';
-  document.getElementById('obPeak').textContent   = f.peakDumpHz.toFixed(1) + ' Hz';
-  const ff = (f.firstFireHour >= 0 && isFinite(f.firstFireHour)) ? f.firstFireHour : obLastFire;
-  document.getElementById('obFirst').textContent  = ff >= 0 ? ff.toFixed(1) + ' h' : '— (no fire)';
-  const tag = document.getElementById('obFireTag');
-  tag.textContent = f.firing ? 'firing · ' + f.dumpHz.toFixed(0) + ' Hz'
-    : (f.tHour < 6 ? 'cold before dawn' : (f.tHour > 18 ? 'cold after dusk' : 'charging…'));
+  const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+  const setH = (id, v) => { const e = document.getElementById(id); if (e) e.innerHTML = v; };
+  set('obFireTag', 'locked · ' + f.broadcastHz.toFixed(0) + ' Hz');
+  set('obClockTag', (f.lockQuality * 100).toFixed(0) + '% lock');
+  set('obVpair2', f.vPair.toFixed(0) + ' V');
+  set('obRatio2', f.transformerRatio.toFixed(1) + ':1 → ' + f.vHome.toFixed(0) + ' V');
+  setH('obHomes2', '<b>' + f.homesPowered + '</b> homes '
+    + '<span style="color:var(--text-muted)">(≈ ' + f.fullPanels.toFixed(2) + ' full 100 A panels at peak)</span>');
+  set('obBroadcastW', (f.broadcastW / 1000).toFixed(0) + ' kW');
+  set('obHomesTotal', '~' + Math.round(f.broadcastHomesTotal));
 }
 
-// Plot the day: x = hour 0..24, sun curve (gold) + dump-rate curve (cyan), first-fire marker.
-function obDrawDay() {
+// Plot the resonance lock curve: a Lorentzian receiver response around the 50 Hz
+// broadcast, with the marker sitting on the locked peak (the frequency obelisk is fixed).
+function obDrawLock() {
   const q = pal(), dpr = window.devicePixelRatio || 1;
-  const w = obCanvas.clientWidth || 360, h = 200, pad = 6;
+  const w = obCanvas.clientWidth || 360, h = 200, pad = 10;
   if (obCanvas.width !== w * dpr) { obCanvas.width = w * dpr; obCanvas.height = h * dpr; obx.setTransform(dpr, 0, 0, dpr, 0, 0); }
   obx.clearRect(0, 0, w, h);
-  const X = (hour) => (hour / 24) * w;
-  const peak = (obFrame && obFrame.peakDumpHz > 0) ? obFrame.peakDumpHz : 50;
-  // baseline + noon gridline
+  const f0 = obFrame ? obFrame.broadcastHz : 50;
+  const Q = obFrame ? (obFrame.receiverQ || 40) : 40;
+  const fmin = f0 - 10, fmax = f0 + 10;
+  const X = (fr) => ((fr - fmin) / (fmax - fmin)) * w;
+  const Y = (L) => h - pad - L * (h - 2 * pad);
+  // baseline + the broadcast (f0) gridline
   obx.strokeStyle = q.grid; obx.lineWidth = 1;
   obx.beginPath(); obx.moveTo(0, h - pad); obx.lineTo(w, h - pad); obx.stroke();
-  obx.beginPath(); obx.moveTo(X(12), pad); obx.lineTo(X(12), h - pad); obx.stroke();
-  // first-fire marker
-  if (obLastFire >= 0) {
-    obx.strokeStyle = q.green; obx.setLineDash([3, 3]);
-    obx.beginPath(); obx.moveTo(X(obLastFire), pad); obx.lineTo(X(obLastFire), h - pad); obx.stroke();
-    obx.setLineDash([]);
+  obx.beginPath(); obx.moveTo(X(f0), pad); obx.lineTo(X(f0), h - pad); obx.stroke();
+  // the Lorentzian L(f) = 1/(1+(2Q·Δf/f0)²)
+  obx.strokeStyle = q.cyan; obx.lineWidth = 2; obx.beginPath();
+  for (let i = 0; i <= w; i += 2) {
+    const fr = fmin + (i / w) * (fmax - fmin);
+    const x = 2 * Q * (fr - f0) / f0;
+    const L = 1 / (1 + x * x);
+    i ? obx.lineTo(X(fr), Y(L)) : obx.moveTo(X(fr), Y(L));
   }
-  if (obDay.length >= 2) {
-    // sun curve (0..1 → full height)
-    obx.strokeStyle = q.gold; obx.lineWidth = 2; obx.beginPath();
-    obDay.forEach((pt, i) => { const x = X(pt.h), y = h - pad - pt.sun * (h - 2 * pad); i ? obx.lineTo(x, y) : obx.moveTo(x, y); });
-    obx.stroke();
-    // dump-rate curve (0..peak → full height)
-    obx.strokeStyle = q.cyan; obx.lineWidth = 2; obx.beginPath();
-    obDay.forEach((pt, i) => { const x = X(pt.h), y = h - pad - Math.min(1, pt.dumpHz / peak) * (h - 2 * pad); i ? obx.lineTo(x, y) : obx.moveTo(x, y); });
-    obx.stroke();
-  }
+  obx.stroke();
+  // the lock marker — sits on the peak (detune 0 ⇒ L = 1)
+  const lock = obFrame ? obFrame.lockQuality : 1;
+  obx.fillStyle = q.gold;
+  obx.beginPath(); obx.arc(X(f0), Y(lock), 5, 0, Math.PI * 2); obx.fill();
+  obx.fillStyle = q.text || '#888'; obx.font = '11px system-ui';
+  obx.fillText('locked ' + f0.toFixed(1) + ' Hz', X(f0) + 8, Y(lock) - 6);
 }
 
-// The obelisk animation loop — marches the simulated day, looping back at 24 h.
+// The obelisk animation loop: the receiver is steady (set by the voltage tune), so the
+// loop only animates the 3D world (wavefronts in, potential arc, transformer, homes).
 function obLoop() {
   if (activeSystem !== 'obelisk' || !obDemo) { obRunning = false; return; }
-  obFrame = obDemo.step(OB_DT_HOURS);
-  if (obFrame.firing && obLastFire < 0) obLastFire = obFrame.tHour;
-  obDay.push({ h: obFrame.tHour, sun: obFrame.sun, dumpHz: obFrame.firing ? obFrame.dumpHz : 0 });
-  if (obFrame.tHour >= 24) { obFrame = obDemo.reset(); obDay = []; obLastFire = -1; }  // loop the day
-  obDrawDay(); obSetReadouts(obFrame);
+  const now = performance.now() / 1000;
+  const dt = Math.min(0.05, now - obLast); obLast = now;
+  if (obFrame && !scene.stub) { scene.resize(); scene.updateObelisk(obFrame, dt, now); }
   requestAnimationFrame(obLoop);
 }
 
-// Lazy-create the obelisk driver on first switch, then seed + start its loop.
+// Lazy-create the receiver driver on first switch, then configure + start its loop.
 async function obEnsureAndStart() {
   if (!obDemo) {
     await ready();
     obDemo = PhiPyramid.createObeliskPair();
-    obConfigure();
-  } else {
-    obFrame = obDemo.reset(); obDay = []; obLastFire = -1; obSetReadouts(obFrame);
   }
+  obConfigure();                                    // seed obFrame from the voltage slider
+  obLast = performance.now() / 1000;
+  if (!scene.stub && obFrame) scene.updateObelisk(obFrame, 0, obLast);   // paint once immediately
   if (!obRunning) { obRunning = true; requestAnimationFrame(obLoop); }
 }
 
-// ── System switch: show one system, pause the other, drive exactly one loop ──
+// ── COFFER MHD CORE: the sealed mercury coffer as an MHD alternator. Static
+// operating point from CofferMHD (no JS physics); the 3D animates slosh + AC.
+function cofR() { return parseFloat(document.getElementById('cofR').value); }   // R_source, mΩ
+function cofConfigure() { if (!cofDemo) return; cofFrame = cofDemo.configure(1.3, cofR()); cofPanels(cofFrame); }
+function cofPanels(f) {
+  cofSustains = cofOn && (cofR() <= f.damThresholdMOhm);   // self-heats iff R ≤ ~42 mΩ
+  setCofReadouts(f); setCofStages(f); cofApplyStateUI(f);
+}
+
+// Energy Loop. OFF: dark (only the permanent-magnet B faint). ON: the MHD chain runs (the
+// slosh→2.5 W byproduct), so the input stages light; the big AC output (Mot) lights fully
+// only if the chopper SUSTAINS (R ≤ 42 mΩ); otherwise just the tiny byproduct trickles.
+function setCofStages(f) {
+  if (!cofOn) {
+    setStage('Dc', 0.0); setStage('Seed', 0.15); setStage('Par', 0.0);
+    setStage('Sat', 0.0); setStage('Ac', 0.0);   setStage('Mot', 0.0);
+    return;
+  }
+  setStage('Dc', 1.0); setStage('Seed', 1.0); setStage('Par', 1.0);
+  setStage('Sat', 1.0); setStage('Ac', 1.0);
+  setStage('Mot', cofSustains ? 1.0 : 0.1);   // full broadcast vs byproduct-only (stalled)
+}
+// Button / label / state-note, driven by the OFF / sustained-ON / stalled-ON state.
+function cofApplyStateUI(f) {
+  const on = cofOn, sustains = cofSustains, thr = f ? f.damThresholdMOhm.toFixed(0) : '42';
+  const btn = document.getElementById('cofToggle');
+  if (btn) {
+    btn.innerHTML = on ? '■ Turn the core OFF (dormant)' : '▶ Turn the core ON (ignite)';
+    btn.style.background = on ? 'var(--gold)' : 'transparent';
+    btn.style.color = on ? '#1a1207' : 'var(--text)';
+  }
+  const lbl = document.getElementById('cofStateLbl');
+  if (lbl) lbl.textContent = !on ? 'OFF' : sustains ? 'ON' : 'STALLED';
+  const note = document.getElementById('cofStateNote');
+  if (note) note.innerHTML = !on
+    ? '<b style="color:var(--gold)">OFF: dormant, sitting unignited.</b> The mercury is cool and still; '
+      + 'no plasma, no resonance. Only the <b>standard atmospheric DC circuit</b> and the <b>ground/telluric '
+      + 'system</b> touch it, the µW–mW ambient that keeps it primed. It stays dormant until a lightning '
+      + 'strike ignites the arc.'
+    : sustains
+      ? '<b style="color:var(--gold)">ON: ignited & sustained.</b> The strike fired the mercury arc; with '
+        + 'R_source ≤ ' + thr + ' mΩ the gated telluric current pays the 59 kW thermal tax, the pool boils to '
+        + '517 °C / 1.0 MPa, the chamber rings at 50 Hz, and the 50 Hz <b>chopper broadcasts hundreds of kW</b>. '
+        + 'The slosh is the <b>switch</b>, not the generator.'
+      : '<b style="color:#d9534f">ON but STALLED.</b> The strike fired the arc, but R_source &gt; ' + thr + ' mΩ: '
+        + 'the regional current flanks the dam, the supply can\'t pay the 59 kW thermal tax, so the pool cools, '
+        + 'the arc quenches, and the broadcast collapses. Slide R_source ≤ ' + thr + ' mΩ to sustain it.';
+}
+// EMF here is single-digit mV (real Giza scale), so format µV/mV sensibly.
+function fmtEMF(v) { return v < 1e-3 ? (v * 1e6).toFixed(0) + ' µV' : (v * 1e3).toFixed(2) + ' mV'; }
+const fmtAmp = (a) => a >= 1000 ? (a / 1000).toFixed(1) + ' kA' : a.toFixed(0) + ' A';
+function setCofReadouts(f) {
+  const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+  const on = cofOn, run = cofOn && cofSustains;   // run = the HOT reactor (plasma/bell/chopper)
+  const fmtJ = (j) => j >= 1000 ? (j / 1000).toFixed(2) + ' kJ' : j.toFixed(0) + ' J';
+  const fmtTinyV = (v) => v < 1e-6 ? (v * 1e9).toFixed(0) + ' nV' : v < 1e-3 ? (v * 1e6).toFixed(2) + ' µV' : (v * 1e3).toFixed(2) + ' mV';
+  // BROADCAST OUTPUT: the telluric chopper (Machine C, conditional on R ≤ ~42 mΩ)
+  if (!on) { set('cofrChop', '…'); set('cofrChopSub', 'reactor off'); }
+  else if (run) {
+    set('cofrChop', fmtW(f.chopperOutputW));
+    set('cofrChopSub', 'telluric DC ' + fmtW(f.chopperSupplyW) + ' chopped @50 Hz − ' + fmtW(f.thermalLeakW)
+      + ' tax · R≤' + f.damThresholdMOhm.toFixed(0) + ' mΩ · CONDITIONAL/unproven');
+  } else {
+    set('cofrChop', 'STALLED');
+    set('cofrChopSub', 'R_source > ' + f.damThresholdMOhm.toFixed(0) + ' mΩ: supply can\'t pay the '
+      + fmtW(f.thermalLeakW) + ' thermal tax; arc quenches');
+  }
+  // MHD byproduct (Faraday): the slosh runs whenever ignited (ambient-driven)
+  set('cofrPow', on ? fmtW(f.pElecW) : '0 W');
+  set('cofrPowSub', on ? 'parasitic slosh→AC, not the broadcast' : 'dormant, not ignited');
+  set('cofrEmf', on ? fmtEMF(f.emfPeak) : '0 V');
+  // matched load (max power transfer): V = Voc/2, I = Isc/2, so V×I = the actual delivered power.
+  // (Voc×Isc would be 4× and is physically impossible at once; that was the bug.)
+  set('cofrEmfSub', on ? 'matched ' + (f.emfPeak * 0.5 * 1e3).toFixed(2) + ' mV × ' + fmtAmp(f.shortCircuitA * 0.5) + ' = ' + fmtW(f.pElecW) : 'no slosh → no EMF');
+  // capability ledger
+  set('cofrIsc', on ? fmtAmp(f.shortCircuitA) : '0 A'); set('cofrConv', on ? fmtW(f.pElecW) : '0 W');
+  set('cofrDrive', on ? fmtW(f.pMechW) : '…'); set('cofrHa', on ? Math.round(f.hartmann).toLocaleString() : '…');
+  set('cofrB', f.bTesla.toFixed(2) + ' T');                                  // permanent magnet, always there
+  set('cofrV', on ? f.sloshVelMms.toFixed(1) + ' mm/s' : '0 mm/s (still)');
+  set('cofrR', (f.internalROhm * 1e6).toFixed(2) + ' µΩ');
+  set('cofrBrake', f.lorentzCoeff.toExponential(1) + ' SI'); set('cofrMass', (f.hgMassKg / 1000).toFixed(2) + ' t');
+  // fixed-fact panel + component headline
+  set('cofFixAmp', f.sloshAmpUm.toFixed(1) + ' µm'); set('cofFixFill', (f.fillFrac * 100).toFixed(1) + '%');
+  set('cofFixBell', f.bellHzCheck.toFixed(1) + ' Hz');
+  set('cofMass', (f.hgMassKg / 1000).toFixed(2) + ' t'); set('cofBhead', f.bTesla.toFixed(2) + ' T');
+  set('cofEmfHead', on ? fmtEMF(f.emfPeak) : '0 V');
+  set('cofDimTag', f.cofferL.toFixed(2) + '×' + f.cofferW.toFixed(2) + '×' + f.cofferDepth.toFixed(2) + ' m interior');
+  set('freqTag', run ? f.fHz.toFixed(0) + ' Hz AC' : on ? 'stalled' : 'dormant');
+  set('sustainTag', run ? 'BROADCAST · ' + fmtW(f.chopperOutputW) : on ? 'STALLED · R too high' : 'OFF · ambient only');
+  // ambient baseline (always present, both states)
+  set('cofrAtmDc', fmtW(f.atmosphericDcW)); set('cofrGnd', fmtW(f.groundTapW));
+  set('cofStateTitle', run ? 'State: RUNNING (ignited & sustained)' : on ? 'State: ON but STALLED (R > threshold)' : 'State: OFF (dormant, ambient only)');
+  // resonance / reactor: HOT values only when sustained; cool/quenched otherwise
+  set('cofrResF', f.resFHz.toFixed(2) + ' Hz'); set('cofrResQ', Math.round(f.resQ).toLocaleString());
+  set('cofrResE', run ? fmtJ(f.resStoredJ) : '0 J (not ringing)'); set('cofrResP', run ? fmtW(f.resCircW) : '0 W');
+  set('cofrTelV', fmtTinyV(f.telVoltageV)); set('cofrTelF', (f.telFieldVpm * 1e9).toFixed(1) + ' nV/m');
+  set('cofrTemp', run ? f.interiorTempC.toFixed(0) + ' °C' : '~37 °C (ambient)');
+  set('cofrPres', run ? f.pressureMPa.toFixed(2) + ' MPa' : '0.10 MPa (1 atm)');
+  set('cofrArc', run ? Math.round(f.plasmaArcK).toLocaleString() + ' K' : on ? 'quenched' : 'none');
+  set('cofrTax', run ? fmtW(f.thermalLeakW) + ' (paid)' : on ? fmtW(f.thermalLeakW) + ' (unpaid → quench)' : '0 W');
+}
+function cofLoop() {
+  if (activeSystem !== 'coffer' || !cofDemo) { cofRunning = false; return; }
+  const now = performance.now() / 1000, dt = Math.min(0.05, now - cofLast); cofLast = now;
+  if (!scene.stub) { scene.resize(); scene.updateCoffer(cofFrame, dt, now, cofOn, cofSustains); }
+  requestAnimationFrame(cofLoop);
+}
+// Toggle the reactor ON (ignite) / OFF (dormant). cofPanels() recomputes sustains + all UI.
+function cofSetPower(on) { cofOn = on; if (cofFrame) cofPanels(cofFrame); }
+async function cofEnsureAndStart() {
+  if (!cofDemo) { await ready(); cofDemo = PhiPyramid.createCofferMHD(); cofConfigure(); }
+  else { cofPanels(cofFrame); }
+  cofLast = performance.now() / 1000;
+  if (!scene.stub && cofFrame) scene.updateCoffer(cofFrame, 0, cofLast, cofOn, cofSustains);
+  if (!cofRunning) { cofRunning = true; requestAnimationFrame(cofLoop); }
+}
+
+// ── System switch: each world owns its panels & controls outright (show/hide) ──
 function switchSystem(sys) {
   activeSystem = sys;
-  const obPanel = document.getElementById('obeliskPanel');
-  const pyCtrls = document.getElementById('pyramidControls');
-  const obCtrls = document.getElementById('obeliskControls');
+  ['pyramid', 'obelisk', 'coffer'].forEach((m) => document.body.classList.toggle('mode-' + m, sys === m));
+  document.getElementById('obeliskPanel').classList.toggle('on', sys === 'obelisk');
+  document.getElementById('cofferPanel').classList.toggle('on', sys === 'coffer');
+  document.getElementById('pyramidControls').style.display = sys === 'pyramid' ? '' : 'none';
+  document.getElementById('obeliskControls').style.display = sys === 'obelisk' ? '' : 'none';
+  document.getElementById('cofferControls').style.display  = sys === 'coffer'  ? '' : 'none';
+  relabelEnergyLoop(sys);
+  const blurb = document.getElementById('systemBlurb');
+  if (blurb) blurb.innerHTML =
+    sys === 'obelisk' ? 'The Obelisk Pair is the <b>receiver</b>: the consumer end of the pyramid\'s '
+      + 'telluric broadcast. It locks to the 50 Hz signal, develops a high voltage potential, and a '
+      + 'each home\'s own transformer steps it down to the 240 V service. One pair per home, or a shared street.'
+    : sys === 'coffer' ? 'The Coffer MHD Core: the sealed mercury reactor at the heart of the device, '
+      + 'housed inside the granite <b>King\'s Chamber</b> ~70 m up the pyramid. The room is the resonant '
+      + 'cavity: its walls and the relieving-chamber capacitor stack ring with the coffer. '
+      + 'Toggle it <b>ON/OFF</b>: dormant it sits in the ambient atmospheric+ground field; ignited it rings, '
+      + 'boils, and pours out 50 Hz AC.'
+    : 'The Great Pyramid as a whole-device energy machine, running end-to-end: apex DC in → 50 Hz '
+      + 'slosh/MHD in the King\'s Chamber → the running core <b>chops</b> the telluric ground loop → '
+      + 'broadcast out. Cold-start it, trigger lightning to bank the ground/aquifer battery, or run storm mode.';
+  document.getElementById('deviceTitle').textContent =
+    sys === 'obelisk' ? 'The Pair · broadcast in → resonant lock → 1000–4000 V → per-home transformer → 240 V'
+    : sys === 'coffer' ? 'The Coffer · mercury slosh → B → MHD → AC'
+    : 'The Device · DC in → slosh chops the telluric loop → broadcast out';
+  if (!scene.stub && scene.setMode) scene.setMode(sys);
   if (sys === 'obelisk') {
-    obPanel.classList.add('on');
-    obCtrls.style.display = '';
-    pyCtrls.classList.add('ob-dimmed');
-    // de-emphasize the pyramid panels (everything except the obelisk panel)
-    document.querySelectorAll('.panels > .scene-panel:not(#obeliskPanel)').forEach((el) => el.classList.add('ob-dimmed'));
     obEnsureAndStart();
+  } else if (sys === 'coffer') {
+    cofEnsureAndStart();
   } else {
-    obPanel.classList.remove('on');
-    obCtrls.style.display = 'none';
-    pyCtrls.classList.remove('ob-dimmed');
-    document.querySelectorAll('.panels > .scene-panel:not(#obeliskPanel)').forEach((el) => el.classList.remove('ob-dimmed'));
-    obRunning = false;                       // obLoop will self-exit on next frame
+    if (frame) setReadouts(frame);           // restore the pyramid freqTag + cards
     if (!pyramidLoopRunning) { pyramidLoopRunning = true; last = performance.now() / 1000; requestAnimationFrame(loop); }
   }
 }
 
 document.getElementById('systemSelect').addEventListener('change', function () { switchSystem(this.value); });
-document.getElementById('obSep').oninput = function () {
-  document.getElementById('obSepVal').textContent = this.value + ' m';
+document.getElementById('cofToggle').addEventListener('click', function () { cofSetPower(!cofOn); });
+document.getElementById('cofR').oninput = function () {
+  document.getElementById('cofRVal').textContent = (+this.value).toFixed(0) + ' mΩ';
+  if (cofDemo) cofConfigure();
+};
+document.getElementById('obVolt').oninput = function () {
+  document.getElementById('obVoltVal').textContent = (+this.value).toFixed(0) + ' V';
   if (obDemo) obConfigure();
 };
-document.getElementById('obHarvest').oninput = function () {
-  document.getElementById('obHarvestVal').textContent = (+this.value).toFixed(1) + ' µA';
-  if (obDemo) obConfigure();
-};
-window.PhiTheme && window.PhiTheme.onChange(() => { if (activeSystem === 'obelisk') obDrawDay(); });
+window.PhiTheme && window.PhiTheme.onChange(() => { if (activeSystem === 'obelisk') obDrawLock(); });
 
 function loop() {
   if (activeSystem !== 'pyramid') { pyramidLoopRunning = false; return; }
@@ -1388,6 +2306,13 @@ function loop() {
   const dt = Math.min(0.05, now - last); last = now;
   if (demo) {
     frame = demo.step(dt * timeScale);
+    // KICKSTART: once the pyramid has powered up to the minimum drive (~70% slosh envelope,
+    // = motor-lock threshold), the mercury arc ignites: the MHD core comes online and stays on.
+    if (!mhdStarted && (frame.motorLocked || frame.envelope >= MHD_KICK_ENV)) {
+      mhdStarted = true;
+      frame = demo.setOperating(true, PY_DAM_R_MOHM);
+      logEvent(frame.t, 'MHD core KICKSTARTED: the pyramid reached the minimum drive; the mercury arc ignites and the broadcast comes online.', true);
+    }
     setStages(frame); setReadouts(frame);
     if (!scene.stub) { scene.resize(); scene.update(frame, dt, now); }
     drawWave(frame, dt);
@@ -1404,6 +2329,10 @@ function loop() {
 
 await ready();
 demo = PhiPyramid.createDemo();
+// COLD START: the MHD core is OFF. The pyramid powers up (rings up the slosh) and kickstarts
+// the core once it reaches the minimum drive (see the loop). The dam-shunt R_source knob lives
+// only in the Coffer MHD view; here it is held at its sustained default once kickstarted.
+pyResetMhd();
 configure();
 renderLadder();
 updateScaleNote();
@@ -1411,11 +2340,17 @@ if (scene.stub) {
   const host = document.querySelector('.scene-panel');
   const d = document.createElement('div');
   d.style.cssText = 'position:absolute;inset:44px 0 0 0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;color:var(--text-muted);font-size:14px;';
-  d.textContent = '3D view needs WebGL (unavailable here) — the live device telemetry is still computed.';
+  d.textContent = '3D view needs WebGL (unavailable here); the live device telemetry is still computed.';
   host.appendChild(d);
 }
 document.getElementById('status').textContent = 'Live · computed in phi-pyramid-cpp (WASM)';
 loop();
+// Deep-link a view via ?system=obelisk|coffer (also drives the dropdown).
+const _qsys = new URLSearchParams(location.search).get('system');
+if (_qsys && ['obelisk', 'coffer'].includes(_qsys)) {
+  const _sel = document.getElementById('systemSelect'); if (_sel) _sel.value = _qsys;
+  switchSystem(_qsys);
+}
 </script>
 </body>
 </html>

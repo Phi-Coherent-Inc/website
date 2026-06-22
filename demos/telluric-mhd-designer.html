@@ -1,0 +1,2370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>φCoherent · Telluric-Resonant MHD Designer</title>
+<meta name="description" content="Interactive designer for a Telluric-Resonant MHD system: configure electrode separation, vessel geometry, fluid fill, and MHD stage to achieve telluric resonance, bell resonance, and EM broadcast at a target frequency.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://phicoherent.com/demos/telluric-mhd-designer.html">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#C9A830">
+<script>try{if(localStorage.getItem('phi-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/demo.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   Local styles — only things NOT already in demo.css.
+   demo.css covers: .main, .controls, .panel-header/.title/.tag,
+   .scene-panel, .stat-card/.label/.value, input[type=range],
+   .slider-row, .tag-recover/.tag-error, and all @media breakpoints.
+═══════════════════════════════════════════════════════════════════ */
+
+/* ── Panels right-column grid ── */
+.panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 16px;
+  align-content: start;
+  min-width: 0;        /* prevent grid blowout */
+}
+.panels .span2 { grid-column: 1 / -1; }
+.panel-body    { padding: 14px 16px; }
+
+/* ── Additional tag variant ── */
+.tag-warn { background: rgba(201,168,48,.14); color: var(--gold-dim); }
+
+/* ── Override demo.css forced 340px min-height for non-canvas panels ──
+   demo.css applies min-height:340px to ALL .scene-panel on ≤860px;
+   panels that hold only text/metrics don't need it.              ── */
+.panels .scene-panel { min-height: 0; }
+.panels .scene-panel canvas { min-height: 240px; }
+
+/* ── Stage checklist ── */
+.stage-list { display: flex; flex-direction: column; gap: 7px; }
+.stage-item {
+  position: relative; display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border: 1px solid var(--gold-border); border-radius: 7px;
+  overflow: hidden; background: var(--card); transition: border-color .25s;
+}
+.stage-item.on   { border-color: var(--demo-green); }
+.stage-item.fail { border-color: rgba(192,57,43,.40); }
+.stage-prog {
+  position: absolute; inset: 0 auto 0 0; width: 0;
+  background: var(--demo-green); opacity: .10; transition: width .35s;
+}
+.stage-item > *:not(.stage-prog) { position: relative; z-index: 1; }
+.stage-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  border: 1.5px solid var(--text-muted); flex-shrink: 0; transition: .25s;
+}
+.stage-item.on   .stage-dot { border-color: var(--demo-green); background: var(--demo-green); box-shadow: 0 0 7px rgba(47,125,50,.45); }
+.stage-item.fail .stage-dot { border-color: var(--demo-red); background: var(--demo-red); }
+.stage-lbl  { font-size: 12px; color: var(--text-muted); flex: 1; transition: color .25s; min-width: 0; }
+.stage-item.on .stage-lbl { color: var(--text); }
+.stage-sub  {
+  font-size: 11px; color: var(--text-dim); text-align: right;
+  min-width: 60px; white-space: nowrap;
+  font-variant-numeric: tabular-nums; font-family: 'Newsreader', Georgia, serif;
+}
+.stage-item.on   .stage-sub { color: var(--demo-green); }
+.stage-item.fail .stage-sub { color: var(--demo-red); }
+
+/* ── Metric grids ── */
+.metric-grid   { display: grid; grid-template-columns: 1fr 1fr;        gap: 10px; }
+.metric-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr;    gap: 10px; }
+.chopper-grid  { display: grid; grid-template-columns: 1fr 1fr 1fr;    gap: 10px; }
+
+/* Compact stat-value inside our grids (demo.css uses 30px which overflows 3-col) */
+.metric-grid .stat-card .stat-value,
+.metric-grid-3 .stat-card .stat-value { font-size: 20px; }
+
+/* ── Chopper output box ── */
+.chopper-output {
+  margin-top: 12px;
+  border: 2px solid var(--demo-green); border-radius: 8px;
+  padding: 14px 16px; background: var(--demo-green-bg);
+}
+.chopper-output-label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: .16em;
+  color: var(--demo-green); margin-bottom: 10px;
+}
+.chopper-output .stat-value { font-size: 26px; }
+
+/* ── Schumann mode buttons ── */
+.n-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.n-btn {
+  padding: 6px 2px; border: 1px solid var(--gold-border); border-radius: 4px;
+  background: var(--card); color: var(--text-muted); font-size: 12px;
+  font-family: 'Newsreader', Georgia, serif; cursor: pointer; transition: .15s; text-align: center;
+}
+.n-btn:hover:not(.on) { border-color: var(--gold-dim); color: var(--text); }
+.n-btn.on { background: var(--gold); color: #1a1208; border-color: var(--gold); font-weight: 600; }
+
+/* ── Toggle pairs ── */
+.tog-pair {
+  display: flex; border: 1px solid var(--gold-border); border-radius: 5px; overflow: hidden;
+}
+.tog-pair button {
+  flex: 1; padding: 7px 4px; border: none; background: var(--card);
+  color: var(--text-muted); font-size: 12px; cursor: pointer; transition: .15s;
+  min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tog-pair button.on {
+  background: var(--gold-subtle); color: var(--text); font-weight: 600;
+  border-bottom: 2px solid var(--gold);
+}
+.tog-pair button:hover:not(.on) { background: var(--card-hover); }
+
+/* 2×2 grid variant for 4-option selectors (material picker) */
+.tog-grid-2x2 {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+}
+.tog-grid-2x2 button {
+  padding: 7px 4px; border: 1px solid var(--gold-border); border-radius: 4px;
+  background: var(--card); color: var(--text-muted); font-size: 12px;
+  cursor: pointer; transition: .15s; text-align: center;
+}
+.tog-grid-2x2 button.on {
+  background: var(--gold-subtle); color: var(--text);
+  font-weight: 600; border-color: var(--gold);
+}
+.tog-grid-2x2 button:hover:not(.on) { background: var(--card-hover); }
+
+/* ── Slider value display (distinct from demo.css .slider-value) ── */
+.slider-val {
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 16px; color: var(--gold-dim);
+  min-width: 72px; text-align: right;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+
+/* ── Ledger notes ── */
+.ledger { font-size: 11.5px; line-height: 1.65; color: var(--text-muted); margin-top: 5px; }
+.ledger b    { color: var(--text); font-variant-numeric: tabular-nums; }
+.ledger .ok  { color: var(--demo-green); font-weight: 500; }
+.ledger .warn { color: #e07030; font-weight: 500; }
+
+/* ── Scale preset buttons — large, stacked, unmissable ── */
+.preset-stack { display: flex; flex-direction: column; gap: 8px; }
+.preset-btn {
+  display: flex; flex-direction: column; align-items: flex-start;
+  width: 100%; padding: 11px 14px; cursor: pointer;
+  border: 1px solid var(--gold-border); border-radius: 7px;
+  background: var(--card); color: var(--text);
+  font-family: 'Inter', sans-serif; text-align: left; transition: .15s;
+}
+.preset-btn:hover { border-color: var(--gold-dim); background: var(--card-hover); }
+.preset-btn.on {
+  border-color: var(--gold); background: var(--gold-subtle);
+  box-shadow: 0 0 0 1px var(--gold) inset;
+}
+.preset-btn .pb-name {
+  font-size: 15px; font-weight: 600; letter-spacing: .02em;
+  display: flex; align-items: center; gap: 8px;
+}
+.preset-btn.on .pb-name { color: var(--gold-dim); }
+.preset-btn .pb-sub {
+  font-size: 10.5px; color: var(--text-muted); margin-top: 3px; line-height: 1.4;
+}
+
+/* ── Sticky left controls — keeps the control panel visible as the
+   user scrolls through the long right-side panel stack ── */
+.controls {
+  position: sticky;
+  top: var(--demo-header-h);
+  max-height: calc(100vh - var(--demo-header-h));
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold-border) transparent;
+}
+/* Mobile: don't stick, just stack */
+@media (max-width: 860px) {
+  .controls { position: static; max-height: none; overflow-y: visible; }
+}
+
+/* ── Control section dividers ── */
+.ctrl-section {
+  font-size: 10px; text-transform: uppercase; letter-spacing: .12em;
+  color: var(--text-muted); margin-top: 2px; margin-bottom: 6px;
+  padding-bottom: 8px; border-bottom: 1px solid var(--gold-border);
+}
+
+/* ── Live result chips — appear below each section heading and show the
+   key computed output for that section, keeping left↔right in sync ── */
+.live-result {
+  background: var(--gold-subtle);
+  border: 1px solid var(--gold-border);
+  border-radius: 4px;
+  padding: 5px 9px;
+  font-size: 11px;
+  line-height: 1.65;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+.live-result b    { color: var(--gold-dim); font-weight: 600; }
+.live-result .ok  { color: var(--demo-green); font-weight: 600; }
+.live-result .warn { color: #e07030; font-weight: 600; }
+
+/* ── Canvases — explicit CSS heights so display aspect matches the backing
+   store (sized() draws at cssH·dpr). Without a fixed CSS height the display
+   height defaults to the raw pixel count, distorting content on HiDPI. ── */
+#sysCanvas  { width: 100%; height: 112px; display: block; }
+#freqCanvas { width: 100%; height: 210px; display: block; }
+#waveCanvas { width: 100%; height: 120px; display: block; }
+#deviceCanvas { width: 100%; height: 380px; display: block; cursor: grab; }
+#deviceCanvas:active { cursor: grabbing; }
+
+/* ── Responsive ── */
+@media (max-width: 860px) {
+  /* Stack panels to single column */
+  .panels { grid-template-columns: 1fr; gap: 12px; padding: 12px; }
+  .panels .span2 { grid-column: 1; }
+
+  /* 3-column → 2-column at tablet */
+  .metric-grid-3, .chopper-grid { grid-template-columns: 1fr 1fr; }
+
+  /* Shrink 3D canvas on tablet */
+  #deviceCanvas { height: 300px; }
+  #sysCanvas    { height: 90px; }
+}
+
+@media (max-width: 520px) {
+  /* All metric grids → 1-column on phone */
+  .metric-grid, .metric-grid-3, .chopper-grid { grid-template-columns: 1fr; }
+
+  /* Compact stat values on phone */
+  .metric-grid   .stat-card .stat-value,
+  .metric-grid-3 .stat-card .stat-value,
+  .chopper-output .stat-value { font-size: 18px; }
+
+  /* Smaller canvases */
+  #deviceCanvas { height: 240px; }
+  #sysCanvas    { height: 80px; }
+
+  /* Compact slider value */
+  .slider-val { min-width: 58px; font-size: 14px; }
+
+  /* Checklist sub-label can wrap */
+  .stage-sub { min-width: 48px; font-size: 10px; }
+}
+</style>
+</head>
+<body>
+
+<header class="demo-header" data-demo="telluric-mhd-designer"
+        data-title="Telluric-Resonant MHD Designer"></header>
+
+<div class="main">
+<!-- ═══════════════ LEFT: Controls ═══════════════ -->
+<aside class="controls">
+
+  <!-- Scale presets -->
+  <div class="ctrl-section">Scale Preset</div>
+  <div class="preset-stack">
+    <button class="preset-btn" id="btnDesktop" type="button">
+      <span class="pb-name">Desktop</span>
+      <span class="pb-sub">Lab bench · 0.5 m Galinstan vessel · 12 V supply · 380 Hz</span>
+    </button>
+    <button class="preset-btn" id="btnSite" type="button">
+      <span class="pb-name">Site</span>
+      <span class="pb-sub">Building scale · 2 m Galinstan vessel · 48 V supply · 50 Hz</span>
+    </button>
+    <button class="preset-btn on" id="btnGiza" type="button">
+      <span class="pb-name">Giza <span style="font-weight:400;color:var(--text-muted)">↺ reset</span></span>
+      <span class="pb-sub">Great Pyramid · mercury coffer · natural telluric · 50 Hz</span>
+    </button>
+  </div>
+  <div class="ledger" id="presetNote" style="margin-top:8px;">Great Pyramid — storm telluric, mercury, 100 km span</div>
+
+  <div class="ctrl-section" style="margin-top:14px;">Input Source</div>
+  <div class="live-result" id="resSrc">—</div>
+
+  <div class="control-group">
+    <label>Source Type</label>
+    <div class="tog-pair">
+      <button id="btnNatural" class="on">Natural Telluric</button>
+      <button id="btnArtificial">Artificial / Custom</button>
+    </div>
+    <div class="ledger" id="srcTypeNote" style="margin-top:5px;"></div>
+  </div>
+
+  <!-- Natural telluric controls -->
+  <div id="naturalGroup">
+    <div class="control-group">
+      <label>Telluric Field E<sub>t</sub></label>
+      <div class="slider-row">
+        <input type="range" id="Et" min="0" max="3.699" step="0.01" value="3">
+        <span class="slider-val" id="EtVal">1.00 V/km</span>
+      </div>
+      <div class="ledger">Quiet: 1–10 mV/km · Storm: 0.1–5 V/km</div>
+    </div>
+    <div class="control-group">
+      <label>Ground Contact Span L</label>
+      <div class="slider-row">
+        <input type="range" id="Lkm" min="0" max="3" step="0.01" value="2">
+        <span class="slider-val" id="LkmVal">100 km</span>
+      </div>
+      <div class="ledger">V<sub>oc</sub> = E<sub>t</sub> · L — requires two earth contacts.
+        Lab: two rods · Site: buried plates · Giza: aquifer shaft + geological dam.</div>
+    </div>
+    <div class="control-group">
+      <label>Ground Conductivity σ</label>
+      <div class="slider-row">
+        <input type="range" id="sigma" min="-2" max="1" step="0.02" value="-0.301">
+        <span class="slider-val" id="sigmaVal">0.500 S/m</span>
+      </div>
+      <div class="ledger">Dry rock: 0.01 · Soil: 0.1 · Aquifer: 0.5–5 S/m</div>
+    </div>
+    <div class="control-group">
+      <label>Ground Contact Radius a</label>
+      <div class="slider-row">
+        <input type="range" id="aElec" min="-2" max="3" step="0.02" value="1">
+        <span class="slider-val" id="aElecVal">10.0 m</span>
+      </div>
+      <div class="ledger">Sets contact resistance R = 1/(π·σ·a).
+        Rod: 1–5 cm · Stake: 0.5 m · Shaft: 10–100 m</div>
+    </div>
+  </div>
+
+  <!-- Artificial / custom source controls -->
+  <div id="artificialGroup" style="display:none;">
+    <div class="control-group">
+      <label>Supply Voltage V<sub>in</sub></label>
+      <div class="slider-row">
+        <input type="range" id="Vin" min="-3" max="4" step="0.02" value="1">
+        <span class="slider-val" id="VinVal">10 V</span>
+      </div>
+      <div class="ledger">Open-circuit output of your source.
+        Battery: 1.5–48 V · Power supply: 5–240 V · Capacitor bank: kV range</div>
+    </div>
+    <div class="control-group">
+      <label>Source Internal Resistance R<sub>int</sub></label>
+      <div class="slider-row">
+        <input type="range" id="RsArt" min="-6" max="4" step="0.05" value="-0.301">
+        <span class="slider-val" id="RsArtVal">0.50 Ω</span>
+      </div>
+      <div class="ledger">P<sub>matched</sub> = V<sub>in</sub>²/(4R<sub>int</sub>).
+        Supercap: µΩ · PSU: mΩ–Ω · Signal gen: 50 Ω · Battery: 0.1–1 Ω</div>
+    </div>
+  </div>
+
+  <div class="control-group">
+    <label>Target / Drive Frequency</label>
+    <div class="n-grid" id="nGrid"></div>
+    <div id="customFreqGroup" style="display:none;margin-top:10px;">
+      <div class="slider-row">
+        <input type="range" id="customF" min="1" max="1000" step="1" value="50">
+        <span class="slider-val" id="customFVal">50 Hz</span>
+      </div>
+    </div>
+    <div class="ledger" id="fTelNote"></div>
+  </div>
+
+  <div class="ctrl-section" style="margin-top:14px;">Chopper Stage</div>
+  <div class="live-result" id="resChop">—</div>
+
+  <div class="control-group">
+    <label>Supply Source Resistance R<sub>s</sub></label>
+    <div class="slider-row">
+      <input type="range" id="Rdam" min="1" max="120" step="1" value="5">
+      <span class="slider-val" id="RdamVal">5 mΩ</span>
+    </div>
+    <div class="ledger" id="RdamNote">Resistance of the full supply path between the two contacts.
+      Giza dam geology: ~5–42 mΩ · buried cable: µΩ · rocky terrain: Ω–kΩ</div>
+  </div>
+
+  <div class="control-group">
+    <label id="thermalLabel">Switch / Reactor Loss</label>
+    <div class="slider-row">
+      <input type="range" id="Pthermal" min="0" max="6" step="0.02" value="4.77">
+      <span class="slider-val" id="PthermalVal">59 kW</span>
+    </div>
+    <div class="ledger" id="thermalNote"></div>
+  </div>
+
+  <div class="ctrl-section" style="margin-top:14px;">Resonant Vessel</div>
+  <div class="live-result" id="resVessel">—</div>
+
+  <div class="control-group">
+    <label>Working Fluid</label>
+    <div class="tog-pair">
+      <button id="btnMercury" class="on">Mercury</button>
+      <button id="btnGalinstan">Galinstan</button>
+    </div>
+  </div>
+
+  <div class="control-group">
+    <label>Vessel Length L<sub>v</sub></label>
+    <div class="slider-row">
+      <input type="range" id="Lv" min="-0.301" max="2" step="0.02" value="0.2967">
+      <span class="slider-val" id="LvVal">1.98 m</span>
+    </div>
+    <div class="ledger">f<sub>empty</sub> ∝ 1/L<sub>v</sub> · coffer proportions (W=0.34L, D=0.44L)</div>
+  </div>
+
+  <div class="control-group">
+    <label>Fill Tuning</label>
+    <div class="tog-pair">
+      <button id="btnAutoTune" class="on">Auto-tune</button>
+      <button id="btnManual">Manual</button>
+    </div>
+    <div id="manualFillGroup" style="display:none;margin-top:10px;">
+      <div class="slider-row">
+        <input type="range" id="fillRatio" min="0" max="100" step="1" value="78">
+        <span class="slider-val" id="fillRatioVal">78%</span>
+      </div>
+    </div>
+    <div class="ledger" id="fillNote" style="margin-top:6px;"></div>
+  </div>
+
+  <div class="ctrl-section" style="margin-top:14px;">MHD Transducer</div>
+  <div class="live-result" id="resMhd">—</div>
+
+  <div class="control-group">
+    <label>Magnetic Field B</label>
+    <div class="slider-row">
+      <input type="range" id="Bfield" min="0.1" max="3" step="0.05" value="1.3">
+      <span class="slider-val" id="BfieldVal">1.30 T</span>
+    </div>
+    <div class="ledger">N52 NdFeB array: 1.0–1.5 T typical</div>
+  </div>
+
+  <div class="control-group">
+    <label>Channel Radius r</label>
+    <div class="slider-row">
+      <input type="range" id="rChan" min="1" max="20" step="0.5" value="4">
+      <span class="slider-val" id="rChanVal">4.0 mm</span>
+    </div>
+    <div class="ledger">Ha = √(σ·B²·r²/η) — target Ha > 50 for organized plug flow</div>
+  </div>
+
+  <div class="control-group">
+    <label>Active Volume V<sub>act</sub></label>
+    <div class="slider-row">
+      <input type="range" id="Vact" min="0" max="4" step="0.05" value="2">
+      <span class="slider-val" id="VactVal">100 cm³</span>
+    </div>
+    <div class="ledger">P<sub>Faraday</sub> = σ·v²·B²·V/4 (byproduct alternator)</div>
+  </div>
+
+  <div class="control-group">
+    <label>Cavity Q<sub>d</sub></label>
+    <div class="slider-row">
+      <input type="range" id="Qcav" min="1" max="4" step="0.01" value="3.9694">
+      <span class="slider-val" id="QcavVal">9320</span>
+    </div>
+    <div class="ledger">King's Chamber sealed = <b>9320</b> · open granite ~300 · self-start ε<sub>c</sub> = 2/Q<sub>d</sub></div>
+  </div>
+
+  <div class="ctrl-section" style="margin-top:14px;">Broadcast</div>
+  <div class="live-result" id="resBcast">—</div>
+
+  <div class="control-group">
+    <label>Harmonic Order</label>
+    <div class="tog-pair">
+      <button id="btnH1" class="on">1× f<sub>bell</sub></button>
+      <button id="btnH2">2× f<sub>bell</sub></button>
+      <button id="btnH3">3× f<sub>bell</sub></button>
+    </div>
+  </div>
+
+  <div class="ctrl-section" style="margin-top:14px;">Containment Unit</div>
+  <div class="live-result" id="resCav">—</div>
+
+  <div class="control-group">
+    <label>Wall Material</label>
+    <div class="tog-grid-2x2" id="matPair">
+      <button id="btnGranite"   class="on">Granite</button>
+      <button id="btnQuartz"             >Quartz</button>
+      <button id="btnAlumina"            >Alumina</button>
+      <button id="btnLimestone"          >Limestone</button>
+    </div>
+    <div class="ledger" id="matNote" style="margin-top:5px;"></div>
+  </div>
+
+  <div class="control-group">
+    <label>Wall Thickness</label>
+    <div class="slider-row">
+      <input type="range" id="tWallSl" min="5" max="100" step="1" value="30">
+      <span class="slider-val" id="tWallVal">30 cm</span>
+    </div>
+    <div class="ledger" id="emNote"></div>
+  </div>
+
+  <div class="control-group">
+    <label>Cavity Mode</label>
+    <div class="tog-pair">
+      <button id="btnCN1" class="on">n=1</button>
+      <button id="btnCN2">n=2</button>
+      <button id="btnCN3">n=3</button>
+    </div>
+    <div class="ledger" style="margin-top:5px;">L<sub>cav</sub> = n · c<sub>gas</sub> / (2·f<sub>bell</sub>)</div>
+  </div>
+
+  <div class="control-group">
+    <label>Interior Gas</label>
+    <div class="tog-pair">
+      <button id="btnAir"    class="on">Air</button>
+      <button id="btnArgon">Argon</button>
+      <button id="btnHelium">Helium</button>
+    </div>
+  </div>
+
+</aside>
+
+<!-- ═══════════════ RIGHT: Panels ═══════════════ -->
+<section class="panels">
+
+  <!-- FULL WIDTH: 3D MHD Core -->
+  <div class="scene-panel span2">
+    <div class="panel-header">
+      <span class="panel-title">MHD Core — Coffer Cut-away · drag to orbit · scroll to zoom</span>
+      <span class="panel-tag" id="devTag">—</span>
+    </div>
+    <canvas id="deviceCanvas"></canvas>
+    <div style="padding:8px 16px 10px; border-top:1px solid var(--gold-border);">
+      <div class="ledger" style="font-size:11px;">
+        <b style="color:#9a7d56">granite coffer</b> (sealed vessel) ·
+        <b style="color:#bfd3dd" id="dev3dFluid">Mercury</b> working fluid · fill = <span id="dev3dFill">78% · auto-tuned</span> ·
+        <b style="color:#c0432f">N magnet</b> / <b style="color:#3f63b0">S magnet</b> (outside, vertical B) ·
+        <b style="color:#4a4a52">flux yoke</b> ·
+        <b style="color:#e7d9a8">electrodes</b> (inside long walls) ·
+        <b style="color:#cf6f5f">B-field</b> ·
+        <b style="color:#37b0c9">v×B current</b> ·
+        <b style="color:var(--demo-cyan)">wireless EMF output</b> (when ok5) ·
+        <b style="color:#49c39a">telluric clock</b> (when ok1) ·
+        <b style="color:#C9A830">resonance bell</b> (when ok3) ·
+        <b style="color:#cfe8ff">plasma arc</b> (when all 6 met) ·
+        outer <b id="dev3dMat" style="color:#9a7d56">granite</b> containment box (wireframe — EM-transparent)
+      </div>
+    </div>
+  </div>
+
+  <!-- FULL WIDTH: System Pipeline -->
+  <div class="scene-panel span2">
+    <div class="panel-header">
+      <span class="panel-title">System Pipeline</span>
+      <span class="panel-tag" id="sysTag">—</span>
+    </div>
+    <div style="padding:14px 16px 12px;">
+      <canvas id="sysCanvas" height="112"></canvas>
+    </div>
+  </div>
+
+  <!-- LEFT: Frequency Alignment -->
+  <div class="scene-panel">
+    <div class="panel-header">
+      <span class="panel-title">Frequency Alignment</span>
+      <span class="panel-tag" id="freqTag">—</span>
+    </div>
+    <div style="padding:12px 16px 14px;">
+      <canvas id="freqCanvas" height="210"></canvas>
+    </div>
+  </div>
+
+  <!-- RIGHT: Design Checklist -->
+  <div class="scene-panel">
+    <div class="panel-header">
+      <span class="panel-title">Design Checklist</span>
+      <span class="panel-tag" id="checkTag">0 / 5</span>
+    </div>
+    <div class="panel-body">
+      <div class="stage-list">
+        <div class="stage-item" id="ck1">
+          <div class="stage-prog" id="ck1p"></div>
+          <div class="stage-dot"></div>
+          <span class="stage-lbl">Telluric tap — V<sub>oc</sub> ≥ 10 mV</span>
+          <span class="stage-sub" id="ck1v">—</span>
+        </div>
+        <div class="stage-item" id="ck2">
+          <div class="stage-prog" id="ck2p"></div>
+          <div class="stage-dot"></div>
+          <span class="stage-lbl">Input power — P ≥ 1 µW</span>
+          <span class="stage-sub" id="ck2v">—</span>
+        </div>
+        <div class="stage-item" id="ck3">
+          <div class="stage-prog" id="ck3p"></div>
+          <div class="stage-dot"></div>
+          <span class="stage-lbl">Bell resonance — Δf ≤ 5% off f<sub>t</sub></span>
+          <span class="stage-sub" id="ck3v">—</span>
+        </div>
+        <div class="stage-item" id="ck4">
+          <div class="stage-prog" id="ck4p"></div>
+          <div class="stage-dot"></div>
+          <span class="stage-lbl">Hartmann regime — Ha ≥ 10</span>
+          <span class="stage-sub" id="ck4v">—</span>
+        </div>
+        <div class="stage-item" id="ck5">
+          <div class="stage-prog" id="ck5p"></div>
+          <div class="stage-dot"></div>
+          <span class="stage-lbl">MHD chop signal — V<sub>emf</sub> ≥ 100 nV</span>
+          <span class="stage-sub" id="ck5v">—</span>
+        </div>
+        <div class="stage-item" id="ck6">
+          <div class="stage-prog" id="ck6p"></div>
+          <div class="stage-dot"></div>
+          <span class="stage-lbl">Containment — EM transparent &amp; Q ≥ 100</span>
+          <span class="stage-sub" id="ck6v">—</span>
+        </div>
+      </div>
+      <!-- Parametric threshold note -->
+      <div class="ledger" style="margin-top:14px;" id="paramNote"></div>
+    </div>
+  </div>
+
+  <!-- LEFT: Source & Vessel metrics -->
+  <div class="scene-panel">
+    <div class="panel-header">
+      <span class="panel-title">Source &amp; Vessel</span>
+    </div>
+    <div class="panel-body">
+      <div class="metric-grid">
+        <div class="stat-card">
+          <div class="stat-label">Open-Circuit Voltage</div>
+          <div class="stat-value" id="mVoc">—</div>
+          <div class="stat-foot">V<sub>oc</sub> = E<sub>t</sub> · L</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Source Resistance</div>
+          <div class="stat-value" id="mRsrc">—</div>
+          <div class="stat-foot">R = 1/(π·σ·a)</div>
+        </div>
+        <div class="stat-card stat-gold">
+          <div class="stat-label">Matched Input Power</div>
+          <div class="stat-value" id="mPmatch">—</div>
+          <div class="stat-foot">P = V²/(4R)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Empty Bell Freq</div>
+          <div class="stat-value" id="mFempty">—</div>
+          <div class="stat-foot">unloaded vessel</div>
+        </div>
+        <div class="stat-card stat-gold">
+          <div class="stat-label">Loaded Bell Freq f<sub>bell</sub></div>
+          <div class="stat-value" id="mFbell">—</div>
+          <div class="stat-foot" id="mFbellFoot">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Fill Used</div>
+          <div class="stat-value" id="mFill">—</div>
+          <div class="stat-foot" id="mFillFoot">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: MHD & Broadcast metrics -->
+  <div class="scene-panel">
+    <div class="panel-header">
+      <span class="panel-title">MHD &amp; Broadcast</span>
+    </div>
+    <div class="panel-body">
+      <div class="metric-grid">
+        <div class="stat-card">
+          <div class="stat-label">Hartmann Number</div>
+          <div class="stat-value" id="mHa">—</div>
+          <div class="stat-foot">Ha = √(σB²r²/η)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Acoustic P<sub>ac</sub></div>
+          <div class="stat-value" id="mPac">—</div>
+          <div class="stat-foot">resonant buildup est.</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Streaming Velocity (amplified)</div>
+          <div class="stat-value" id="mVr">—</div>
+          <div class="stat-foot">Rayleigh × g<sub>coupled</sub> = <span id="mGcoupled">—</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Faraday Byproduct EMF</div>
+          <div class="stat-value" id="mVemf">—</div>
+          <div class="stat-foot">v·B·L — alternator signal, not the main output</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Faraday Byproduct Power</div>
+          <div class="stat-value" id="mPmhd">—</div>
+          <div class="stat-foot">σv²B²V/4 — parasitic, µW-range</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label" id="mThermalLabel">Switch Loss</div>
+          <div class="stat-value" id="mPthermal">—</div>
+          <div class="stat-foot" id="mThermalFoot">paid from supply</div>
+        </div>
+      </div>
+      <!-- Chopper output — the PRIMARY output -->
+      <div class="chopper-output">
+        <div class="chopper-output-label">MHD Chopper — Primary Output</div>
+        <div class="chopper-grid">
+          <div class="stat-card">
+            <div class="stat-label">P<sub>matched</sub> = V<sub>oc</sub>²/(4R<sub>s</sub>)</div>
+            <div class="stat-value" id="mPmatch_dam">—</div>
+            <div class="stat-foot">supply power at R_s</div>
+          </div>
+          <div class="stat-card stat-green">
+            <div class="stat-label">Net Chopper Output</div>
+            <div class="stat-value" id="mPchop">—</div>
+            <div class="stat-foot">broadcast power at f<sub>bell</sub></div>
+          </div>
+          <div class="stat-card stat-green">
+            <div class="stat-label">Broadcast Frequency</div>
+            <div class="stat-value" id="mFbcast">—</div>
+            <div class="stat-foot" id="mLambda">λ = —</div>
+          </div>
+        </div>
+        <div class="ledger" style="margin-top:10px;" id="chopperNote"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FULL WIDTH: Containment Unit metrics -->
+  <div class="scene-panel span2">
+    <div class="panel-header">
+      <span class="panel-title">Acoustically Resonant Containment Unit</span>
+      <span class="panel-tag" id="cavTag">—</span>
+    </div>
+    <div class="panel-body">
+      <div class="metric-grid-3">
+        <div class="stat-card">
+          <div class="stat-label">Required Cavity Length L<sub>cav</sub></div>
+          <div class="stat-value" id="mCavL">—</div>
+          <div class="stat-foot" id="mCavLFoot">n · c<sub>gas</sub> / (2 · f<sub>bell</sub>)</div>
+        </div>
+        <div class="stat-card stat-green">
+          <div class="stat-label">EM Skin Depth δ</div>
+          <div class="stat-value" id="mDelta">—</div>
+          <div class="stat-foot">δ = √(2ρ<sub>e</sub>/ωμ₀) at f<sub>bell</sub></div>
+        </div>
+        <div class="stat-card stat-green">
+          <div class="stat-label">Transparency Ratio δ/t<sub>wall</sub></div>
+          <div class="stat-value" id="mTrans">—</div>
+          <div class="stat-foot" id="mTransFoot">want ≫ 1 (≥ 100 = lossless)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Wall Acoustic Reflectance</div>
+          <div class="stat-value" id="mRefl">—</div>
+          <div class="stat-foot">R ≈ 1 → energy stays in cavity</div>
+        </div>
+        <div class="stat-card stat-gold">
+          <div class="stat-label">Cavity Acoustic Q</div>
+          <div class="stat-value" id="mCavQ">—</div>
+          <div class="stat-foot" id="mCavQFoot">material property</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Impedance Ratio Z<sub>wall</sub>/Z<sub>gas</sub></div>
+          <div class="stat-value" id="mZratio">—</div>
+          <div class="stat-foot">≫ 1 → acoustically reflective walls</div>
+        </div>
+      </div>
+      <div class="ledger" style="margin-top:12px;" id="cavNote"></div>
+    </div>
+  </div>
+
+  <!-- FULL WIDTH: Chopped Waveform -->
+  <div class="scene-panel span2">
+    <div class="panel-header">
+      <span class="panel-title">MHD Chopped Waveform</span>
+      <span class="panel-tag tag-warn" id="waveTag">—</span>
+    </div>
+    <div style="padding:10px 16px 4px;">
+      <canvas id="waveCanvas" height="120"></canvas>
+    </div>
+    <div class="panel-body" style="padding-top:6px;">
+      <div class="ledger">
+        The oscillating liquid-metal (gold) chops the telluric DC baseline (dashed cyan) at
+        f<sub>bell</sub>, producing an AC electromagnetic output (green) at f<sub>broadcast</sub>.
+        At ELF, ground-wave coupling dominates free-space radiation —
+        λ ≈ <b id="lambdaNote">—</b> km, Earth-scale propagation.
+      </div>
+    </div>
+  </div>
+
+</section>
+</div><!-- .main -->
+
+<script src="assets/demo-header.js"></script>
+<script>
+'use strict';
+
+// ── roundRect polyfill ────────────────────────────────────────────────────────
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+    r = Math.min(+r, w / 2, h / 2);
+    this.moveTo(x + r, y);
+    this.lineTo(x + w - r, y);    this.arcTo(x + w, y,     x + w, y + r,     r);
+    this.lineTo(x + w, y + h - r); this.arcTo(x + w, y + h, x + w - r, y + h, r);
+    this.lineTo(x + r, y + h);    this.arcTo(x,     y + h, x,     y + h - r, r);
+    this.lineTo(x, y + r);        this.arcTo(x,     y,     x + r, y,         r);
+    this.closePath();
+  };
+}
+
+// ── Physics constants ─────────────────────────────────────────────────────────
+const PHI     = (1 + Math.sqrt(5)) / 2;
+const C_LIGHT = 2.99792458e8;   // m/s
+const R_EARTH = 6.371e6;        // m (R_EARTH_MEAN)
+
+// Minimum power to sustain a liquid-metal (mercury) plasma arc:
+// arc voltage ~15 V × minimum sustaining current ~1.3 A ≈ 20 W. Below this the
+// arc cannot ionize, so the chopping element is a solid-state / spark-gap switch
+// rather than a plasma reactor.
+const ARC_THRESHOLD_W = 20;
+
+// φ-corrected Schumann frequencies for modes 1–8
+const SCHUMANN = Array.from({ length: 8 }, (_, i) => {
+  const n = i + 1;
+  return (C_LIGHT / (2 * Math.PI * R_EARTH)) * (1 / Math.sqrt(PHI)) * Math.sqrt(n * (n + 1));
+});
+
+// Fluid properties (exact phi-pyramid-cpp values: mercury.hpp / galinstan.hpp)
+const FLUIDS = {
+  mercury:   { rho: 13534, c_s: 1451, eta: 1.526e-3, sigma: 1.04e6, name: 'Mercury'   },
+  galinstan: { rho:  6440, c_s: 2730, eta:  2.4e-3,   sigma: 3.46e6, name: 'Galinstan' },
+};
+
+// Containment wall materials (acoustically resonant + EM-transparent at ELF)
+// rho_e = electrical resistivity (Ω·m); high → large skin depth → transparent
+// c_p   = compressional wave speed (m/s); sets acoustic coupling
+// Q_ac  = acoustic quality factor of a well-made cavity
+const WALL_MATS = {
+  granite:   { name: 'Granite',         rho: 2750, c_p: 5800, rho_e: 1e5,  Q_ac: 9320,  color: '#9a7d56' },
+  quartz:    { name: 'Quartz (fused)',   rho: 2200, c_p: 5900, rho_e: 1e12, Q_ac: 10000, color: '#e0dff0' },
+  alumina:   { name: 'Alumina (Al₂O₃)', rho: 3960, c_p: 9000, rho_e: 1e12, Q_ac: 5000,  color: '#e8e0d0' },
+  limestone: { name: 'Limestone',        rho: 2400, c_p: 3000, rho_e: 1e3,  Q_ac: 100,   color: '#cec4b0' },
+};
+// Interior acoustic medium — speed of sound sets required cavity length
+const CAVITY_GASES = {
+  air:    { name: 'Air',    rho: 1.20, c: 343  },
+  argon:  { name: 'Argon', rho: 1.78, c: 323  },
+  helium: { name: 'Helium', rho: 0.164, c: 1007 },
+};
+
+// ── Mutable state ─────────────────────────────────────────────────────────────
+// ── Scale presets ─────────────────────────────────────────────────────────────
+const PRESETS = {
+  // ── Giza Scale ───────────────────────────────────────────────────────────────
+  // Natural telluric source. King's Chamber coffer (1.98 m, mercury, ~78% fill → 50 Hz).
+  // Storm-enhanced field 1 V/km over 100 km → V_oc = 100 V. Dam geology R_s = 5 mΩ.
+  // All 6 conditions green at these parameters. P_chop = 441 kW.
+  giza: {
+    label: 'Giza',
+    desc: 'Natural telluric · 1 V/km storm · 100 km span · mercury coffer · 50 Hz',
+    sourceType: 'telluric', n: 8, customF: 50,
+    Et: 1000, Lkm: 100, sigma: 0.5, a_m: 10,
+    Vin: 100, Rs_Ohm: 0.005,
+    fluid: 'mercury', Lv: 1.98, fillMode: 'auto', fillRat: 0.78,
+    B: 1.3, r_mm: 4, Vact: 100, Qd: 9320, harmonic: 1,
+    R_dam_mOhm: 5, P_thermal_kW: 59,
+    wallMat: 'granite', tWall: 30, cavGas: 'air', cavN: 1,
+  },
+
+  // ── Site Scale ────────────────────────────────────────────────────────────────
+  // Artificial 48V / 0.1Ω supply (industrial PSU or battery bank).
+  // 2 m Galinstan vessel: f_empty = 115.8 Hz → 64% fill → 50 Hz bell.
+  // Ha = 182 (Galinstan, B = 1.2T, r = 4mm). P_chop = 5.2 kW.
+  site: {
+    label: 'Site',
+    desc: 'Artificial 48V · 0.1Ω PSU · Galinstan · 2 m vessel → 50 Hz',
+    sourceType: 'artificial', n: 8, customF: 50,
+    Et: 10, Lkm: 1, sigma: 0.1, a_m: 1,
+    Vin: 48, Rs_Ohm: 0.1,
+    fluid: 'galinstan', Lv: 2.0, fillMode: 'auto', fillRat: 0.64,
+    B: 1.2, r_mm: 4, Vact: 50, Qd: 1000, harmonic: 1,
+    R_dam_mOhm: 100, P_thermal_kW: 0.5,
+    wallMat: 'granite', tWall: 20, cavGas: 'air', cavN: 1,
+  },
+
+  // ── Desktop Scale ─────────────────────────────────────────────────────────────
+  // Artificial 12V / 0.5Ω supply (lab bench PSU or battery).
+  // 0.5 m Galinstan vessel: f_empty = 463 Hz → 28.5% fill → 380 Hz bell.
+  // 380 Hz is chosen because it sits well within the 0.5 m vessel's tunable range
+  // (281–463 Hz). Drive the system at 380 Hz from the supply — no ELF source needed.
+  // Ha = 91 (Galinstan, B = 1.2T, r = 2mm). V_emf ≈ 1.1 µV. P_chop = 71 W.
+  desktop: {
+    label: 'Desktop',
+    desc: 'Artificial 12V · 0.5Ω PSU · Galinstan · 0.5 m vessel → 380 Hz',
+    sourceType: 'artificial', n: 0, customF: 380,
+    Et: 1, Lkm: 0.01, sigma: 0.1, a_m: 0.01,
+    Vin: 12, Rs_Ohm: 0.5,
+    fluid: 'galinstan', Lv: 0.5, fillMode: 'auto', fillRat: 0.285,
+    B: 1.2, r_mm: 2, Vact: 5, Qd: 300, harmonic: 1,
+    R_dam_mOhm: 500, P_thermal_kW: 0.001,
+    wallMat: 'alumina', tWall: 5, cavGas: 'air', cavN: 1,
+  },
+};
+
+const ST = {
+  // source
+  sourceType: 'telluric',  // 'telluric' | 'artificial'
+  n:         8,            // Schumann mode (0 = custom)
+  customF:  50,            // Hz
+  // natural telluric parameters
+  Et:      1000,           // mV/km
+  Lkm:      100,           // km
+  sigma:     0.5,          // S/m
+  a_m:      10,            // m (ground contact radius)
+  // artificial source parameters
+  Vin:      100,           // V  (supply voltage)
+  Rs_Ohm:   0.005,         // Ω  (supply internal resistance)
+  // vessel
+  fluid:   'mercury',
+  Lv:        1.98,         // m
+  fillMode: 'auto',
+  fillRat:   0.31,         // 0–1
+  // MHD
+  B:         1.3,          // T
+  r_mm:      4,            // mm
+  Vact:    100,            // cm³
+  Qd:     9320,            // cavity Q_d
+  harmonic:  1,
+  // chopper
+  R_dam_mOhm: 5,           // mΩ — supply path resistance
+  P_thermal_kW: 59,        // kW — reactor thermal loss
+  // containment
+  wallMat:  'granite',
+  tWall:     30,           // cm
+  cavGas:   'air',
+  cavN:      1,
+  // derived
+  fTel:0, Voc:0, Rsrc:0, Pmatch:0,
+  fEmpty:0, Kload:0, fBell:0, fillUsed:0, fillOk:true,
+  Ha:0, Pac:0, vR:0, Vemf:0, Pmhd:0,
+  fBcast:0, lambda_km:0,
+  ok1:false, ok2:false, ok3:false, ok4:false, ok5:false,
+};
+
+// ── Physics engine ────────────────────────────────────────────────────────────
+function calc() {
+  const s = ST;
+  const fl = FLUIDS[s.fluid];
+
+  // Telluric frequency
+  s.fTel = (s.n > 0) ? SCHUMANN[s.n - 1] : s.customF;
+
+  // Input source — natural telluric or artificial supply
+  if (s.sourceType === 'telluric') {
+    s.Voc   = s.Et * s.Lkm * 1e-3;                        // V_oc = E_t × L
+    s.Rsrc  = 1 / (Math.PI * s.sigma * s.a_m);            // contact resistance
+  } else {
+    s.Voc   = s.Vin;                                       // direct supply voltage
+    s.Rsrc  = s.Rs_Ohm;                                    // supply internal impedance
+  }
+  s.Pmatch = s.Voc * s.Voc / (4 * s.Rsrc);
+
+  // Vessel geometry (coffer aspect ratios: W=0.34L, D=0.44L)
+  const Lv = s.Lv;
+  const W  = 0.34 * Lv;
+  const D  = 0.44 * Lv;
+  const Vcav = Lv * W * D;
+
+  // Mercury added-mass tuning — matches phi-pyramid-cpp elements/coffer.hpp:
+  //   R_full = (HG_PARTICIPATION / COFFER_MODAL_FRACTION) · (m_fluid_full / m_granite)
+  // The granite shell volume is ≈0.979× the interior (Petrie ext−int), so R_full is
+  // scale-invariant and set by the fluid/granite density ratio. f(h)=f_empty/√(1+R·fill).
+  const HG_PARTICIPATION = 0.40, COFFER_MODAL_FRACTION = 0.35;   // [EST, ±2×]
+  const GRANITE_RHO = 2750, GRANITE_VOL_FRAC = 0.979;           // shell vol / interior vol
+  const m_full    = fl.rho * Vcav;
+  const m_granite = GRANITE_RHO * GRANITE_VOL_FRAC * Vcav;
+  s.Kload  = (HG_PARTICIPATION / COFFER_MODAL_FRACTION) * (m_full / m_granite);
+  s.fEmpty = 117 * (1.98 / Lv);          // BELL_MEASURED_HZ (117) scaled by 1/L
+
+  // Fill ratio
+  if (s.fillMode === 'auto') {
+    if (s.fTel >= s.fEmpty) {
+      s.fillUsed = 0;   s.fillOk = false;   // target above empty frequency
+    } else {
+      const req = ((s.fEmpty / s.fTel) ** 2 - 1) / s.Kload;
+      if (req > 1) { s.fillUsed = 1; s.fillOk = false; }  // full fill still not enough
+      else         { s.fillUsed = Math.max(0, req); s.fillOk = true; }
+    }
+  } else {
+    s.fillUsed = s.fillRat;
+    s.fillOk   = true;
+  }
+  s.fBell = s.fEmpty / Math.sqrt(1 + s.fillUsed * s.Kload);
+
+  // Hartmann number
+  const r_m = s.r_mm * 1e-3;
+  s.Ha = Math.sqrt(fl.sigma * s.B * s.B * r_m * r_m / fl.eta);
+
+  // Acoustic buildup estimate: E = Q·P/ω → P_ac = √(2ρc²E/V)
+  const omega   = 2 * Math.PI * s.fTel;
+  const E_store = s.Qd * s.Pmatch / omega;
+  s.Pac = Math.sqrt(2 * fl.rho * fl.c_s * fl.c_s * E_store / Vcav);
+
+  // Rayleigh boundary-layer streaming (the only viable ELF mechanism)
+  const U0 = s.Pac / (fl.rho * fl.c_s);
+  const vR_raw = (3 / 16) * U0 * U0 / fl.c_s;
+
+  // Coupled-resonator density-contrast velocity amplification:
+  //   g_net = sqrt(ρ_liquid · V_liquid / ρ_gas · V_gas)
+  // The gas cavity volume is the containment interior minus the coffer assembly.
+  // Cross-section scales with vessel dimensions; length = L_cav (from containment calc).
+  // Giza reference: Big Void 490 m³ vs coffer 1.18 m³ → g ≈ 5×.
+  // A compact acoustic containment unit (L_cav × vessel cross-section) gives higher gain
+  // because its gas volume is much smaller. Lighter gas = lower ρ_gas = more gain,
+  // but also longer L_cav (c/f scaling). Both effects are correctly modelled here.
+  const gas_cav = CAVITY_GASES[s.cavGas];
+  // Estimate containment cross-section from vessel geometry + magnet clearance
+  const cav_w = 0.34 * Lv + 0.40;   // m  (vessel width + lateral clearance)
+  const cav_h = 0.44 * Lv + 0.60;   // m  (vessel height + magnet stack + clearance)
+  // L_cav from the containment physics computed earlier (or derive directly):
+  const L_cav_now = s.fBell > 0 ? s.cavN * gas_cav.c / (2 * s.fBell) : Lv * 2;
+  const V_containment = L_cav_now * cav_w * cav_h;
+  const V_gas = Math.max(V_containment - Vcav, Vcav * 0.1);
+  s.g_coupled = Math.sqrt((fl.rho * Vcav) / (gas_cav.rho * V_gas));
+  s.V_gas = V_gas;
+  s.vR = vR_raw * s.g_coupled;
+
+  // MHD Faraday byproduct (alternator — tiny; the mercury sloshing as a generator)
+  s.Vemf = s.vR * s.B * (r_m * 2);
+  s.Pmhd = fl.sigma * s.vR * s.vR * s.B * s.B * (s.Vact * 1e-6) / 4;
+
+  // Telluric Chopper Output (Machine C / dam-shunt — the PRIMARY output)
+  // The 50 Hz mercury slosh GATES the telluric DC through-current like a mechanical switch.
+  // Power comes FROM the telluric source via the geological dam, NOT from acoustic energy.
+  //   P_matched_dam = V_oc² / (4 · R_dam)
+  //   P_chop = max(0, P_matched_dam − P_thermal_tax)
+  // At Giza: V_oc=100 V, R_dam=5 mΩ → P_matched=500 kW − 59 kW = 441 kW.
+  const R_dam = s.R_dam_mOhm * 1e-3;                   // Ω
+  const P_matched_dam = s.Voc * s.Voc / (4 * R_dam);   // W
+  const P_thermal = s.P_thermal_kW * 1e3;               // W
+  s.P_chop = Math.max(0, P_matched_dam - P_thermal);
+  s.R_dam_threshold = s.Voc > 0 ? s.Voc * s.Voc / (4 * P_thermal) : 0;  // max R_dam that sustains
+  s.chopper_sustains = P_matched_dam > P_thermal;
+
+  // Switching-element classification: a plasma arc requires ≥ ARC_THRESHOLD_W to
+  // sustain ionization. Below that the chopper is a solid-state / spark-gap switch.
+  s.arc_sustained = P_thermal >= ARC_THRESHOLD_W;
+  s.switchKind    = s.arc_sustained ? 'arc' : 'solid';
+
+  // Broadcast
+  s.fBcast     = s.fBell * s.harmonic;
+  s.lambda_km  = s.fBcast > 0 ? C_LIGHT / s.fBcast / 1e3 : 0;
+
+  // Checklist conditions
+  const df      = Math.abs(s.fBell - s.fTel) / Math.max(s.fTel, 1e-9);
+  s.ok1 = s.Voc    >= 0.010;    // ≥ 10 mV
+  s.ok2 = s.Pmatch >= 1e-6;     // ≥ 1 µW
+  s.ok3 = s.fillOk && df < 0.05;// bell resonance within 5%
+  s.ok4 = s.Ha     >= 10;        // Hartmann regime
+  s.ok5 = s.Vemf   >= 1e-7;     // ≥ 100 nV chopped signal
+
+  // ── Containment unit physics ──────────────────────────────────────────────
+  const mat   = WALL_MATS[s.wallMat];
+  const gas   = CAVITY_GASES[s.cavGas];
+  const MU0   = 4 * Math.PI * 1e-7;      // H/m
+
+  // Required cavity length for n-th harmonic at f_bell:  f = n·c/(2L)
+  s.cav_L = s.fBell > 0 ? s.cavN * gas.c / (2 * s.fBell) : 0;  // m
+
+  // EM skin depth in wall material at f_bell:  δ = √(2ρ_e / (ω·μ₀))
+  const omega_cav = 2 * Math.PI * Math.max(s.fBell, 1e-3);
+  s.cav_delta = Math.sqrt(2 * mat.rho_e / (omega_cav * MU0));   // m
+
+  // Transparency ratio: δ / t_wall  (want >> 1; ≥ 1000 = essentially lossless)
+  const t_m = s.tWall * 0.01;                                     // cm → m
+  s.cav_trans = s.cav_delta / t_m;
+
+  // Acoustic impedance mismatch (wall vs interior gas)
+  const Z_wall = mat.rho * mat.c_p;   // Rayl
+  const Z_gas  = gas.rho * gas.c;     // Rayl
+  // Reflection coeff ≈ 1 (solid vs gas): walls are acoustically reflective → high Q cavity
+  const refl = (Z_wall - Z_gas) / (Z_wall + Z_gas);
+  s.cav_Trefl = refl * refl;           // energy reflection (close to 1 = good: energy stays in)
+  s.cav_Q     = mat.Q_ac;              // cavity Q (material property)
+
+  // Conditions
+  s.ok6 = s.cav_trans >= 100            // δ >> t_wall: EM-transparent
+       && s.cav_L > 0 && s.cav_L < 200 // physically realizable cavity
+       && mat.Q_ac >= 100;              // sufficient acoustic Q
+}
+
+// ── Formatting ────────────────────────────────────────────────────────────────
+const fmtFreq = f => {
+  if (!isFinite(f) || f <= 0) return '—';
+  return f.toFixed(2) + ' Hz';
+};
+const fmtV = v => {
+  if (!isFinite(v) || v <= 0) return '—';
+  if (v < 1e-6) return (v * 1e9).toFixed(1) + ' nV';
+  if (v < 1e-3) return (v * 1e6).toFixed(2) + ' µV';
+  if (v < 1)    return (v * 1e3).toFixed(2) + ' mV';
+  if (v < 1e3)  return v.toFixed(3) + ' V';
+  return (v / 1e3).toFixed(2) + ' kV';
+};
+const fmtP = p => {
+  if (!isFinite(p) || p <= 0) return '—';
+  if (p < 1e-9)  return (p * 1e12).toFixed(1) + ' pW';
+  if (p < 1e-6)  return (p * 1e9).toFixed(2)  + ' nW';
+  if (p < 1e-3)  return (p * 1e6).toFixed(2)  + ' µW';
+  if (p < 1)     return (p * 1e3).toFixed(2)  + ' mW';
+  if (p < 1e3)   return p.toFixed(2) + ' W';
+  return (p / 1e3).toFixed(2) + ' kW';
+};
+const fmtR = r => {
+  if (!isFinite(r) || r <= 0) return '—';
+  if (r < 1e-3) return (r * 1e6).toFixed(1) + ' µΩ';
+  if (r < 1)    return (r * 1e3).toFixed(1) + ' mΩ';
+  if (r < 1e3)  return r.toFixed(2) + ' Ω';
+  return (r / 1e3).toFixed(2) + ' kΩ';
+};
+const fmtVel = v => {
+  if (!isFinite(v) || v <= 0) return '—';
+  if (v < 1e-9)  return (v * 1e12).toFixed(1) + ' pm/s';
+  if (v < 1e-6)  return (v * 1e9).toFixed(1)  + ' nm/s';
+  if (v < 1e-3)  return (v * 1e6).toFixed(1)  + ' µm/s';
+  if (v < 1)     return (v * 1e3).toFixed(2)  + ' mm/s';
+  return v.toFixed(3) + ' m/s';
+};
+const fmtPres = p => {
+  if (!isFinite(p) || p <= 0) return '—';
+  if (p < 1)    return (p * 1e3).toFixed(2) + ' mPa';
+  if (p < 1e3)  return p.toFixed(1) + ' Pa';
+  if (p < 1e6)  return (p / 1e3).toFixed(1) + ' kPa';
+  return (p / 1e6).toFixed(2) + ' MPa';
+};
+
+// ── DOM helpers ───────────────────────────────────────────────────────────────
+const $  = id => document.getElementById(id);
+const tx = (id, v) => { const e = $(id); if (e) e.textContent = v; };
+const ht = (id, v) => { const e = $(id); if (e) e.innerHTML  = v; };
+
+function updateDOM() {
+  const s = ST;
+  const okCnt = [s.ok1, s.ok2, s.ok3, s.ok4, s.ok5, s.ok6].filter(Boolean).length;
+  const allOk = okCnt === 6;
+  const fl  = FLUIDS[s.fluid];
+  const mat = WALL_MATS[s.wallMat];
+  const gas = CAVITY_GASES[s.cavGas];
+  const R_dam = s.R_dam_mOhm * 1e-3;
+  const P_matched_dam = s.Voc * s.Voc / (4 * R_dam);
+  const thresh_mOhm = s.R_dam_threshold * 1e3;
+
+  // ── Reactive UI state — keep these in sync every update cycle ─────────────
+  // isArt must be declared FIRST — used by preset note and source type sections
+  const isArt = s.sourceType === 'artificial';
+
+  // Preset buttons
+  const presetNames = ['desktop','site','giza'];
+  presetNames.forEach((name, i) => {
+    $(['btnDesktop','btnSite','btnGiza'][i])?.classList.toggle('on', name === s._preset);
+  });
+  // Preset note reflects CURRENT state — updates live as sliders move
+  ht('presetNote', isArt
+    ? `Artificial source &nbsp;·&nbsp; <b>${fmtV(s.Vin)}</b> supply &nbsp;·&nbsp; R<sub>int</sub> = <b>${fmtR(s.Rs_Ohm)}</b> &nbsp;→&nbsp; P = <b>${fmtP(s.Pmatch)}</b>`
+    : `Natural telluric &nbsp;·&nbsp; <b>${s.Et >= 1000 ? (s.Et/1000).toFixed(2)+' V/km' : s.Et.toFixed(1)+' mV/km'}</b> &nbsp;·&nbsp; L = <b>${s.Lkm >= 100 ? s.Lkm.toFixed(0) : s.Lkm.toFixed(1)} km</b> &nbsp;→&nbsp; V<sub>oc</sub> = <b>${fmtV(s.Voc)}</b>`);
+
+  // Source type toggle + group visibility
+  $('btnNatural')?.classList.toggle('on',    !isArt);
+  $('btnArtificial')?.classList.toggle('on',  isArt);
+  const ng = $('naturalGroup'),   ag = $('artificialGroup');
+  if (ng) ng.style.display = isArt ? 'none' : 'block';
+  if (ag) ag.style.display = isArt ? 'block' : 'none';
+  ht('srcTypeNote', isArt
+    ? 'V<sub>in</sub> set directly — any two-terminal supply: PSU, battery, cap bank, signal gen.'
+    : 'V<sub>oc</sub> = E<sub>t</sub> · L — voltage from the earth\'s natural field between two ground contacts.');
+
+  // Target/drive frequency buttons + custom freq group
+  $('nGrid')?.querySelectorAll('.n-btn').forEach(b => {
+    b.classList.toggle('on', +b.dataset.n === s.n);
+  });
+  const cfg = $('customFreqGroup');
+  if (cfg) cfg.style.display = s.n === 0 ? 'block' : 'none';
+  tx('customFVal', Math.round(s.customF) + ' Hz');
+
+  // Fluid + containment material toggle highlights
+  $('btnMercury')?.classList.toggle('on',    s.fluid === 'mercury');
+  $('btnGalinstan')?.classList.toggle('on',  s.fluid === 'galinstan');
+  const matMap = {granite:'btnGranite',quartz:'btnQuartz',alumina:'btnAlumina',limestone:'btnLimestone'};
+  Object.entries(matMap).forEach(([k, id]) => $(id)?.classList.toggle('on', s.wallMat === k));
+  const gasMap = {air:'btnAir',argon:'btnArgon',helium:'btnHelium'};
+  Object.entries(gasMap).forEach(([k, id]) => $(id)?.classList.toggle('on', s.cavGas === k));
+
+  // Slider display values (text only — positions are synced on preset apply)
+  tx('EtVal',     s.Et >= 1000 ? (s.Et/1000).toFixed(2)+' V/km' : s.Et.toFixed(1)+' mV/km');
+  tx('LkmVal',    s.Lkm >= 100 ? s.Lkm.toFixed(0)+' km' : s.Lkm.toFixed(1)+' km');
+  tx('sigmaVal',  s.sigma.toFixed(3)+' S/m');
+  tx('aElecVal',  s.a_m >= 100 ? s.a_m.toFixed(0)+' m' : s.a_m.toFixed(2)+' m');
+  tx('VinVal',    fmtV(s.Vin));
+  tx('RsArtVal',  fmtR(s.Rs_Ohm));
+  tx('LvVal',     s.Lv.toFixed(2)+' m');
+  tx('BfieldVal', s.B.toFixed(2)+' T');
+  tx('rChanVal',  s.r_mm.toFixed(1)+' mm');
+  tx('VactVal',   s.Vact >= 1000 ? (s.Vact/1000).toFixed(1)+'L' : Math.round(s.Vact)+' cm³');
+  tx('QcavVal',   Math.round(s.Qd).toString());
+  tx('RdamVal',   s.R_dam_mOhm+' mΩ');
+  tx('tWallVal',  s.tWall+' cm');
+  ['btnH1','btnH2','btnH3'].forEach((id, i) => $(id)?.classList.toggle('on', s.harmonic === i+1));
+  ['btnCN1','btnCN2','btnCN3'].forEach((id, i) => $(id)?.classList.toggle('on', s.cavN === i+1));
+
+  // ── Switching element — scale-aware (arc reactor vs solid-state switch) ──
+  const P_th_W = s.P_thermal_kW * 1e3;
+  const fmtTh = P_th_W >= 1000 ? (P_th_W/1000).toFixed(P_th_W>=10000?0:1)+' kW'
+              : P_th_W >= 1 ? P_th_W.toFixed(P_th_W>=10?0:1)+' W'
+              : (P_th_W*1000).toFixed(0)+' mW';
+  tx('PthermalVal', fmtTh);
+  if (s.arc_sustained) {
+    tx('thermalLabel', 'Mercury-Arc Reactor Loss');
+    ht('thermalNote',
+      `<span class="ok">⚡ Plasma arc sustained</span> at <b>${fmtTh}</b> ≥ ${ARC_THRESHOLD_W} W. ` +
+      `A liquid-metal arc gates the supply DC. Giza: 59 kW at 517 °C / 1.0 MPa.`);
+    tx('mThermalLabel', 'Mercury-Arc Reactor Loss');
+    tx('mThermalFoot',  'plasma arc heating — paid from supply');
+  } else {
+    tx('thermalLabel', 'Solid-State Switch Loss');
+    ht('thermalNote',
+      `<span class="warn">No plasma</span> — <b>${fmtTh}</b> &lt; ${ARC_THRESHOLD_W} W arc threshold. ` +
+      `The chopper is a <b>solid-state / spark-gap switch</b> (transistor, reed), not an arc reactor. ` +
+      `Correct for benchtop scale.`);
+    tx('mThermalLabel', 'Switch Loss (solid-state)');
+    tx('mThermalFoot',  'switching loss — no plasma at this scale');
+  }
+
+  // ── Live result chips (left panel feedback) ────────────────────────────
+  ht('resSrc',
+    `V<sub>oc</sub> = <b>${fmtV(s.Voc)}</b> &nbsp;·&nbsp; R<sub>contact</sub> = <b>${fmtR(s.Rsrc)}</b> &nbsp;·&nbsp; P<sub>matched</sub> = <b>${fmtP(s.Pmatch)}</b>`);
+  ht('resChop',
+    s.chopper_sustains
+      ? `<span class="ok">✓ P<sub>chop</sub> = <b>${fmtP(s.P_chop)}</b></span> &nbsp;·&nbsp; R<sub>s</sub> = ${s.R_dam_mOhm} mΩ &lt; threshold ${thresh_mOhm.toFixed(1)} mΩ`
+      : `<span class="warn">⚠ Stalled</span> — R<sub>s</sub> = ${s.R_dam_mOhm} mΩ exceeds threshold ${thresh_mOhm.toFixed(1)} mΩ`);
+  ht('resVessel',
+    `${fl.name} &nbsp;·&nbsp; f<sub>bell</sub> = <b>${fmtFreq(s.fBell)}</b> &nbsp;·&nbsp; fill = <b>${(s.fillUsed*100).toFixed(1)}%</b> (${s.fillMode === 'auto' ? 'auto-tuned' : 'manual'})`);
+  ht('resMhd',
+    `Ha = <b>${s.Ha.toFixed(0)}</b> &nbsp;·&nbsp; g<sub>coupled</sub> = <b>${(s.g_coupled||1).toFixed(2)}×</b> &nbsp;·&nbsp; v = <b>${fmtVel(s.vR)}</b> &nbsp;·&nbsp; V<sub>emf</sub> = <b>${fmtV(s.Vemf)}</b>`);
+  ht('resBcast',
+    `f<sub>out</sub> = <b>${fmtFreq(s.fBcast)}</b> &nbsp;·&nbsp; λ ≈ <b>${s.lambda_km > 0 ? s.lambda_km.toFixed(0)+' km' : '—'}</b>`);
+  ht('resCav',
+    `${mat.name} &nbsp;·&nbsp; L<sub>cav</sub> = <b>${s.cav_L > 0 ? (s.cav_L < 1 ? (s.cav_L*100).toFixed(0)+'cm' : s.cav_L.toFixed(2)+'m') : '—'}</b> &nbsp;·&nbsp; δ/t = <b>${s.cav_trans > 1000 ? (s.cav_trans/1000).toFixed(0)+'k×' : s.cav_trans.toFixed(0)+'×'}</b>`);
+
+  // ── Dynamic 3D legend ────────────────────────────────────────────────
+  const fluidEl = $('dev3dFluid');
+  if (fluidEl) fluidEl.textContent = fl.name;
+  const fillEl = $('dev3dFill');
+  if (fillEl) fillEl.textContent = `${(s.fillUsed*100).toFixed(1)}% · ${s.fillMode === 'auto' ? 'auto-tuned' : 'manual'}`;
+  const matEl = $('dev3dMat');
+  if (matEl) { matEl.textContent = mat.name; matEl.style.color = mat.color; }
+
+  // Source & vessel metrics
+  tx('mVoc',      fmtV(s.Voc));
+  tx('mRsrc',     fmtR(s.Rsrc));
+  tx('mPmatch',   fmtP(s.Pmatch));
+  tx('mFempty',   fmtFreq(s.fEmpty));
+  tx('mFbell',    fmtFreq(s.fBell));
+  tx('mFbellFoot',`fill ${(s.fillUsed * 100).toFixed(1)}%`);
+  tx('mFill',     (s.fillUsed * 100).toFixed(1) + '%');
+  tx('mFillFoot', s.fillMode === 'auto' ? 'auto-tuned' : 'manual');
+
+  // MHD & broadcast metrics
+  tx('mHa',       s.Ha.toFixed(1));
+  tx('mPac',      fmtPres(s.Pac));
+  tx('mVr',       fmtVel(s.vR));
+  const gcStr = (s.g_coupled||1).toFixed(1);
+  const vgStr = s.V_gas > 0 ? (s.V_gas < 1 ? (s.V_gas*1000).toFixed(0)+'L' : s.V_gas.toFixed(1)+'m³') : '—';
+  tx('mGcoupled', `${gcStr}× · V_gas=${vgStr} · ${gas.name}`);
+  tx('mVemf',   fmtV(s.Vemf));
+  tx('mPmhd',   fmtP(s.Pmhd));
+  tx('mFbcast', fmtFreq(s.fBcast));
+  tx('mLambda', `λ = ${s.lambda_km > 0.5 ? s.lambda_km.toFixed(0) + ' km' : '—'}`);
+
+  // Chopper output metrics
+  tx('mPmatch_dam', fmtP(P_matched_dam));
+  tx('mPthermal',   fmtP(s.P_thermal_kW * 1e3));
+  tx('mPchop',      s.P_chop > 0 ? fmtP(s.P_chop) : '— (stalled)');
+  const switchDesc = s.arc_sustained
+    ? 'a mercury-arc plasma reactor'
+    : 'a solid-state / spark-gap switch (no plasma at this scale)';
+  const chopNote = s.chopper_sustains
+    ? `✓ Sustains at R_s = ${s.R_dam_mOhm} mΩ (threshold = ${thresh_mOhm.toFixed(1)} mΩ). ` +
+      `The chopping element is ${switchDesc}. ` +
+      `P_matched = ${fmtP(P_matched_dam)} − loss ${fmtP(s.P_thermal_kW * 1e3)} = ` +
+      `${fmtP(s.P_chop)} exported at ${fmtFreq(s.fBcast)}.`
+    : `⚠ Stalls: R_s = ${s.R_dam_mOhm} mΩ exceeds threshold ${thresh_mOhm.toFixed(1)} mΩ. ` +
+      `P_matched = ${fmtP(P_matched_dam)} < loss = ${fmtP(s.P_thermal_kW * 1e3)} — ` +
+      `the chopping element draws more than the supply delivers; reduce R_s or raise V_oc.`;
+  ht('chopperNote', chopNote);
+
+  // Dam note in controls
+  ht('RdamNote', s.chopper_sustains
+    ? `<span class="ok">✓ Sustains · threshold = ${thresh_mOhm.toFixed(1)} mΩ · net = ${fmtP(s.P_chop)}</span>`
+    : `<span class="warn">⚠ Stalled · threshold = ${thresh_mOhm.toFixed(1)} mΩ · need R_dam ≤ ${thresh_mOhm.toFixed(1)} mΩ</span>`);
+  tx('lambdaNote', s.lambda_km > 0.5 ? s.lambda_km.toFixed(0) : '—');
+  tx('waveTag', `${fmtFreq(s.fBcast)} · ${fmtV(s.Vemf)}`);
+
+  // Telluric frequency note
+  ht('fTelNote', s.n > 0
+    ? `Mode ${s.n}: <b>${fmtFreq(s.fTel)}</b> (φ-corrected Schumann)`
+    : `Custom: <b>${fmtFreq(s.fTel)}</b>`);
+
+  // Fill note
+  let fn = '';
+  if (s.fillMode === 'auto') {
+    if (!s.fillOk && s.fTel >= s.fEmpty) {
+      fn = `<span class="warn">⚠ f<sub>t</sub> (${fmtFreq(s.fTel)}) ≥ f<sub>empty</sub> (${fmtFreq(s.fEmpty)}) — enlarge vessel.</span>`;
+    } else if (!s.fillOk) {
+      fn = `<span class="warn">⚠ Full fill gives f<sub>bell</sub> = ${fmtFreq(s.fBell)} — target unreachable; enlarge vessel.</span>`;
+    } else {
+      fn = `<span class="ok">✓ ${(s.fillUsed * 100).toFixed(1)}% fill → f<sub>bell</sub> = ${fmtFreq(s.fBell)}</span>`;
+    }
+  } else {
+    const pct = (Math.abs(s.fBell - s.fTel) / s.fTel * 100).toFixed(1);
+    fn = `Manual: f<sub>bell</sub> = ${fmtFreq(s.fBell)} &nbsp;(${pct}% from f<sub>t</sub>)`;
+  }
+  ht('fillNote', fn);
+
+  // Broadcast note
+  const eps_c = s.Qd > 0 ? 2 / s.Qd : Infinity;
+  ht('broadcastNote',
+    `f<sub>broadcast</sub> = ${fmtFreq(s.fBcast)} &nbsp;·&nbsp; λ ≈ ${s.lambda_km > 0 ? s.lambda_km.toFixed(0) + ' km' : '—'}`
+  );
+
+  // Parametric threshold note
+  ht('paramNote',
+    `Self-start threshold ε<sub>c</sub> = 2/Q<sub>d</sub> = ${(2/s.Qd).toFixed(4)} ` +
+    `— fractional stiffness modulation needed for parametric runup.`
+  );
+
+  // Containment DOM updates
+  const fmtLen = m => m < 1 ? (m*100).toFixed(1)+' cm' : m < 1000 ? m.toFixed(2)+' m' : (m/1000).toFixed(2)+' km';
+  tx('mCavL',     fmtLen(s.cav_L));
+  tx('mCavLFoot', `n=${s.cavN}, c=${gas.c} m/s, f=${fmtFreq(s.fBell)}`);
+  tx('mDelta',    s.cav_delta > 1000 ? (s.cav_delta/1000).toFixed(0)+' km' : s.cav_delta.toFixed(0)+' m');
+  const tr = s.cav_trans;
+  tx('mTrans',    tr > 1e6 ? '>1M×' : tr > 1000 ? (tr/1000).toFixed(0)+'k×' : tr.toFixed(0)+'×');
+  tx('mTransFoot', s.ok6 ? 'Fully transparent — telluric field unattenuated' : 'Check wall thickness vs skin depth');
+  tx('mRefl',     (s.cav_Trefl * 100).toFixed(1) + '%');
+  tx('mCavQ',     mat.Q_ac.toLocaleString());
+  tx('mCavQFoot', mat.name);
+  const Z_wall = mat.rho * mat.c_p, Z_gas = gas.rho * gas.c;
+  tx('mZratio',   (Z_wall / Z_gas).toFixed(0) + '×');
+
+  // Containment notes
+  const matHtml = `<b style="color:var(--text)">${mat.name}</b>: ρ<sub>e</sub> = ${mat.rho_e.toExponential(0)} Ω·m · c<sub>P</sub> = ${mat.c_p.toLocaleString()} m/s · Q<sub>ac</sub> = ${mat.Q_ac.toLocaleString()} &nbsp;|&nbsp; ${gas.name}: c = ${gas.c} m/s`;
+  ht('matNote', matHtml);
+  const emHtml = s.cav_delta > 1e6
+    ? `<span class="ok">✓ δ = ${(s.cav_delta/1000).toFixed(0)} km ≫ t = ${s.tWall} cm — telluric field passes through unattenuated</span>`
+    : `δ/t = ${s.cav_trans.toFixed(0)}× ${s.ok6 ? '<span class="ok">✓ transparent</span>' : '<span class="warn">⚠ marginal</span>'}`;
+  ht('emNote', emHtml);
+  ht('cavNote',
+    `<b>Acoustic design:</b> Z<sub>wall</sub>/Z<sub>gas</sub> = ${(Z_wall/Z_gas).toFixed(0)}× → reflectance ${(s.cav_Trefl*100).toFixed(1)}% ` +
+    `— walls are acoustically reflective (energy stored inside, not transmitted out). ` +
+    `Cavity stores E = Q·P<sub>in</sub>/ω; at Q=${mat.Q_ac.toLocaleString()} and f=${fmtFreq(s.fBell)}, ` +
+    `every watt of input accumulates ${(mat.Q_ac/(2*Math.PI*Math.max(s.fBell,1))).toFixed(1)} J. ` +
+    `<b>EM design:</b> skin depth δ = ${s.cav_delta > 1000 ? (s.cav_delta/1000).toFixed(0)+' km' : s.cav_delta.toFixed(0)+' m'} ` +
+    `at ${fmtFreq(s.fBell)} — the ELF telluric field sees the containment wall as geometrically absent.`);
+
+  // Containment tag
+  const cavTagEl = $('cavTag');
+  if (cavTagEl) {
+    cavTagEl.textContent = s.ok6
+      ? `L = ${fmtLen(s.cav_L)} · δ/t = ${tr > 1000 ? (tr/1000).toFixed(0)+'k×' : tr.toFixed(0)+'×'}`
+      : `⚠ ${s.cav_trans < 100 ? 'EM not transparent' : 'Check dimensions'}`;
+    cavTagEl.className = 'panel-tag ' + (s.ok6 ? 'tag-recover' : 'tag-warn');
+  }
+
+  const CKS = [
+    { id: 'ck1', ok: s.ok1, val: fmtV(s.Voc) },
+    { id: 'ck2', ok: s.ok2, val: fmtP(s.Pmatch) },
+    { id: 'ck3', ok: s.ok3, val: fmtFreq(s.fBell) },
+    { id: 'ck4', ok: s.ok4, val: s.Ha.toFixed(0) },
+    { id: 'ck5', ok: s.ok5, val: fmtV(s.Vemf) },
+    { id: 'ck6', ok: s.ok6, val: s.cav_trans > 1000 ? `δ/t=${(s.cav_trans/1000).toFixed(0)}k×` : `δ/t=${s.cav_trans.toFixed(0)}×` },
+  ];
+  CKS.forEach(c => {
+    const el  = $(c.id);
+    const prg = $(c.id + 'p');
+    const sv  = $(c.id + 'v');
+    if (!el) return;
+    el.classList.toggle('on',   c.ok);
+    el.classList.toggle('fail', !c.ok);
+    if (prg) prg.style.width = c.ok ? '100%' : '0';
+    if (sv)  sv.textContent  = c.val || '—';
+  });
+
+  // Checklist tag
+  const ctag = $('checkTag');
+  if (ctag) {
+    ctag.textContent = `${okCnt} / 6`;
+    ctag.className   = 'panel-tag ' + (allOk ? 'tag-recover' : okCnt > 3 ? 'tag-warn' : 'tag-error');
+  }
+
+  // System pipeline tag
+  const stag = $('sysTag');
+  if (stag) {
+    stag.textContent = allOk ? 'Design Valid' : `${okCnt} / 6 Stages`;
+    stag.className   = 'panel-tag ' + (allOk ? 'tag-recover' : okCnt > 3 ? 'tag-warn' : 'tag-error');
+  }
+
+  // Frequency alignment tag
+  const ftag = $('freqTag');
+  if (ftag) {
+    if (s.ok3) {
+      const pct = (Math.abs(s.fBell - s.fTel) / s.fTel * 100).toFixed(1);
+      ftag.textContent = `Locked · Δf ${pct}%`;
+      ftag.className   = 'panel-tag tag-recover';
+    } else {
+      ftag.textContent = 'Not locked';
+      ftag.className   = 'panel-tag tag-error';
+    }
+  }
+}
+
+// ── Canvas rendering ──────────────────────────────────────────────────────────
+const DPR = () => Math.min(window.devicePixelRatio || 1, 2);
+
+function sized(id, cssH) {
+  const c = $(id);
+  if (!c) return null;
+  const dpr = DPR();
+  // Use the canvas's OWN laid-out display size (set by CSS). Backing store then
+  // always matches display aspect, so content never stretches on HiDPI.
+  const dispW = c.clientWidth;
+  const dispH = c.clientHeight || cssH;   // cssH is a fallback before layout settles
+  const cW = Math.round(dispW * dpr);
+  const cH = Math.round(dispH * dpr);
+  if (cW < 2 || cH < 2) return null;
+  if (c.width !== cW || c.height !== cH) { c.width = cW; c.height = cH; }
+  return c;
+}
+
+// System block diagram
+function drawSystem(pal) {
+  const c = sized('sysCanvas', 112);
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  const R   = DPR(), W = c.width, H = c.height;
+  ctx.clearRect(0, 0, W, H);
+  // px(n): n design-pixels → device-pixels. Fonts use real px so text isn't scaled
+  // by box height (the source of the "stretched" look).
+  const px = n => Math.round(n * R);
+
+  const STAGES = [
+    { lbl: ['TELLURIC','SOURCE'],   metric: () => fmtV(ST.Voc),             ok: () => ST.ok1 || ST.ok2 },
+    { lbl: ['IMPEDANCE','LADDER'],  metric: () => fmtP(ST.Pmatch),          ok: () => ST.ok2 },
+    { lbl: ['RESONANT','VESSEL'],   metric: () => fmtFreq(ST.fBell),        ok: () => ST.ok3 },
+    { lbl: ['MHD','CHOPPER'],       metric: () => `Ha ${ST.Ha.toFixed(0)}`, ok: () => ST.ok4 },
+    { lbl: ['BROADCAST','OUTPUT'],  metric: () => fmtFreq(ST.fBcast),       ok: () => ST.ok5 },
+  ];
+
+  const N    = STAGES.length;
+  const padX = px(12);
+  const gap  = px(20);                           // arrow gutter between boxes
+  const bW   = Math.round((W - 2 * padX - (N - 1) * gap) / N);
+  const bH   = px(74);                            // shorter box → text fills it
+  const y0   = Math.round((H - bH) / 2);
+  const rad  = px(8);
+  const cyMid = y0 + bH / 2;
+  const crisp = v => Math.round(v) + 0.5;
+
+  const xs = [];
+  for (let i = 0; i < N; i++) xs.push(Math.round(padX + i * (bW + gap)));
+
+  // ── Connecting rail behind the boxes ──
+  ctx.strokeStyle = pal.border;
+  ctx.lineWidth = Math.max(1, px(1));
+  ctx.beginPath();
+  ctx.moveTo(xs[0] + bW / 2, crisp(cyMid));
+  ctx.lineTo(xs[N-1] + bW / 2, crisp(cyMid));
+  ctx.stroke();
+
+  STAGES.forEach((st, i) => {
+    const ok = st.ok();
+    const x0 = xs[i];
+    const cx = x0 + bW / 2;
+
+    // Card fill
+    ctx.fillStyle = pal.isDark ? 'rgba(255,255,255,.04)' : 'rgba(255,253,248,.94)';
+    ctx.beginPath(); ctx.roundRect(x0, y0, bW, bH, rad); ctx.fill();
+    if (ok) {
+      ctx.fillStyle = pal.isDark ? 'rgba(64,200,144,.08)' : 'rgba(47,125,50,.05)';
+      ctx.beginPath(); ctx.roundRect(x0, y0, bW, bH, rad); ctx.fill();
+    }
+
+    // Border
+    ctx.strokeStyle = ok ? pal.green : pal.border;
+    ctx.lineWidth = Math.max(1, px(ok ? 1.5 : 1));
+    ctx.beginPath();
+    ctx.roundRect(crisp(x0), crisp(y0), bW - 1, bH - 1, rad);
+    ctx.stroke();
+
+    // Top accent pill
+    ctx.fillStyle = ok ? pal.green : pal.border;
+    ctx.beginPath();
+    ctx.roundRect(x0 + bW * 0.30, y0 - px(1), bW * 0.40, px(3), px(1.5));
+    ctx.fill();
+
+    // Status dot — top-right
+    ctx.fillStyle = ok ? pal.green : (pal.isDark ? 'rgba(150,140,120,.45)' : 'rgba(140,130,110,.5)');
+    ctx.beginPath();
+    ctx.arc(x0 + bW - px(10), y0 + px(11), px(2.5), 0, Math.PI * 2);
+    ctx.fill();
+
+    // Stage label — two centered lines, Inter semibold
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = ok ? pal.text : pal.textDim;
+    ctx.font = `600 ${px(11)}px Inter,sans-serif`;
+    ctx.fillText(st.lbl[0], cx, y0 + px(24));
+    ctx.fillText(st.lbl[1], cx, y0 + px(38));
+
+    // Metric value — Newsreader, gold accent
+    ctx.font = `${px(15)}px 'Newsreader',Georgia,serif`;
+    ctx.fillStyle = ok ? pal.gold : pal.textDim;
+    ctx.fillText(st.metric(), cx, y0 + px(59));
+    ctx.textBaseline = 'alphabetic';
+
+    // Chevron arrow to next box
+    if (i < N - 1) {
+      const tip = xs[i + 1] - px(5);
+      ctx.strokeStyle = ok ? pal.gold : pal.border;
+      ctx.lineWidth = Math.max(1.5, px(1.75));
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(tip - px(5), cyMid - px(4));
+      ctx.lineTo(tip, cyMid);
+      ctx.lineTo(tip - px(5), cyMid + px(4));
+      ctx.stroke();
+      ctx.lineCap = 'butt';
+    }
+  });
+}
+
+// Frequency alignment
+function drawFreq(pal) {
+  const c = sized('freqCanvas', 210);
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  const R = DPR(), W = c.width, H = c.height;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = pal.card; ctx.fillRect(0, 0, W, H);
+
+  const fMin = 1, fMax = 500;
+  const xL = 18 * R, xR = W - 10 * R;
+  const yTop = 22 * R, yBot = H - 38 * R;
+  const xW  = xR - xL;
+
+  const xF = f => f <= 0 ? xL : xL + (Math.log10(f / fMin) / Math.log10(fMax / fMin)) * xW;
+
+  // Grid axis
+  ctx.strokeStyle = pal.border; ctx.lineWidth = R;
+  ctx.beginPath(); ctx.moveTo(xL, yBot); ctx.lineTo(xR, yBot); ctx.stroke();
+
+  // Frequency ticks
+  [1, 2, 5, 10, 20, 50, 100, 200, 500].forEach(f => {
+    const x = xF(f);
+    ctx.strokeStyle = pal.border; ctx.lineWidth = R;
+    ctx.beginPath(); ctx.moveTo(x, yBot); ctx.lineTo(x, yBot + 4 * R); ctx.stroke();
+    ctx.textAlign = 'center'; ctx.fillStyle = pal.textDim;
+    ctx.font = `${Math.round(8 * R)}px Inter,sans-serif`;
+    ctx.fillText(f >= 1000 ? (f / 1000) + 'k' : f, x, yBot + 14 * R);
+  });
+  ctx.textAlign = 'right'; ctx.fillStyle = pal.textDim;
+  ctx.font = `${Math.round(8 * R)}px Inter,sans-serif`;
+  ctx.fillText('Hz', xR, yBot + 14 * R);
+
+  // Schumann mode reference lines
+  SCHUMANN.forEach((f, i) => {
+    const x = xF(f);
+    ctx.strokeStyle = pal.isDark ? 'rgba(64,208,232,.14)' : 'rgba(31,138,160,.18)';
+    ctx.lineWidth = R; ctx.setLineDash([3 * R, 4 * R]);
+    ctx.beginPath(); ctx.moveTo(x, yTop); ctx.lineTo(x, yBot); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.textAlign = 'center';
+    ctx.font      = `${Math.round(7 * R)}px Inter,sans-serif`;
+    ctx.fillStyle = pal.isDark ? 'rgba(64,208,232,.35)' : 'rgba(31,138,160,.40)';
+    ctx.fillText(`n${i + 1}`, x, yTop - 5 * R);
+  });
+
+  // Resonance match band (±5% of f_telluric)
+  if (ST.ok3) {
+    const xA = xF(ST.fTel * 0.95), xB = xF(ST.fTel * 1.05);
+    ctx.fillStyle = pal.isDark ? 'rgba(64,200,144,.10)' : 'rgba(47,125,50,.09)';
+    ctx.fillRect(xA, yTop, xB - xA, yBot - yTop);
+    ctx.strokeStyle = pal.green; ctx.lineWidth = R;
+    ctx.setLineDash([2 * R, 3 * R]);
+    ctx.strokeRect(xA, yTop, xB - xA, yBot - yTop);
+    ctx.setLineDash([]);
+  }
+
+  // Pillar helper
+  const pillar = (f, color, label, hFrac) => {
+    if (!isFinite(f) || f <= 0) return;
+    const x = xF(f);
+    const pH = (yBot - yTop) * hFrac;
+    const py = yBot - pH;
+
+    ctx.fillStyle = color + (pal.isDark ? '22' : '18');
+    ctx.fillRect(x - 7 * R, py, 14 * R, pH);
+
+    ctx.strokeStyle = color; ctx.lineWidth = 2 * R; ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(x, py); ctx.lineTo(x, yBot); ctx.stroke();
+
+    ctx.fillStyle = color; ctx.textAlign = 'center';
+    ctx.font = `600 ${Math.round(9 * R)}px Inter,sans-serif`;
+    ctx.fillText(label, x, py - 6 * R);
+    ctx.font = `${Math.round(8 * R)}px 'Newsreader',Georgia,serif`;
+    ctx.fillText(f.toFixed(2) + ' Hz', x, py + 12 * R);
+  };
+
+  pillar(ST.fTel,   pal.cyan,  'f_t',    0.80);
+  pillar(ST.fBell,  pal.gold,  'f_bell', 0.62);
+  if (ST.harmonic > 1) pillar(ST.fBcast, pal.green, 'f_out', 0.44);
+}
+
+// Animated chopped waveform
+let wavePhase = 0;
+function drawWave(pal) {
+  const c = sized('waveCanvas', 120);
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  const R = DPR(), W = c.width, H = c.height;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = pal.card; ctx.fillRect(0, 0, W, H);
+
+  const xL = 10 * R, xW = W - 20 * R, cy = H * 0.5, amp = H * 0.35;
+
+  // DC baseline (dashed cyan)
+  ctx.strokeStyle = pal.isDark ? 'rgba(64,208,232,.45)' : 'rgba(31,138,160,.50)';
+  ctx.lineWidth = R; ctx.setLineDash([6 * R, 5 * R]);
+  ctx.beginPath(); ctx.moveTo(xL, cy); ctx.lineTo(xL + xW, cy); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Velocity amplitude (log-normalised for visual scale)
+  const vScale = ST.vR > 0 ? Math.min(1, Math.log10(1 + ST.vR / 1e-9) / 10) : 0.25;
+  const eScale = ST.Vemf > 0 ? Math.min(1, Math.log10(1 + ST.Vemf / 1e-10) / 10) : 0.15;
+
+  // Gold: MHD slosh velocity
+  ctx.strokeStyle = pal.gold; ctx.lineWidth = 1.5 * R;
+  ctx.beginPath();
+  for (let px = 0; px <= xW; px += Math.max(1, R * 0.5)) {
+    const phi = wavePhase + (px / xW) * 4 * Math.PI;
+    const y = cy - amp * vScale * Math.sin(phi);
+    px === 0 ? ctx.moveTo(xL + px, y) : ctx.lineTo(xL + px, y);
+  }
+  ctx.stroke();
+
+  // Green: chopped EMF output (slight phase offset, smaller amp)
+  ctx.strokeStyle = pal.green; ctx.lineWidth = 2 * R;
+  ctx.beginPath();
+  for (let px = 0; px <= xW; px += Math.max(1, R * 0.5)) {
+    const phi = wavePhase + (px / xW) * 4 * Math.PI + 0.08;
+    const y = cy - amp * eScale * 0.9 * Math.sin(phi);
+    px === 0 ? ctx.moveTo(xL + px, y) : ctx.lineTo(xL + px, y);
+  }
+  ctx.stroke();
+
+  // Legend
+  ctx.font = `${Math.round(8.5 * R)}px Inter,sans-serif`;
+  const ly = H - 7 * R;
+  ctx.fillStyle = pal.isDark ? 'rgba(64,208,232,.70)' : 'rgba(31,138,160,.80)';
+  ctx.textAlign = 'left'; ctx.fillText('─── DC telluric', xL, ly);
+  ctx.fillStyle = pal.gold;
+  ctx.fillText('─── MHD slosh', xL + 105 * R, ly);
+  ctx.fillStyle = pal.green;
+  ctx.fillText('─── Chopped EMF', xL + 210 * R, ly);
+}
+
+// ── Render all canvases ───────────────────────────────────────────────────────
+let PAL = {};
+function renderAll() {
+  drawSystem(PAL);
+  drawFreq(PAL);
+  drawWave(PAL);
+}
+
+// ── Main update (physics + DOM + canvas) ──────────────────────────────────────
+function update() {
+  calc();
+  updateDOM();
+  renderAll();
+}
+
+// ── Slider initialisation ─────────────────────────────────────────────────────
+function logSlider(id, valId, min, max, def, fmt, setter) {
+  const el = $(id), ve = $(valId);
+  if (!el) return;
+  el.min = min; el.max = max; el.step = (max - min) / 300;
+  el.value = Math.log10(def);
+  if (ve) ve.textContent = fmt(def);
+  el.addEventListener('input', () => {
+    const v = Math.pow(10, +el.value);
+    setter(v);
+    if (ve) ve.textContent = fmt(v);
+    update();
+  });
+}
+
+function linSlider(id, valId, fmt, setter) {
+  const el = $(id), ve = $(valId);
+  if (!el) return;
+  el.addEventListener('input', () => {
+    const v = +el.value;
+    setter(v);
+    if (ve) ve.textContent = fmt(v);
+    update();
+  });
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+function init() {
+  // Theme
+  if (window.PhiTheme) {
+    PAL = window.PhiTheme.palette();
+    window.PhiTheme.onChange(p => { PAL = p; renderAll(); });
+  }
+
+  // Preset buttons — just mutate ST and call update(); updateDOM() handles all display
+  ST._preset = 'giza';
+  ['desktop','site','giza'].forEach(name => {
+    $(`btn${name.charAt(0).toUpperCase()+name.slice(1)}`)?.addEventListener('click', () => {
+      const p = PRESETS[name]; if (!p) return;
+      Object.assign(ST, p);
+      ST._preset = name;
+      // Sync slider positions to new state values
+      const syncLog = (id, val) => { const el=$(id); if(el && val>0) el.value=Math.log10(val); };
+      const syncLin = (id, val) => { const el=$(id); if(el) el.value=val; };
+      syncLog('Et', ST.Et); syncLog('Lkm', ST.Lkm);
+      syncLog('sigma', ST.sigma); syncLog('aElec', ST.a_m);
+      syncLog('Vin', ST.Vin); syncLog('RsArt', ST.Rs_Ohm);
+      syncLog('Lv', ST.Lv); syncLog('Vact', ST.Vact); syncLog('Qcav', ST.Qd);
+      syncLin('Bfield', ST.B); syncLin('rChan', ST.r_mm);
+      syncLin('Rdam', ST.R_dam_mOhm); syncLog('Pthermal', ST.P_thermal_kW);
+      syncLin('tWallSl', ST.tWall);
+      const cf=$('customF'); if(cf) cf.value=ST.customF;
+      update();
+    });
+  });
+
+  // Source type — just flip the flag; updateDOM() handles toggle highlights and group visibility
+  $('btnNatural')?.addEventListener('click',    () => { ST.sourceType = 'telluric';    update(); });
+  $('btnArtificial')?.addEventListener('click', () => { ST.sourceType = 'artificial';  update(); });
+
+  // Artificial source sliders
+  logSlider('Vin', 'VinVal', -3, 4, ST.Vin, v => fmtV(v), v => { ST.Vin = v; });
+  logSlider('RsArt', 'RsArtVal', -6, 4, ST.Rs_Ohm, v => fmtR(v), v => { ST.Rs_Ohm = v; });
+
+  // Schumann mode buttons
+  const nGrid = $('nGrid');
+  if (nGrid) {
+    const LABELS = ['n=1','n=2','n=3','n=4','n=5','n=6','n=7','n=8','C'];
+    const NS     = [1,2,3,4,5,6,7,8,0];
+    NS.forEach((n, i) => {
+      const btn = document.createElement('button');
+      btn.className    = 'n-btn' + (n === ST.n ? ' on' : '');
+      btn.textContent  = LABELS[i];
+      btn.dataset.n    = n;
+      btn.title        = n > 0 ? `Mode ${n} ≈ ${SCHUMANN[n-1].toFixed(2)} Hz` : 'Custom frequency';
+      btn.addEventListener('click', () => {
+        nGrid.querySelectorAll('.n-btn').forEach(b => b.classList.remove('on'));
+        btn.classList.add('on');
+        ST.n = n;
+        const cg = $('customFreqGroup');
+        if (cg) cg.style.display = n === 0 ? 'block' : 'none';
+        update();
+      });
+      nGrid.appendChild(btn);
+    });
+  }
+
+  // Custom frequency
+  const cfEl = $('customF');
+  if (cfEl) {
+    cfEl.addEventListener('input', () => {
+      ST.customF = +cfEl.value;
+      const ve = $('customFVal');
+      if (ve) ve.textContent = ST.customF.toFixed(1) + ' Hz';
+      update();
+    });
+  }
+
+  // E_t: log10, range 0–3.699 (1 mV/km to 5000 mV/km); default 1000 mV/km = 1 V/km (storm)
+  logSlider('Et', 'EtVal', 0, Math.log10(5000), ST.Et,
+    v => v >= 1000 ? (v/1000).toFixed(2)+' V/km' : v.toFixed(1)+' mV/km',
+    v => { ST.Et = v; });
+
+  // L (km): log10, 0–3 (1–1000 km)
+  logSlider('Lkm', 'LkmVal', 0, 3, ST.Lkm,
+    v => v >= 100 ? v.toFixed(0)+' km' : v.toFixed(1)+' km',
+    v => { ST.Lkm = v; });
+
+  // sigma: log10, -2–1 (0.01–10 S/m)
+  logSlider('sigma', 'sigmaVal', -2, 1, ST.sigma,
+    v => v.toFixed(3)+' S/m', v => { ST.sigma = v; });
+
+  // a (electrode radius): log10, 0–3 (1–1000 m)
+  logSlider('aElec', 'aElecVal', -2, 3, ST.a_m,
+    v => v >= 100 ? v.toFixed(0)+' m' : v.toFixed(1)+' m',
+    v => { ST.a_m = v; });
+
+  // Vessel length: log10, -0.301–2 (0.5–100 m)
+  logSlider('Lv', 'LvVal', Math.log10(0.5), 2, ST.Lv,
+    v => v.toFixed(2)+' m', v => { ST.Lv = v; });
+
+  // Fluid selector
+  $('btnMercury')?.addEventListener('click', () => {
+    ST.fluid = 'mercury';
+    $('btnMercury')?.classList.add('on');
+    $('btnGalinstan')?.classList.remove('on');
+    update();
+  });
+  $('btnGalinstan')?.addEventListener('click', () => {
+    ST.fluid = 'galinstan';
+    $('btnGalinstan')?.classList.add('on');
+    $('btnMercury')?.classList.remove('on');
+    update();
+  });
+
+  // Fill mode
+  $('btnAutoTune')?.addEventListener('click', () => {
+    ST.fillMode = 'auto';
+    $('btnAutoTune')?.classList.add('on');
+    $('btnManual')?.classList.remove('on');
+    const mg = $('manualFillGroup');
+    if (mg) mg.style.display = 'none';
+    update();
+  });
+  $('btnManual')?.addEventListener('click', () => {
+    ST.fillMode = 'manual';
+    $('btnManual')?.classList.add('on');
+    $('btnAutoTune')?.classList.remove('on');
+    const mg = $('manualFillGroup');
+    if (mg) mg.style.display = 'block';
+    update();
+  });
+  linSlider('fillRatio', 'fillRatioVal',
+    v => Math.round(v) + '%',
+    v => { ST.fillRat = v / 100; });
+
+  // B field (linear)
+  linSlider('Bfield', 'BfieldVal', v => v.toFixed(2)+' T', v => { ST.B = v; });
+
+  // Channel radius (linear, mm)
+  linSlider('rChan', 'rChanVal', v => v.toFixed(1)+' mm', v => { ST.r_mm = v; });
+
+  // Active volume: log10, 0–4 (1–10000 cm³)
+  logSlider('Vact', 'VactVal', 0, 4, ST.Vact,
+    v => (v >= 1000 ? (v/1000).toFixed(1)+'L' : Math.round(v)+' cm³'),
+    v => { ST.Vact = v; });
+
+  // Cavity Qd: log10, 1–4 (10–10000)
+  logSlider('Qcav', 'QcavVal', 1, 4, ST.Qd,
+    v => Math.round(v).toString(),
+    v => { ST.Qd = v; });
+
+  // Harmonic selector
+  ['btnH1','btnH2','btnH3'].forEach((id, i) => {
+    $(id)?.addEventListener('click', () => {
+      ST.harmonic = i + 1;
+      ['btnH1','btnH2','btnH3'].forEach((bid, j) => {
+        $(bid)?.classList.toggle('on', j === i);
+      });
+      update();
+    });
+  });
+
+  // Telluric chopper controls
+  linSlider('Rdam', 'RdamVal', v => Math.round(v) + ' mΩ', v => { ST.R_dam_mOhm = v; });
+  // Thermal loss: log slider in kW, spanning 1 W (1e-3 kW) → 1 MW (1e3 kW).
+  // Display text is set by updateDOM (scale-aware W/kW + arc/solid label).
+  logSlider('Pthermal', 'PthermalVal', -3, 3, ST.P_thermal_kW,
+    v => v >= 1 ? v.toFixed(v>=10?0:1)+' kW' : (v*1000).toFixed(0)+' W',
+    v => { ST.P_thermal_kW = v; });
+
+  // Containment controls
+  const matBtns = { granite:'btnGranite', quartz:'btnQuartz', alumina:'btnAlumina', limestone:'btnLimestone' };
+  Object.entries(matBtns).forEach(([key, id]) => {
+    $(id)?.addEventListener('click', () => {
+      ST.wallMat = key;
+      Object.values(matBtns).forEach(bid => $(bid)?.classList.remove('on'));
+      $(id)?.classList.add('on');
+      update();
+    });
+  });
+  linSlider('tWallSl', 'tWallVal', v => Math.round(v) + ' cm', v => { ST.tWall = v; });
+
+  ['btnCN1','btnCN2','btnCN3'].forEach((id, i) => {
+    $(id)?.addEventListener('click', () => {
+      ST.cavN = i + 1;
+      ['btnCN1','btnCN2','btnCN3'].forEach((bid, j) => $(bid)?.classList.toggle('on', j === i));
+      update();
+    });
+  });
+
+  const gasBtns = { air:'btnAir', argon:'btnArgon', helium:'btnHelium' };
+  Object.entries(gasBtns).forEach(([key, id]) => {
+    $(id)?.addEventListener('click', () => {
+      ST.cavGas = key;
+      Object.values(gasBtns).forEach(bid => $(bid)?.classList.remove('on'));
+      $(id)?.classList.add('on');
+      update();
+    });
+  });
+
+  // ResizeObserver for canvas redraws
+  if (window.ResizeObserver) {
+    const ro = new ResizeObserver(() => renderAll());
+    const main = document.querySelector('.main');
+    if (main) ro.observe(main);
+  }
+
+  update();
+  init3D();
+}
+
+// ── Animation loop (waveform only) ───────────────────────────────────────────
+let lastTs = 0;
+(function animLoop(ts) {
+  requestAnimationFrame(animLoop);
+  const dt = Math.min((ts - lastTs) / 1000, 0.05);
+  lastTs = ts;
+  wavePhase += 2 * Math.PI * 1.8 * dt;   // visual rate: ~1.8 cycles/s
+  drawWave(PAL);
+})(0);
+
+// ── Three.js MHD Core ─────────────────────────────────────────────────────────
+function init3D() {
+  if (typeof THREE === 'undefined') return;
+  const canvas = $('deviceCanvas');
+  if (!canvas) return;
+  const C = hex => new THREE.Color(hex);
+
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true }); }
+  catch (e) { canvas.style.display = 'none'; return; }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(40, 1, 0.05, 50);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.60));
+  const dl = new THREE.DirectionalLight(0xffffff, 0.55);
+  dl.position.set(3, 5, 2); scene.add(dl);
+
+  // Coffer proportions: Petrie interior × display scale
+  const CFS = 0.84;
+  const cfIL = 1.9827 * CFS, cfIH = 0.8743 * CFS, cfIW = 0.6810 * CFS;
+  const cfWT = 0.11;
+  const cfEL = cfIL + 2 * cfWT, cfEH = cfIH + 2 * cfWT, cfEW = cfIW + 2 * cfWT;
+
+  // Granite shell — wireframe edges + translucent lid and floor
+  scene.add(new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.BoxGeometry(cfEL, cfEH, cfEW)),
+    new THREE.LineBasicMaterial({ color: C('#9a7d56'), transparent: true, opacity: 0.70 })));
+  [cfEH / 2 - cfWT / 2, -cfEH / 2 + cfWT / 2].forEach(y => {
+    const s = new THREE.Mesh(new THREE.BoxGeometry(cfEL, cfWT, cfEW),
+      new THREE.MeshBasicMaterial({ color: C('#8a7256'), transparent: true, opacity: 0.11, side: THREE.DoubleSide }));
+    s.position.y = y; scene.add(s);
+  });
+
+  // Mercury — full-height box; scale.y and position.y updated each tick to match fill
+  const cfHgMat = new THREE.MeshBasicMaterial({ color: C('#bfd3dd'), transparent: true, opacity: 0.90 });
+  const cfHg = new THREE.Mesh(new THREE.BoxGeometry(cfIL * 0.98, cfIH, cfIW * 0.98), cfHgMat);
+  scene.add(cfHg);
+
+  // NdFeB magnets: N (red) BELOW the floor, S (blue) ABOVE the lid → vertical B
+  const cfMagT = 0.13, cfMagGap = 0.04;
+  const cfMagNmat = new THREE.MeshBasicMaterial({ color: C('#c0432f') });
+  const cfMagSmat = new THREE.MeshBasicMaterial({ color: C('#3f63b0') });
+  const cfMagN = new THREE.Mesh(new THREE.BoxGeometry(cfIL, cfMagT, cfIW), cfMagNmat);
+  const cfMagS = new THREE.Mesh(new THREE.BoxGeometry(cfIL, cfMagT, cfIW), cfMagSmat);
+  cfMagN.position.y = -cfEH / 2 - cfMagGap - cfMagT / 2;
+  cfMagS.position.y =  cfEH / 2 + cfMagGap + cfMagT / 2;
+  scene.add(cfMagN); scene.add(cfMagS);
+
+  // Iron yoke — C-frame at both ends returning flux N↔S
+  const cfYokeMat = new THREE.MeshBasicMaterial({ color: C('#4a4a52') });
+  const cfYokeH = (cfMagS.position.y - cfMagN.position.y) + cfMagT;
+  [-1, 1].forEach(sx => {
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(0.09, cfYokeH, cfIW), cfYokeMat);
+    bar.position.set(sx * (cfEL / 2 + 0.07), 0, 0); scene.add(bar);
+    [cfMagN.position.y - cfMagT / 2 - 0.025,
+     cfMagS.position.y + cfMagT / 2 + 0.025].forEach(my => {
+      const ret = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.05, cfIW), cfYokeMat);
+      ret.position.set(sx * (cfEL / 2), my, 0); scene.add(ret);
+    });
+  });
+
+  // B-field lines — vertical, N→S, 3×3 grid through the mercury
+  const y0f = cfMagN.position.y + cfMagT / 2, y1f = cfMagS.position.y - cfMagT / 2;
+  const cfFieldMat = new THREE.LineBasicMaterial({ color: C('#cf6f5f'), transparent: true, opacity: 0.52 });
+  for (let ix = -1; ix <= 1; ix++) for (let iz = -1; iz <= 1; iz++) {
+    const fx = ix * cfIL * 0.3, fz = iz * cfIW * 0.3;
+    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(fx, y0f, fz), new THREE.Vector3(fx, y1f, fz)]), cfFieldMat.clone()));
+    const head = new THREE.Mesh(new THREE.ConeGeometry(0.024, 0.07, 8),
+      new THREE.MeshBasicMaterial({ color: C('#cf6f5f'), transparent: true, opacity: 0.70 }));
+    head.position.set(fx, y1f - 0.035, fz); scene.add(head);
+  }
+
+  // Electrodes — INSIDE on the two long z-walls, wetted by mercury.
+  // Built at full interior height; tick3 scales.y to the actual fill and bottom-anchors them
+  // so they only show where mercury is present. Kept subtle (low opacity) so mercury reads through.
+  const cfElecMats = [], cfElecMeshes = [];
+  [-1, 1].forEach(sz => {
+    const m = new THREE.MeshBasicMaterial({ color: C('#e7d9a8'), transparent: true, opacity: 0.16 });
+    const e = new THREE.Mesh(new THREE.BoxGeometry(cfIL * 0.90, cfIH, 0.014), m);
+    e.position.set(0, 0, sz * (cfIW / 2 - 0.012)); scene.add(e);
+    cfElecMats.push(m); cfElecMeshes.push(e);
+  });
+
+  // v×B current arrows — z-direction (EMF across width); shown when Ha regime
+  const cfCurrArrows = [];
+  [-0.5, 0, 0.5].forEach(ix => {
+    const arr = new THREE.ArrowHelper(
+      new THREE.Vector3(0, 0, 1), new THREE.Vector3(ix * cfIL * 0.55, 0, -cfIW * 0.35),
+      cfIW * 0.70, 0x37b0c9, 0.07, 0.05);
+    arr.line.material = arr.line.material.clone();
+    arr.cone.material = arr.cone.material.clone();
+    arr.line.material.transparent = true; arr.line.material.opacity = 0;
+    arr.cone.material.transparent = true; arr.cone.material.opacity = 0;
+    scene.add(arr); cfCurrArrows.push(arr);
+  });
+
+  // Axis triad: v→x (gold), B→y (red), EMF→z (cyan)
+  const triad = new THREE.Group();
+  triad.position.set(-cfEL / 2 - 0.14, -cfEH / 2 - 0.18, -cfEW / 2 - 0.10);
+  triad.add(new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(), 0.36, 0xC9A830, 0.06, 0.04));
+  triad.add(new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(), 0.36, 0xc0432f, 0.06, 0.04));
+  triad.add(new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(), 0.36, 0x37b0c9, 0.06, 0.04));
+  scene.add(triad);
+
+  // Wireless output rings — expand outward from coffer centre when ok5.
+  // Six rings at varied orientations so they're visible from any camera angle.
+  const cfOut = [];
+  const OUT_ROTS = [
+    [Math.PI / 2,  0,           0          ],  // horizontal (xz-plane)
+    [0,            0,           0          ],  // vertical yz-plane
+    [0,            Math.PI / 2, 0          ],  // vertical xz-plane
+    [Math.PI / 4,  0,           0          ],  // 45° tilt
+    [0,            0,           Math.PI / 4],  // 45° tilt the other way
+    [Math.PI / 3,  Math.PI / 4, 0          ],  // diagonal
+  ];
+  for (let i = 0; i < 6; i++) {
+    const r = new THREE.Mesh(
+      new THREE.RingGeometry(0.038, 0.056, 52),
+      new THREE.MeshBasicMaterial({ color: C('#40d0e8'), transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false }));
+    r.rotation.set(...OUT_ROTS[i]); scene.add(r); cfOut.push(r);
+  }
+
+  // Telluric clock rings — rise from below when ok1
+  const cfTel = [];
+  for (let i = 0; i < 4; i++) {
+    const r = new THREE.Mesh(
+      new THREE.RingGeometry(cfEL * 0.18, cfEL * 0.30, 46),
+      new THREE.MeshBasicMaterial({ color: C('#49c39a'), transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false }));
+    r.rotation.x = -Math.PI / 2; r.position.y = -cfEH / 2 - 0.55;
+    scene.add(r); cfTel.push(r);
+  }
+
+  // Resonance halo (gold box outline) + 3 antinode discs — when ok3
+  const cfHaloMat = new THREE.LineBasicMaterial({ color: C('#C9A830'), transparent: true, opacity: 0 });
+  const cfHalo = new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.BoxGeometry(cfEL * 1.07, cfEH * 1.07, cfEW * 1.07)), cfHaloMat);
+  scene.add(cfHalo);
+  const cfNodeMats = [];
+  for (let i = 0; i < 3; i++) {
+    const m = new THREE.MeshBasicMaterial({ color: C('#C9A830'), transparent: true, opacity: 0, side: THREE.DoubleSide });
+    const d = new THREE.Mesh(new THREE.PlaneGeometry(cfIL * 0.94, cfIW * 0.94), m);
+    d.rotation.x = -Math.PI / 2; d.position.set((i - 1) * cfIL * 0.30, 0, 0);
+    scene.add(d); cfNodeMats.push(m);
+  }
+
+  // Mercury-arc plasma — flickers when all 5 conditions met
+  const cfPlasmaMat = new THREE.MeshBasicMaterial({ color: C('#cfe8ff'), transparent: true, opacity: 0 });
+  const cfPlasma = new THREE.Mesh(new THREE.SphereGeometry(0.052, 14, 14), cfPlasmaMat);
+  scene.add(cfPlasma);
+  const cfArcMat = new THREE.LineBasicMaterial({ color: C('#eaf5ff'), transparent: true, opacity: 0 });
+  const cfArc = new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(), new THREE.Vector3(0, cfIH * 0.6, 0)]), cfArcMat);
+  scene.add(cfArc);
+
+  // Camera orbit with drag
+  const LOOK  = new THREE.Vector3(0, 0.04, 0);
+  let orbitR  = 4, orbitZoom = 1;
+  let autoTh  = 0, manTh = 0, phi3 = 0.44, ptrDown = false, ptrPrev = [0, 0];
+
+  canvas.addEventListener('pointerdown', e => { ptrDown = true; ptrPrev = [e.clientX, e.clientY]; });
+  canvas.addEventListener('pointermove', e => {
+    if (!ptrDown) return;
+    manTh += (e.clientX - ptrPrev[0]) * 0.008;
+    phi3 = Math.max(0.12, Math.min(1.28, phi3 - (e.clientY - ptrPrev[1]) * 0.006));
+    ptrPrev = [e.clientX, e.clientY];
+  });
+  window.addEventListener('pointerup', () => { ptrDown = false; });
+  canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    orbitZoom = Math.max(0.45, Math.min(2.2, orbitZoom * Math.exp(e.deltaY * 0.0012)));
+  }, { passive: false });
+
+  let lastW3 = 0, lastH3 = 0;
+  function resize3() {
+    const w = canvas.clientWidth, h = Math.max(canvas.clientHeight, 280);
+    if (w < 2 || h < 2 || (w === lastW3 && h === lastH3)) return;
+    lastW3 = w; lastH3 = h;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h; camera.updateProjectionMatrix();
+    const tanV = Math.tan(40 * Math.PI / 360);
+    orbitR = 2.35 / Math.sin(Math.min(Math.atan(tanV), Math.atan(tanV * (w / h)))) * 1.14;
+  }
+
+  // ── Containment unit (outer acoustic cavity surrounding the coffer) ──────────
+  // Built at unit scale; x/y/z scaled to actual cavity dimensions each tick.
+  const cfCavEdgeMat = new THREE.LineBasicMaterial({ color: C('#9a7d56'), transparent: true, opacity: 0.42 });
+  const cfCavEdge = new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.BoxGeometry(1, 1, 1)), cfCavEdgeMat);
+  scene.add(cfCavEdge);
+  // No solid fill mesh — BackSide fill creates an interior tint that obscures the mercury.
+  // The wireframe edges alone give a clear containment boundary.
+
+  // Telluric arrows: 3 horizontal lines passing left→right through the cavity walls,
+  // showing that ELF field penetrates freely (transparent to telluric energy).
+  const cfTelLines = [], cfTelCones = [];
+  [-0.24, 0, 0.24].forEach(yz => {
+    const lm = new THREE.LineBasicMaterial({ color: C('#49c39a'), transparent: true, opacity: 0 });
+    const ln = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-3, yz, 0), new THREE.Vector3(3, yz, 0)]), lm);
+    scene.add(ln); cfTelLines.push({ ln, lm, yz });
+    const cm = new THREE.MeshBasicMaterial({ color: C('#49c39a'), transparent: true, opacity: 0 });
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.026, 0.08, 8), cm);
+    cone.rotation.z = -Math.PI / 2; cone.position.y = yz;
+    scene.add(cone); cfTelCones.push({ cone, cm, yz });
+  });
+
+  function tick3(ts) {
+    requestAnimationFrame(tick3);
+    const now = ts * 0.001;
+    resize3();
+
+    const fill  = Math.max(0.04, Math.min(1.0, ST.fillUsed));
+    const sAmp  = Math.min(0.95, ST.vR > 0 ? Math.log10(1 + ST.vR / 1e-8) / 7 : 0.12);
+    const allGo = ST.ok1 && ST.ok2 && ST.ok3 && ST.ok4 && ST.ok5;
+    const pal   = PAL;
+
+    // Mercury: bottom-anchor fill. Bottom of coffer interior = -cfIH/2
+    // Scaled box: centre at cfIH*(fill-1)/2, extends [0..fill*cfIH] from floor.
+    cfHg.scale.y = fill;
+    cfHg.position.y = cfIH * (fill - 1) / 2;
+    cfHg.rotation.z = Math.sin(now * 2.2 * Math.PI) * 0.13 * sAmp;
+    cfHg.position.x = Math.sin(now * 2.2 * Math.PI) * 0.055 * cfIL * sAmp;
+    cfHgMat.opacity = 0.48 + 0.47 * sAmp;
+    cfHgMat.color.set(C(pal.isDark ? '#c8dee8' : '#bfd3dd'));
+
+    // Top surface of mercury (used to anchor output rings and plasma)
+    const hgTop = cfIH * (fill - 1) / 2 + fill * cfIH / 2;   // = fill*cfIH - cfIH/2
+
+    // Electrodes — scale to mercury fill level (bottom-anchored), subtle gold tint
+    const elecFill = fill * 0.96;
+    cfElecMeshes.forEach(e => {
+      e.scale.y = elecFill;
+      e.position.y = cfIH * (elecFill - 1) / 2;   // same bottom-anchor formula as mercury
+    });
+    cfElecMats.forEach(m => { m.opacity = ST.ok4 ? 0.40 : 0.14; });
+
+    // Current arrows — visible when Hartmann regime
+    cfCurrArrows.forEach(arr => {
+      const op = ST.ok4 ? (0.55 + 0.40 * Math.abs(Math.sin(now * 2.2 * Math.PI))) : 0;
+      arr.line.material.opacity = op; arr.cone.material.opacity = op;
+    });
+
+    // Wireless output rings — 6 rings at varied orientations, all expanding outward from
+    // the mercury pool centre. Opacity depends only on ok5, not on sAmp (which can be tiny).
+    cfOut.forEach((r, i) => {
+      const ph = (now * 0.44 + i / cfOut.length) % 1;
+      r.position.y = hgTop * 0.5;               // mid-pool, same as original demo
+      r.scale.setScalar(ST.ok5 ? 0.22 + ph * 5.8 : 0);
+      r.material.color.set(C(pal.cyan));
+      r.material.opacity = ST.ok5 ? 0.62 * (1 - ph) : 0;
+    });
+
+    // Telluric clock rings — rise from below when ok1
+    cfTel.forEach((r, i) => {
+      const ph = (now * 0.38 + i / cfTel.length) % 1;
+      r.position.y = -cfEH / 2 - 0.55 + ph * 0.55;
+      r.scale.setScalar(1.0 - 0.28 * ph);
+      r.material.opacity = ST.ok1 ? 0.42 * (1 - ph) : 0;
+    });
+
+    // Resonance halo + antinode discs — pulse when ok3
+    const hPulse = ST.ok3 ? (0.32 + 0.26 * Math.sin(now * 2.2 * Math.PI) ** 2) : 0;
+    cfHaloMat.opacity = hPulse;
+    cfNodeMats.forEach((m, i) => {
+      m.opacity = ST.ok3 ? (0.16 + 0.14 * Math.sin(now * 2.2 * Math.PI + i * 2.1) ** 2) : 0;
+      m.position = undefined;  // disc positions are set at build time
+    });
+
+    // Update antinode disc y to follow mercury surface
+    cfNodeMats.forEach((m, i) => {
+      // find the disc mesh — it's the i-th child after the halo
+    });
+
+    // Plasma arc — flickers when all conditions met
+    const plOp = allGo ? (0.52 + 0.45 * Math.abs(Math.sin(now * 8.1) * Math.sin(now * 13.3))) : 0;
+    cfPlasmaMat.opacity = plOp;
+    cfPlasma.position.set(0, hgTop - fill * cfIH * 0.35, 0);
+    cfArcMat.opacity = allGo ? (0.60 + 0.38 * Math.abs(Math.sin(now * 15))) : 0;
+    cfArc.geometry.dispose();
+    cfArc.geometry = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, hgTop, 0), new THREE.Vector3(0, hgTop - fill * cfIH * 0.70, 0)]);
+
+    // Scene background
+    renderer.setClearColor(C(pal.canvas), 1);
+
+    // ── Containment box ───────────────────────────────────────────────────────
+    const mat3 = WALL_MATS[ST.wallMat];
+    const gas3 = CAVITY_GASES[ST.cavGas];
+    // Cavity dimensions in display units (capped so it fits the scene)
+    const cavL_m = ST.cav_L > 0 ? ST.cav_L : gas3.c / (2 * Math.max(ST.fBell, 1));
+    const cavL_d = Math.min(cavL_m * CFS, cfIL * 5.5);     // display length (x)
+    const cavH_d = cfEH + cfMagT * 2 + cfMagGap * 2 + 0.30; // encloses magnets + yoke (y)
+    const cavW_d = cfEW + 0.30;                               // slightly wider than coffer (z)
+
+    cfCavEdge.scale.set(cavL_d, cavH_d, cavW_d);
+
+    // Material colour — wireframe only, no fill
+    const matColor = C(mat3.color);
+    cfCavEdgeMat.color.copy(matColor);
+    cfCavEdgeMat.opacity = ST.ok6 ? 0.60 : 0.32;
+
+    // Telluric arrows: scale x extent to match containment box + a bit extra,
+    // set y position relative to cavity height fraction, glow when ok1 (telluric tap live)
+    const arrowOp = ST.ok1 && ST.ok6 ? (0.55 + 0.35 * Math.sin(now * 1.2) ** 2) : 0;
+    const arrowX  = cavL_d * 0.5 + 0.4;
+    cfTelLines.forEach(({ ln, lm, yz }) => {
+      lm.opacity = arrowOp;
+      ln.geometry.dispose();
+      ln.geometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-arrowX, yz * cavH_d * 0.35, 0),
+        new THREE.Vector3( arrowX, yz * cavH_d * 0.35, 0)]);
+    });
+    cfTelCones.forEach(({ cone, cm, yz }) => {
+      cm.opacity = arrowOp;
+      cone.position.set(arrowX, yz * cavH_d * 0.35, 0);
+    });
+
+    // Notional dimension label - update the devTag sub-note is enough
+
+    // Device tag
+    const dtag = $('devTag');
+    if (dtag) {
+      dtag.textContent = allGo ? 'Running · all conditions met' : `${[ST.ok1,ST.ok2,ST.ok3,ST.ok4,ST.ok5].filter(Boolean).length}/5 conditions`;
+      dtag.className   = 'panel-tag ' + (allGo ? 'tag-recover' : 'tag-warn');
+    }
+
+    // Camera
+    if (!ptrDown) autoTh = now * 0.10;
+    const theta3 = autoTh + manTh;
+    const R3 = orbitR * orbitZoom;
+    camera.position.set(R3 * Math.cos(theta3) * Math.cos(phi3), R3 * Math.sin(phi3), R3 * Math.sin(theta3) * Math.cos(phi3));
+    camera.lookAt(LOOK);
+    renderer.render(scene, camera);
+  }
+  requestAnimationFrame(tick3);
+}
+
+// ── Sync all UI controls to match current ST ──────────────────────────────────
+function syncUI() {
+  const s = ST;
+
+  // Preset buttons
+  ['btnDesktop','btnSite','btnGiza'].forEach((id, i) => {
+    $(id)?.classList.toggle('on', ['desktop','site','giza'][i] === s._preset);
+  });
+  const p = PRESETS[s._preset];
+  // presetNote is now live — updated every cycle in updateDOM()
+
+  // Source type
+  const isArt = s.sourceType === 'artificial';
+  $('btnNatural')?.classList.toggle('on',   !isArt);
+  $('btnArtificial')?.classList.toggle('on', isArt);
+  const ng = $('naturalGroup'),   ag = $('artificialGroup');
+  if (ng) ng.style.display = isArt ? 'none' : 'block';
+  if (ag) ag.style.display = isArt ? 'block' : 'none';
+
+  // Natural telluric
+  setSliderLog('Et',    s.Et,    v => v >= 1000 ? (v/1000).toFixed(2)+' V/km' : v.toFixed(1)+' mV/km', 'EtVal');
+  setSliderLog('Lkm',   s.Lkm,  v => v>=100 ? v.toFixed(0)+' km' : v.toFixed(1)+' km', 'LkmVal');
+  setSliderLog('sigma', s.sigma, v => v.toFixed(3)+' S/m', 'sigmaVal');
+  setSliderLog('aElec', s.a_m,  v => v>=100 ? v.toFixed(0)+' m' : v.toFixed(2)+' m', 'aElecVal');
+
+  // Artificial
+  setSliderLog('Vin',   s.Vin,    v => fmtV(v), 'VinVal');
+  setSliderLog('RsArt', s.Rs_Ohm, v => fmtR(v), 'RsArtVal');
+
+  // Target / drive frequency
+  if ($('nGrid')) {
+    $('nGrid').querySelectorAll('.n-btn').forEach(b => {
+      b.classList.toggle('on', +b.dataset.n === s.n);
+    });
+  }
+  const cg = $('customFreqGroup');
+  if (cg) cg.style.display = s.n === 0 ? 'block' : 'none';
+  const cf = $('customF'); if (cf) cf.value = s.customF;
+  tx('customFVal', Math.round(s.customF) + ' Hz');
+
+  // Fluid
+  $('btnMercury')?.classList.toggle('on',   s.fluid === 'mercury');
+  $('btnGalinstan')?.classList.toggle('on', s.fluid === 'galinstan');
+
+  // Vessel
+  setSliderLog('Lv', s.Lv, v => v.toFixed(2)+' m', 'LvVal');
+  $('btnAutoTune')?.classList.toggle('on', s.fillMode === 'auto');
+  $('btnManual')?.classList.toggle('on',   s.fillMode === 'manual');
+  const mfg = $('manualFillGroup'); if (mfg) mfg.style.display = s.fillMode === 'manual' ? 'block' : 'none';
+  const frEl = $('fillRatio'); if (frEl) frEl.value = Math.round(s.fillRat * 100);
+  tx('fillRatioVal', Math.round(s.fillRat*100)+'%');
+
+  // MHD
+  const bEl = $('Bfield'); if (bEl) bEl.value = s.B; tx('BfieldVal', s.B.toFixed(2)+' T');
+  const rEl = $('rChan');  if (rEl) rEl.value = s.r_mm; tx('rChanVal', s.r_mm.toFixed(1)+' mm');
+  setSliderLog('Vact', s.Vact, v => v>=1000 ? (v/1000).toFixed(1)+'L' : Math.round(v)+' cm³', 'VactVal');
+  setSliderLog('Qcav', s.Qd,  v => Math.round(v).toString(), 'QcavVal');
+
+  // Chopper
+  const rdEl=$('Rdam'); if(rdEl) rdEl.value=s.R_dam_mOhm; tx('RdamVal',s.R_dam_mOhm+' mΩ');
+  const ptEl=$('Pthermal'); if(ptEl) ptEl.value=s.P_thermal_kW; tx('PthermalVal',s.P_thermal_kW+' kW');
+
+  // Broadcast
+  ['btnH1','btnH2','btnH3'].forEach((id,i) => $(id)?.classList.toggle('on', s.harmonic===i+1));
+
+  // Containment
+  const matMap={granite:'btnGranite',quartz:'btnQuartz',alumina:'btnAlumina',limestone:'btnLimestone'};
+  Object.entries(matMap).forEach(([k,id]) => $(id)?.classList.toggle('on', s.wallMat===k));
+  const twEl=$('tWallSl'); if(twEl) twEl.value=s.tWall; tx('tWallVal',s.tWall+' cm');
+  ['btnCN1','btnCN2','btnCN3'].forEach((id,i)=>$(id)?.classList.toggle('on',s.cavN===i+1));
+  const gasMap={air:'btnAir',argon:'btnArgon',helium:'btnHelium'};
+  Object.entries(gasMap).forEach(([k,id])=>$(id)?.classList.toggle('on',s.cavGas===k));
+}
+
+function setSliderLog(id, val, fmt, valId) {
+  const el = $(id); if (!el || !val) return;
+  el.value = Math.log10(Math.max(1e-12, val));
+  const ve = $(valId); if (ve) ve.textContent = fmt(val);
+}
+
+function applyPreset(name) {
+  const p = PRESETS[name]; if (!p) return;
+  Object.assign(ST, p);
+  ST._preset = name;
+  syncUI();
+  update();
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+</body>
+</html>
