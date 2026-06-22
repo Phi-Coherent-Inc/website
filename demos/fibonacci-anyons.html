@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>φCoherent · Qudit Measurement-Based Computation (1D + 2D)</title>
-<meta name="description" content="Interactive demo: measurement-based (one-way) quantum computation generalized to qudits (d-level systems). 1D: a qudit cluster resource state with an area law quantized in ln d and one-way J_d-chains computing any single-qudit unitary at fidelity 1. 2D: a real two-qudit algorithm run purely by measurement, with vertical CZ_d links making it genuinely entangling. Computed live in your browser via WebAssembly. No golden ratio.">
+<title>φCoherent · Fibonacci Anyons: Braiding & Universality</title>
+<meta name="description" content="Interactive demo: Fibonacci anyons, where the golden ratio is genuinely load-bearing. Braiding: a τ-anyon's quantum dimension is exactly φ, making it universal by braiding alone (no magic-state distillation); braid the worldlines and watch fidelity under real noise. Modular data: the Fibonacci S/T matrices, Verlinde's τ×τ=1+τ, and φ read straight off the S-matrix, with the honest twist that universality, not consistency, separates Fibonacci from Ising. Computed live via WebAssembly.">
 <meta name="robots" content="index, follow">
-<link rel="canonical" href="https://phicoherent.com/demos/qudit-mbqc.html">
+<link rel="canonical" href="https://phicoherent.com/demos/fibonacci-anyons.html">
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -36,41 +36,36 @@
 </head>
 <body>
 
-<header class="demo-header" data-demo="qudit-mbqc"
-        data-title="Qudit Measurement-Based Computation"></header>
+<header class="demo-header" data-demo="fibonacci-anyons"
+        data-title="Fibonacci Anyons: Braiding &amp; Universality"></header>
 
-<div class="tabbar" id="tabbar" role="tablist" aria-label="MBQC view">
-  <button class="tab active" role="tab" data-src="qudit-mbqc-1d.html" data-label="1D · one-way computation">1D · one-way computation</button>
-  <button class="tab" role="tab" data-src="qudit-mbqc-2d.html" data-label="2D · entangling cluster">2D · entangling cluster</button>
+<div class="tabbar" id="tabbar" role="tablist" aria-label="Fibonacci anyon view">
+  <button class="tab active" role="tab" data-src="anyon-braiding.html" data-label="Braiding">Braiding · d_τ = φ</button>
+  <button class="tab" role="tab" data-src="modular-data.html" data-label="Modular data">Modular data &amp; universality</button>
 </div>
-<p class="tab-intro" id="tabIntro">Measurement <em>is</em> the computation. <strong>1D:</strong> a qudit cluster resource state, area law quantized in ln d, and one-way J_d-chains computing any single-qudit unitary at fidelity 1.</p>
+<p class="tab-intro" id="tabIntro">Where the golden ratio is genuinely load-bearing. <strong>Braiding:</strong> a Fibonacci anyon's quantum dimension is exactly φ, making it universal by braiding alone, with no magic-state distillation. Braid the worldlines and watch the fusion-space fidelity under real noise.</p>
 <div class="frame-wrap">
   <div id="frames"><div class="frame-loading" id="loading">Loading…</div></div>
 </div>
 
 <script src="assets/demo-header.js"></script>
 <script>
-// Unified host: lazy same-origin iframes of the two standalone MBQC demos
-// (loaded with ?embed=1 so each hides its own chrome). Each is created on first
-// visit and kept for instant re-switching; height auto-fits its content; the
-// host theme toggle propagates into the embedded documents.
+// Unified host: lazy same-origin iframes of the two standalone Fibonacci-anyon
+// demos (loaded with ?embed=1 so each hides its own chrome).
 (function () {
   var frames = document.getElementById('frames');
   var loading = document.getElementById('loading');
   var intro = document.getElementById('tabIntro');
-  var made = {};      // src -> iframe
+  var made = {};
   var introByLabel = {
-    '1D · one-way computation': 'Measurement <em>is</em> the computation. <strong>1D:</strong> a qudit cluster resource state, area law quantized in ln d, and one-way J_d-chains computing any single-qudit unitary at fidelity 1.',
-    '2D · entangling cluster': '<strong>2D:</strong> a real two-qudit algorithm run purely by measurement: vertical CZ_d links make it genuinely entangling; strip them and the cluster factorizes. Every branch draws a random byproduct correction, yet the corrected output is exact (fidelity 1.000).'
+    'Braiding': 'Where the golden ratio is genuinely load-bearing. <strong>Braiding:</strong> a Fibonacci anyon\'s quantum dimension is exactly φ, making it universal by braiding alone, with no magic-state distillation. Braid the worldlines and watch the fusion-space fidelity under real noise.',
+    'Modular data': '<strong>Modular data:</strong> the Fibonacci S/T matrices, S²=I, Verlinde recovering τ×τ=1+τ, and φ read straight off the S-matrix, with the honest twist that both Fibonacci and Ising have <em>consistent</em> modular data; what separates them is braiding universality, not consistency.'
   };
 
   function fit(f) {
-    try {
-      var d = f.contentDocument;
-      if (d && d.body) f.style.height = (d.body.scrollHeight + 24) + 'px';
-    } catch (e) { /* same-origin expected; ignore */ }
+    try { var d = f.contentDocument; if (d && d.body) f.style.height = (d.body.scrollHeight + 24) + 'px'; }
+    catch (e) { /* ignore */ }
   }
-
   function applyTheme(f) {
     try {
       var dark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -81,22 +76,17 @@
       setTimeout(function () { fit(f); }, 60);
     } catch (e) { /* ignore */ }
   }
-
   function show(src) {
     Object.keys(made).forEach(function (s) { made[s].style.display = (s === src) ? 'block' : 'none'; });
     if (!made[src]) {
       var f = document.createElement('iframe');
-      f.className = 'demo-frame';
-      f.title = 'demo';
-      f.style.height = '900px';
+      f.className = 'demo-frame'; f.title = 'demo'; f.style.height = '900px';
       f.src = src + '?embed=1';
       f.addEventListener('load', function () { applyTheme(f); fit(f); });
-      made[src] = f;
-      frames.appendChild(f);
+      made[src] = f; frames.appendChild(f);
     }
-    if (loading) { loading.style.display = 'none'; }
+    if (loading) loading.style.display = 'none';
   }
-
   document.querySelectorAll('#tabbar .tab').forEach(function (btn) {
     btn.addEventListener('click', function () {
       document.querySelectorAll('#tabbar .tab').forEach(function (b) {
@@ -107,15 +97,13 @@
       show(btn.dataset.src);
     });
   });
-
-  // re-fit the visible frame on resize; propagate theme toggles into all frames
   window.addEventListener('resize', function () {
     Object.keys(made).forEach(function (s) { if (made[s].style.display !== 'none') fit(made[s]); });
   });
   function onThemeChange() { Object.keys(made).forEach(function (s) { applyTheme(made[s]); }); }
   if (window.PhiTheme && window.PhiTheme.onChange) window.PhiTheme.onChange(onThemeChange);
 
-  show('qudit-mbqc-1d.html');   // default tab
+  show('anyon-braiding.html');
 })();
 </script>
 </body>

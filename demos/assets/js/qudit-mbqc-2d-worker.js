@@ -3,7 +3,7 @@
 //
 // Web Worker for the 2D Qudit MBQC demo. Computes, off the UI thread via WASM:
 //   (1) the entangling power of the two-qudit target circuit (entropy of
-//       U|0,0⟩) vs depth, WITH vertical CZ_d links vs WITHOUT — nonzero with
+//       U|0,0⟩) vs depth, WITH vertical CZ_d links vs WITHOUT: nonzero with
 //       links, identically zero without (the cluster factorizes). The link is
 //       load-bearing; this is the anti-wash, for d ∈ {2,3,5};
 //   (2) the one-way computation across many Born branches for the selected d:

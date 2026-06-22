@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>φCoherent · Qudit Measurement-Based Computation (1D + 2D)</title>
-<meta name="description" content="Interactive demo: measurement-based (one-way) quantum computation generalized to qudits (d-level systems). 1D: a qudit cluster resource state with an area law quantized in ln d and one-way J_d-chains computing any single-qudit unitary at fidelity 1. 2D: a real two-qudit algorithm run purely by measurement, with vertical CZ_d links making it genuinely entangling. Computed live in your browser via WebAssembly. No golden ratio.">
+<title>φCoherent · Topological QEC: Fibonacci vs Surface</title>
+<meta name="description" content="Non-abelian Fibonacci (d_τ = φ) topological error correction on identical machinery to the abelian baselines. Trapped-ion companion: run the abelian code class and our Fibonacci string-net under real Quantinuum H2 / IonQ Aria noise, alongside Microsoft + Quantinuum's trapped-ion QEC. String-net vs surface: a genuine 2D Levin-Wen Fibonacci code compared fairly against the surface code: same lattice, noise, decoder, metric. Honest, code-capacity, computed live via WebAssembly.">
 <meta name="robots" content="index, follow">
-<link rel="canonical" href="https://phicoherent.com/demos/qudit-mbqc.html">
+<link rel="canonical" href="https://phicoherent.com/demos/topological-qec.html">
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -36,41 +36,36 @@
 </head>
 <body>
 
-<header class="demo-header" data-demo="qudit-mbqc"
-        data-title="Qudit Measurement-Based Computation"></header>
+<header class="demo-header" data-demo="topological-qec"
+        data-title="Topological QEC: Fibonacci vs Surface"></header>
 
-<div class="tabbar" id="tabbar" role="tablist" aria-label="MBQC view">
-  <button class="tab active" role="tab" data-src="qudit-mbqc-1d.html" data-label="1D · one-way computation">1D · one-way computation</button>
-  <button class="tab" role="tab" data-src="qudit-mbqc-2d.html" data-label="2D · entangling cluster">2D · entangling cluster</button>
+<div class="tabbar" id="tabbar" role="tablist" aria-label="Topological QEC view">
+  <button class="tab active" role="tab" data-src="trapped-ion-qec.html" data-label="Ion">Trapped-ion companion</button>
+  <button class="tab" role="tab" data-src="string-net-qec.html" data-label="StringNet">String-net vs surface</button>
 </div>
-<p class="tab-intro" id="tabIntro">Measurement <em>is</em> the computation. <strong>1D:</strong> a qudit cluster resource state, area law quantized in ln d, and one-way J_d-chains computing any single-qudit unitary at fidelity 1.</p>
+<p class="tab-intro" id="tabIntro"><strong>Trapped-ion companion:</strong> alongside Microsoft + Quantinuum's trapped-ion error correction, not a competitor but a companion sandbox. Run their abelian code class and our non-abelian Fibonacci string-net (d_τ = φ) on identical machinery under real Quantinuum H2 / IonQ Aria noise, and see the frontier their work doesn't cover: Fibonacci is braiding-universal, so its magic-state distillation cost drops to zero. Honest, code-capacity, computed live.</p>
 <div class="frame-wrap">
   <div id="frames"><div class="frame-loading" id="loading">Loading…</div></div>
 </div>
 
 <script src="assets/demo-header.js"></script>
 <script>
-// Unified host: lazy same-origin iframes of the two standalone MBQC demos
-// (loaded with ?embed=1 so each hides its own chrome). Each is created on first
-// visit and kept for instant re-switching; height auto-fits its content; the
-// host theme toggle propagates into the embedded documents.
+// Unified host: lazy same-origin iframes of the two topological-QEC demos
+// (loaded with ?embed=1 so each hides its own chrome).
 (function () {
   var frames = document.getElementById('frames');
   var loading = document.getElementById('loading');
   var intro = document.getElementById('tabIntro');
-  var made = {};      // src -> iframe
+  var made = {};
   var introByLabel = {
-    '1D · one-way computation': 'Measurement <em>is</em> the computation. <strong>1D:</strong> a qudit cluster resource state, area law quantized in ln d, and one-way J_d-chains computing any single-qudit unitary at fidelity 1.',
-    '2D · entangling cluster': '<strong>2D:</strong> a real two-qudit algorithm run purely by measurement: vertical CZ_d links make it genuinely entangling; strip them and the cluster factorizes. Every branch draws a random byproduct correction, yet the corrected output is exact (fidelity 1.000).'
+    'Ion': '<strong>Trapped-ion companion:</strong> alongside Microsoft + Quantinuum\'s trapped-ion error correction, not a competitor but a companion sandbox. Run their abelian code class and our non-abelian Fibonacci string-net (d_τ = φ) on identical machinery under real Quantinuum H2 / IonQ Aria noise, and see the frontier their work doesn\'t cover: Fibonacci is braiding-universal, so its magic-state distillation cost drops to zero. Honest, code-capacity, computed live.',
+    'StringNet': '<strong>String-net vs surface:</strong> a genuine 2D Levin-Wen Fibonacci code (a real topological code with a logical qubit, not a 1D surrogate) compared fairly against the surface code on identical machinery: same lattice, noise, decoder, metric. On that honest axis the Fibonacci code is competitive, a touch better. Computed live, with its scope stated plainly.'
   };
 
   function fit(f) {
-    try {
-      var d = f.contentDocument;
-      if (d && d.body) f.style.height = (d.body.scrollHeight + 24) + 'px';
-    } catch (e) { /* same-origin expected; ignore */ }
+    try { var d = f.contentDocument; if (d && d.body) f.style.height = (d.body.scrollHeight + 24) + 'px'; }
+    catch (e) { /* ignore */ }
   }
-
   function applyTheme(f) {
     try {
       var dark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -81,22 +76,17 @@
       setTimeout(function () { fit(f); }, 60);
     } catch (e) { /* ignore */ }
   }
-
   function show(src) {
     Object.keys(made).forEach(function (s) { made[s].style.display = (s === src) ? 'block' : 'none'; });
     if (!made[src]) {
       var f = document.createElement('iframe');
-      f.className = 'demo-frame';
-      f.title = 'demo';
-      f.style.height = '900px';
+      f.className = 'demo-frame'; f.title = 'demo'; f.style.height = '900px';
       f.src = src + '?embed=1';
       f.addEventListener('load', function () { applyTheme(f); fit(f); });
-      made[src] = f;
-      frames.appendChild(f);
+      made[src] = f; frames.appendChild(f);
     }
-    if (loading) { loading.style.display = 'none'; }
+    if (loading) loading.style.display = 'none';
   }
-
   document.querySelectorAll('#tabbar .tab').forEach(function (btn) {
     btn.addEventListener('click', function () {
       document.querySelectorAll('#tabbar .tab').forEach(function (b) {
@@ -107,15 +97,13 @@
       show(btn.dataset.src);
     });
   });
-
-  // re-fit the visible frame on resize; propagate theme toggles into all frames
   window.addEventListener('resize', function () {
     Object.keys(made).forEach(function (s) { if (made[s].style.display !== 'none') fit(made[s]); });
   });
   function onThemeChange() { Object.keys(made).forEach(function (s) { applyTheme(made[s]); }); }
   if (window.PhiTheme && window.PhiTheme.onChange) window.PhiTheme.onChange(onThemeChange);
 
-  show('qudit-mbqc-1d.html');   // default tab
+  show('trapped-ion-qec.html');
 })();
 </script>
 </body>

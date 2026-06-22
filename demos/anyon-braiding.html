@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>φCoherent — Fibonacci-Anyon Braiding Demo</title>
-<meta name="description" content="Interactive demo: Fibonacci anyons (quantum dimension d_τ = φ) compute universally by braiding alone — no magic-state distillation. Braid worldlines, fusion-space evolution, and a live code-capacity threshold, computed in your browser from phi-quantum-topoqec-cpp via WebAssembly.">
+<title>φCoherent · Fibonacci-Anyon Braiding Demo</title>
+<meta name="description" content="Interactive demo: Fibonacci anyons (quantum dimension d_τ = φ) compute universally by braiding alone, with no magic-state distillation. Braid worldlines, fusion-space evolution, and a live code-capacity threshold, computed in your browser from phi-quantum-topoqec-cpp via WebAssembly.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://phicoherent.com/demos/anyon-braiding.html">
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -37,7 +37,7 @@
 <div class="main">
   <div class="controls">
     <div class="control-group">
-      <label>Braid length — (σ₁σ₂)<sup>n</sup></label>
+      <label>Braid length, (σ₁σ₂)<sup>n</sup></label>
       <div class="slider-row">
         <input type="range" id="braidN" min="1" max="12" step="1" value="6">
         <span class="slider-value" id="braidNVal">6</span>
@@ -56,32 +56,32 @@
     <div class="demo-status" id="status">Loading…</div>
 
     <div class="stat-card stat-gold axis-card">
-      <div class="stat-label">Node axis — universality</div>
-      <div class="stat-value" id="nodeAxis">—</div>
+      <div class="stat-label">Node axis: universality</div>
+      <div class="stat-value" id="nodeAxis">…</div>
       <div class="stat-sub">braiding alone, no distillation</div>
     </div>
 
     <div class="stat-card stat-green axis-card">
       <div class="stat-label">Fibonacci anyon · d_τ = φ</div>
-      <div class="stat-value" id="fibCard">—</div>
+      <div class="stat-value" id="fibCard">…</div>
       <div class="stat-sub" id="fibSub">τ × τ = 1 + τ ⇒ d² = d + 1</div>
     </div>
 
     <div class="stat-card stat-red axis-card">
       <div class="stat-label">Ising / Majorana · d = √2 (off-φ)</div>
-      <div class="stat-value" id="isingCard">—</div>
+      <div class="stat-value" id="isingCard">…</div>
       <div class="stat-sub" id="isingSub">the anti-wash comparator</div>
     </div>
 
     <div class="stat-card">
       <div class="stat-label">Surrogate threshold p_c</div>
-      <div class="stat-value" id="threshVal">—</div>
+      <div class="stat-value" id="threshVal">…</div>
       <div class="stat-sub">code-capacity, small-instance</div>
     </div>
 
     <div class="stat-card stat-gold axis-card">
       <div class="stat-label">Interferometric read-out</div>
-      <div class="stat-value" id="readoutCard">—</div>
+      <div class="stat-value" id="readoutCard">…</div>
       <div class="stat-sub">φ in the measured signal</div>
     </div>
   </div>
@@ -90,14 +90,14 @@
     <div class="canvas-row">
       <div class="canvas-panel">
         <div class="panel-header">
-          <span class="panel-title">Braid Worldlines — (σ₁σ₂)<sup>n</sup> on 3 τ-anyons</span>
+          <span class="panel-title">Braid Worldlines: (σ₁σ₂)<sup>n</sup> on 3 τ-anyons</span>
           <span class="panel-tag tag-phi">φCoherent</span>
         </div>
         <canvas id="braidCanvas"></canvas>
       </div>
       <div class="canvas-panel">
         <div class="panel-header">
-          <span class="panel-title">Fusion-Space Evolution — τ-channel population</span>
+          <span class="panel-title">Fusion-Space Evolution: τ-channel population</span>
           <span class="panel-tag tag-phi">dim = F(3) = 2</span>
         </div>
         <canvas id="fusionCanvas"></canvas>
@@ -107,14 +107,14 @@
     <div class="canvas-row">
       <div class="canvas-panel">
         <div class="panel-header">
-          <span class="panel-title">Interferometric Read-Out — fringe visibility</span>
+          <span class="panel-title">Interferometric Read-Out: fringe visibility</span>
           <span class="panel-tag tag-phi">suppression = 1/φ²</span>
         </div>
         <canvas id="interfCanvas"></canvas>
       </div>
       <div class="canvas-panel">
         <div class="panel-header">
-          <span class="panel-title">Braid Fidelity vs Length — idealized vs realistic exchange cost</span>
+          <span class="panel-title">Braid Fidelity vs Length: idealized vs realistic exchange cost</span>
           <span class="panel-tag tag-phi">physical p = 0.001 (≈ IBM Heron r3 2q error, ~0.12%)</span>
         </div>
         <canvas id="fidelityCanvas"></canvas>
@@ -133,32 +133,32 @@
       <canvas id="chartCanvas"></canvas>
     </div>
 
-    <div class="chart-panel">
+    <div class="chart-panel note">
       <div class="panel-header">
-        <span class="panel-title">Feasibility Budget — does it fit in the car? (per-logical-gate error at 15 mK)</span>
+        <span class="panel-title">Feasibility Budget: does it fit in the car? (per-logical-gate error at 15 mK)</span>
         <span class="panel-tag" style="background:rgba(224,86,107,.14);color:#e0566b">budget NOT closed</span>
       </div>
-      <div id="feasBudget" style="padding:14px 4px 4px;font-size:13px;line-height:1.55">—</div>
+      <div id="feasBudget" style="padding:14px 4px 4px;font-size:13px;line-height:1.55">…</div>
     </div>
   </div>
 </div>
 
 <div class="caveat-footer">
-  <strong>What this demo claims — and what it does not.</strong>
+  <strong>What this demo claims, and what it does not.</strong>
   A Fibonacci anyon has quantum dimension exactly the golden ratio (d_τ = φ, the root of τ × τ = 1 + τ),
   which makes it the minimal anyon theory <em>universal by braiding alone, with no magic-state distillation</em>.
   That is the one place the golden ratio is genuinely load-bearing in quantum error correction. It does NOT claim:
   <ul>
-    <li>that Fibonacci-anyon QEC beats the surface code (+ distillation) on threshold or overhead — it does not;
-        the off-φ Ising comparator wins the system axis (cheap poly-time decoder + amortizable 15-to-1 distillation);</li>
-    <li>that the threshold shown is scalable or independently validated — it is a small-instance
+    <li>that Fibonacci-anyon QEC beats the surface code (+ distillation) on threshold or overhead (it does not;
+        the off-φ Ising comparator wins the system axis with a cheap poly-time decoder + amortizable 15-to-1 distillation);</li>
+    <li>that the threshold shown is scalable or independently validated. It is a small-instance
         <em>code-capacity surrogate</em>; the true non-Abelian (string-net) decoder is #P-flavoured and BQP-complete to validate;</li>
-    <li>that Fibonacci anyons are realized hardware — this is simulation, computed live from phi-quantum-topoqec-cpp via WebAssembly.</li>
+    <li>that Fibonacci anyons are realized hardware. This is simulation, computed live from phi-quantum-topoqec-cpp via WebAssembly.</li>
   </ul>
   <p style="margin:8px 0 0;font-size:12px;opacity:.75">The fidelity sweep uses a representative
   superconducting per-gate error <em>p = 0.001</em> (≈ IBM Heron r3's published 2q median ~0.0012). The
-  feasibility-budget inputs — <em>15 mK</em> operating temperature, a 99% parity monitor, 1000 read-out
-  probe passes, visibility <em>V₀ = 0.9</em> — are <strong>illustrative design assumptions</strong>
+  feasibility-budget inputs (<em>15 mK</em> operating temperature, a 99% parity monitor, 1000 read-out
+  probe passes, visibility <em>V₀ = 0.9</em>) are <strong>illustrative design assumptions</strong>
   (notional, not measured specs), chosen to size the per-logical-gate error budget.</p>
 </div>
 
@@ -321,10 +321,10 @@ function drawInterferometer() {
 
 // ── braid fidelity vs length: idealized kernel vs realistic exchange cost ──────
 // Two curves under the SAME per-gate noise (IBM Heron p=0.001):
-//   • idealized — 1 noise event per anyon exchange (the flattering kernel);
-//   • realistic — ~20 physical two-qubit gates per emergent-anyon braid (the
+//   • idealized: 1 noise event per anyon exchange (the flattering kernel);
+//   • realistic: ~20 physical two-qubit gates per emergent-anyon braid (the
 //     string-net embodiment cost). The realistic curve collapses to the
-//     maximally-mixed floor 0.5 — at one compiled logical gate, the machine is a
+//     maximally-mixed floor 0.5. At one compiled logical gate, the machine is a
 //     physics demo, not a computer. This matches test anchor AB13.
 function drawFidelity() {
   if (!fidIdeal || !fidIdeal.length) return;
@@ -389,7 +389,7 @@ function renderFeasibility() {
     + ' &nbsp;≫&nbsp; budget ' + b.perGateBudget.toExponential(0) + '</span></div>'
     + '<div style="opacity:.72;font-size:11.5px;margin-top:7px;line-height:1.5">'
     + 'The fault-tolerant budget does <b>not</b> close at 15 mK. Reaching it needs a gap '
-    + 'Δ/k<sub>B</sub> ≈ <b>' + b.closingGapK15mK.toFixed(2) + ' K</b> — far above the candidate ν=12/5 phase’s '
+    + 'Δ/k<sub>B</sub> ≈ <b>' + b.closingGapK15mK.toFixed(2) + ' K</b>, far above the candidate ν=12/5 phase’s '
     + '~' + b.candidateGapK.toFixed(2) + ' K. Colder operation helps: at 1 mK only ≈ '
     + b.closingGapK1mK.toFixed(3) + ' K is required. Rate constants are order-of-magnitude '
     + 'feasibility figures, not φ-derived; the physics they budget (d<sub>τ</sub>=φ, 1/φ read-out) is. '
@@ -486,7 +486,7 @@ function initWorker() {
     if (!e.data.ok) { statusEl.textContent = 'Error: ' + e.data.error; return; }
     curve = e.data.points;
     const thr = estimateThreshold();
-    document.getElementById('threshVal').textContent = thr !== null ? ('≈ ' + thr.toFixed(2)) : '—';
+    document.getElementById('threshVal').textContent = thr !== null ? ('≈ ' + thr.toFixed(2)) : '…';
     statusEl.textContent = 'Real Fibonacci-anyon decoding · ' + parseInt(trialsSlider.value) + ' trials/point';
     drawChart();
   };
@@ -511,7 +511,7 @@ window.PhiTheme && window.PhiTheme.onChange(() => { legendColors(); drawBraid();
     renderReadout();
     renderFeasibility();
     drawBraid(); drawFusion(); drawInterferometer(); drawFidelity();
-    statusEl.textContent = 'Fibonacci anyons (d_τ = φ) — braiding is universal, no distillation.';
+    statusEl.textContent = 'Fibonacci anyons (d_τ = φ): braiding is universal, no distillation.';
     initWorker();
     setTimeout(runThreshold, 400);
   } catch (e) {

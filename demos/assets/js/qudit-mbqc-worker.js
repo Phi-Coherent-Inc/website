@@ -4,12 +4,12 @@
 // Web Worker for the Qudit MBQC demo. Computes, off the UI thread via WASM,
 // the two halves of measurement-based computation generalized to d-level
 // systems (qudits), for d ∈ {2,3,5}:
-//   (1) the 2D qudit cluster RESOURCE state — left/right-half cut entropy of a
+//   (1) the 2D qudit cluster RESOURCE state: left/right-half cut entropy of a
 //       2×M grid is 2·ln d regardless of M: an AREA LAW, quantized in ln d
 //       (entanglement = number of crossing edges × ln d, "the loom");
-//   (2) one-way COMPUTATION on it — the fidelity of a measured J_d-chain output
+//   (2) one-way COMPUTATION on it: the fidelity of a measured J_d-chain output
 //       vs the directly applied chain unitary, across chain depth (exact ≈ 1);
-//   (3) headline scalars for the selected d — stabilizer defect (state is
+//   (3) headline scalars for the selected d: stabilizer defect (state is
 //       fixed), cut-match error, and the entangling-gadget anti-wash
 //       (link entropy ≈ ln d vs no-link entropy 0).
 // Module worker:

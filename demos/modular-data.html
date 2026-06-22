@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>φCoherent — Modular Data &amp; the Universality Gap</title>
-<meta name="description" content="Interactive demo: the Fibonacci and Ising anyon theories both have perfectly consistent modular data (S, T) — yet only Fibonacci braiding is universal. φ is load-bearing in universality, not in consistency. Computed live in your browser via WebAssembly.">
+<title>φCoherent · Modular Data &amp; the Universality Gap</title>
+<meta name="description" content="Interactive demo: the Fibonacci and Ising anyon theories both have perfectly consistent modular data (S, T), yet only Fibonacci braiding is universal. φ is load-bearing in universality, not in consistency. Computed live in your browser via WebAssembly.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://phicoherent.com/demos/modular-data.html">
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -50,24 +50,24 @@
 
     <div class="stat-card stat-green">
       <div class="stat-label">Consistency lights</div>
-      <div id="lights" style="margin-top:8px">—</div>
+      <div id="lights" style="margin-top:8px">…</div>
     </div>
 
     <div class="stat-card stat-gold">
       <div class="stat-label">Quantum dimension d<sub>τ</sub> from S</div>
-      <div class="stat-value" id="dTauVal">—</div>
+      <div class="stat-value" id="dTauVal">…</div>
       <div class="stat-sub">= φ (golden ratio)</div>
     </div>
 
     <div class="stat-card stat-cyan">
       <div class="stat-label">Chiral central charge c</div>
-      <div class="stat-value" id="cVal">—</div>
+      <div class="stat-value" id="cVal">…</div>
       <div class="stat-sub">= 14/5 (mod 8)</div>
     </div>
 
     <div class="stat-card stat-gold">
       <div class="stat-label">Universality verdict</div>
-      <div class="stat-value" id="verdict">—</div>
+      <div class="stat-value" id="verdict">…</div>
       <div class="stat-sub">distance to the T-gate</div>
     </div>
   </div>
@@ -75,7 +75,7 @@
   <div class="canvas-area">
     <div class="chart-panel" style="height:300px">
       <div class="panel-header">
-        <span class="panel-title">Distance to the T-gate — Fibonacci reaches it, Ising is blocked</span>
+        <span class="panel-title">Distance to the T-gate: Fibonacci reaches it, Ising is blocked</span>
         <div class="legend">
           <div class="legend-item"><div class="legend-dot" id="dotFib"></div> Fibonacci braiding (universal)</div>
           <div class="legend-item"><div class="legend-dot" id="dotIsing"></div> Ising braiding (Clifford, blocked)</div>
@@ -84,21 +84,21 @@
       <canvas id="chartCanvas"></canvas>
     </div>
 
-    <div class="chart-panel" style="margin-top:4px;">
-      <div class="panel-header"><span class="panel-title">What this shows — consistency is not universality</span></div>
+    <div class="chart-panel note" style="margin-top:4px;">
+      <div class="panel-header"><span class="panel-title">What this shows: consistency is not universality</span></div>
       <div style="padding:14px 18px;font:400 13.5px/1.62 Inter,sans-serif;color:var(--text-muted);">
-        <p style="margin:0 0 10px;">Every anyon theory carries <b>modular data</b> — an S-matrix and a
-        T-matrix — that must satisfy hard algebraic consistency conditions: S is symmetric and unitary,
+        <p style="margin:0 0 10px;">Every anyon theory carries <b>modular data</b> (an S-matrix and a
+        T-matrix) that must satisfy hard algebraic consistency conditions: S is symmetric and unitary,
         S² = (charge conjugation) so S² = I here, and the <b>Verlinde formula</b> reproduces the fusion
         rules (for the non-trivial anyon, τ × τ = 1 + τ). The lights on the left show these all pass for
         the Fibonacci theory, and the S-matrix readout gives <b>d<sub>τ</sub> = φ</b> and chiral central
         charge <b>c = 14/5</b>.</p>
         <p style="margin:0 0 10px;"><b>The headline anti-wash</b> is the bar chart: the smallest distance
         a braid word (up to a fixed length) can get to the single-qubit <b>T-gate</b>. <b>Fibonacci</b>
-        braiding gets <i>arbitrarily close</i> — it is dense in the unitary group, hence
-        <b>universal</b>. <b>Ising</b> braiding is pinned far away — it generates only the
+        braiding gets <i>arbitrarily close</i>: it is dense in the unitary group, hence
+        <b>universal</b>. <b>Ising</b> braiding is pinned far away; it generates only the
         <b>Clifford group</b>, so the T-gate is provably <b>out of reach by braiding alone</b>.</p>
-        <p style="margin:0;"><b>The point:</b> the Ising theory has <i>equally consistent</i> modular data —
+        <p style="margin:0;"><b>The point:</b> the Ising theory has <i>equally consistent</i> modular data,
         a perfectly valid S and T. Consistency does not buy you universality. <b>φ is load-bearing in the
         universality gap</b> (the Fibonacci anyon's quantum dimension d = φ is exactly what makes its
         braid group dense), <b>not</b> in the bare consistency of the modular data. Everything here is
@@ -111,7 +111,7 @@
 <div class="caveat-footer">
   <strong>Honest scope.</strong> Both theories are simulated. The consistency checks are exact algebra on
   the S/T data; the &ldquo;distance to T&rdquo; is the minimum over braid words up to a fixed length
-  (here 8) — a finite search, so the Fibonacci number is a small positive residual that shrinks with
+  (here 8), a finite search, so the Fibonacci number is a small positive residual that shrinks with
   length, not literally zero, while the Ising number is a genuine floor it can never beat. Anyons are
   not realized hardware.
 </div>

@@ -2,8 +2,8 @@
 // Copyright (C) 2026 Phi-Coherent Inc.
 //
 // Web Worker for the Modular Data & Universality demo. Runs the exact modular
-// consistency checks (S/T data) and the braiding-universality gap — Fibonacci
-// nearly reaches the T-gate, Ising is pinned far away — off the UI thread, from
+// consistency checks (S/T data) and the braiding-universality gap (Fibonacci
+// nearly reaches the T-gate, Ising is pinned far away) off the UI thread, from
 // phi-quantum-* via WASM. Module worker:
 //     new Worker('assets/js/modular-data-worker.js', { type: 'module' })
 //

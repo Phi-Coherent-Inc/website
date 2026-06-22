@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Phi-Coherent Inc.
 //
-// Web Worker for the Dual-Mode Yoga Core demo. Runs the exact dual-mode
-// comparison — one intent compiled to both the circuit (gate) and the anyonic
-// (braiding) backend — off the UI thread, from phi-quantum-core-cpp via WASM.
+// Web Worker for the Dual-Mode Core demo. Runs the exact dual-mode
+// comparison: one intent compiled to both the circuit (gate) and the anyonic
+// (braiding) backend, off the UI thread, from phi-quantum-core-cpp via WASM.
 // Module worker:
 //     new Worker('assets/js/dual-mode-worker.js', { type: 'module' })
 //
@@ -51,8 +51,19 @@ self.onmessage = async () => {
       schmidtRank: e.schmidtRank,
       certified: e.certified,
     };
+    // Entangling-weave frontier: CNOT-class distance vs allowed 6-anyon braid length.
+    const fv = mod.runEntanglerFrontier();
+    const frontier = [];
+    for (let i = 0; i < fv.size(); i++) {
+      const r = fv.get(i);
+      frontier.push({
+        len: r.len, leakage: r.leakage, cnotDistance: r.cnotDistance,
+        maxNegativity: r.maxNegativity, schmidtRank: r.schmidtRank, certified: r.certified,
+      });
+    }
+    if (typeof fv.delete === 'function') fv.delete();
     const totalDim = mod.fibTotalQuantumDim();
-    self.postMessage({ ok: true, qubit, entangler, totalDim });
+    self.postMessage({ ok: true, qubit, entangler, frontier, totalDim });
   } catch (err) {
     self.postMessage({ ok: false, error: String((err && err.message) || err) });
   }

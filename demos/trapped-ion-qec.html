@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>φCoherent — Trapped-Ion QEC Companion</title>
+<title>φCoherent · Trapped-Ion QEC Companion</title>
 <meta name="description" content="Companion code to Microsoft's trapped-ion error correction: an abelian surface-equivalent code and our non-abelian Fibonacci string-net (d=φ) run on identical machinery under real Quantinuum H2 / IonQ Aria noise, surfacing the distillation-free universality trade. Computed live in your browser via WebAssembly.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://phicoherent.com/demos/trapped-ion-qec.html">
@@ -47,13 +47,13 @@
 
     <div class="stat-card stat-gold">
       <div class="stat-label">Universality cost / logical T-gate</div>
-      <div class="stat-value" id="distill">—</div>
+      <div class="stat-value" id="distill">…</div>
       <div class="stat-sub" id="distillSub">abelian distills magic states · Fibonacci braids (0)</div>
     </div>
 
     <div class="stat-card stat-green">
       <div class="stat-label">Device error floor (code-capacity · sourced)</div>
-      <div class="stat-value" id="peff">—</div>
+      <div class="stat-value" id="peff">…</div>
       <div class="stat-sub" id="peffSub">2-qubit gate error · idle adds a schedule-dependent term</div>
     </div>
 
@@ -71,62 +71,60 @@
         <div class="legend">
           <div class="legend-item"><div class="legend-dot" id="dotFib"></div> Fibonacci string-net (d=φ, distillation-free)</div>
           <div class="legend-item"><div class="legend-dot" id="dotZ2"></div> Abelian / surface-equivalent (Z₂ toric)</div>
-          <div class="legend-item"><div class="legend-dot" id="dotSurf"></div> SurfaceQEC (anchor — different metric)</div>
+          <div class="legend-item"><div class="legend-dot" id="dotSurf"></div> SurfaceQEC (anchor, different metric)</div>
         </div>
       </div>
       <canvas id="chartCanvas"></canvas>
     </div>
 
-    <div class="chart-panel" style="margin-top:14px;">
-      <div class="panel-header"><span class="panel-title">Companion to Microsoft's trapped-ion QEC — what this shows</span></div>
+    <div class="chart-panel note" style="margin-top:4px;">
+      <div class="panel-header"><span class="panel-title">Companion to Microsoft's trapped-ion QEC: what this shows</span></div>
       <div style="padding:14px 18px;font:400 13.5px/1.62 Inter,sans-serif;color:var(--text-dim,#555);">
         <p style="margin:0 0 10px;">Microsoft + Quantinuum reported (Nature, blog linked below) logical
         <b>error correction and detection</b> on <b>Quantinuum's trapped-ion hardware</b> with two
-        <b>abelian</b> stabilizer codes — verbatim, <i>"a 12-qubit code encoding two logical qubits and a
-        16-qubit tesseract color code"</i> — and <i>"logical error-rate improvements ranging from 11x to
+        <b>abelian</b> stabilizer codes, verbatim, <i>"a 12-qubit code encoding two logical qubits and a
+        16-qubit tesseract color code"</i> and <i>"logical error-rate improvements ranging from 11x to
         800x over corresponding physical circuit baselines."</i> Those are <b>their</b> measured figures,
-        on different codes; <b>we do not reproduce them</b>. We are <b>not a hardware competitor</b> — a
+        on different codes; <b>we do not reproduce them</b>. We are <b>not a hardware competitor</b>, but a
         <b>companion sandbox</b> that runs an abelian code (Z₂ toric, the surface code's topological
         order) and our <b>non-abelian Fibonacci string-net (d<sub>τ</sub> = φ)</b> on <b>identical</b>
         machinery under representative trapped-ion noise, to explore a frontier their abelian work
         doesn't.</p>
         <p style="margin:0 0 10px;"><b>The frontier: the road to a universal gate set.</b> The blog's
-        demonstrated circuits (Bell and cat states) are <b>Clifford</b> — they need no magic states, and
+        demonstrated circuits (Bell and cat states) are <b>Clifford</b>: they need no magic states, and
         the blog does not claim any. But <b>any</b> universal fault-tolerant machine built on abelian
         codes eventually needs the non-Clifford T-gate, which abelian codes supply through
-        <b>magic-state distillation</b> (a general, well-established architectural cost — not something
+        <b>magic-state distillation</b> (a general, well-established architectural cost, not something
         attributed to their specific demo). <b>Fibonacci anyons are braiding-universal</b>: the T-gate
-        comes from braiding, so that distillation overhead is <b>zero</b> (gold card). The honest trade —
+        comes from braiding, so that distillation overhead is <b>zero</b> (gold card). The honest trade:
         Fibonacci instead pays an expensive non-abelian decoder. The demo lets you <i>see</i> that trade.</p>
         <p style="margin:0 0 10px;"><b>Anti-wash control.</b> The gold and red curves differ only by the
-        F-symbol that makes the code Fibonacci — same lattice, noise, projective syndrome, decoder, and
+        F-symbol that makes the code Fibonacci: same lattice, noise, projective syndrome, decoder, and
         entanglement-fidelity metric. If φ washed, the curves would coincide. So the interesting
         question is the universality cost, not the logical-error rate.</p>
         <p style="margin:0 0 10px;"><b>Where real ion devices sit (green band).</b> The solid green line
         is each device's <b>sourced gate-error floor</b> (Quantinuum H2 <b>0.156%</b>; IonQ Aria
         <b>0.40%</b>, both 2-qubit gate errors); the dashed line adds a schedule-dependent idle-dephasing
-        estimate. With the <b>real, Microsoft-published coherence times — T₂ ≈ 1 s for IonQ Aria, ≈ 10⁶ µs
-        for H2</b> — idle dephasing over a gate is only ~0.02–0.06%, so the band is a <b>hair's width</b>
+        estimate. With the <b>real, Microsoft-published coherence times</b> (T₂ ≈ 1 s for IonQ Aria, ≈ 10⁶ µs
+        for H2), idle dephasing over a gate is only ~0.02–0.06%, so the band is a <b>hair's width</b>
         and the operating point is essentially the gate error. Both ion devices sit <b>well below</b> the
         ~10% code-capacity threshold: trapped ions' long coherence is exactly why they're a clean QEC
-        substrate. (An earlier draft used a 10 ms T₂ that made dephasing look material — Microsoft's
+        substrate. (An earlier draft used a 10 ms T₂ that made dephasing look material; Microsoft's
         published 1 s figure corrects that.)</p>
         <p style="margin:0;"><b>Honest scope (no overclaiming).</b> This is <b>code-capacity</b> noise
         at a single distance, <b>not</b> a circuit-level fault-tolerance threshold; the device spec is
         reduced to an effective per-edge error = gate error + a <b>model-dependent</b> idle-dephasing
         term (a conservative single-MS-gate window; a fuller syndrome-round schedule would raise it for
         slow-gate devices). The blue dashed line is the literal <code>SurfaceQEC</code> in its own binary
-        metric (heights not directly comparable). No "we beat Microsoft" — a companion design sandbox.
-        <b>Vedic lens:</b> QEC restores <i>Ṛta</i> (order) against error as <i>Asat</i> (entropy); the
-        decoder is <i>Varuṇa</i> (Book 7) who sees every violation; distillation is the <i>Soma</i>
-        pipeline (Book 9). Computed live from <code>phi-quantum-sim-cpp</code> via WebAssembly.</p>
+        metric (heights not directly comparable). No "we beat Microsoft", just a companion design sandbox.
+        Computed live from <code>phi-quantum-sim-cpp</code> via WebAssembly.</p>
         <p style="margin:12px 0 0;font-size:12px;color:var(--text-dim,#777);"><b>Sources.</b> Microsoft
         figures (11×–800×, code sizes): <a href="https://quantum.microsoft.com/en-us/insights/blogs/microsoft-application-of-error-correction-to-trapped-ion-qubits">Microsoft Quantum blog</a>,
         on the Nature paper "Improved quantum processor logical error rates via correction and detection"
-        — quoted verbatim. Quantinuum H2 device specs (2q error 0.156%, T₂ ≈ 10⁶ µs): Moses et al.,
+        (quoted verbatim). Quantinuum H2 device specs (2q error 0.156%, T₂ ≈ 10⁶ µs): Moses et al.,
         <i>Phys. Rev. X</i> 13, 041052 (2023), Table II. IonQ Aria specs (2q error 0.40% from 99.6%
         fidelity, T₂ = 1 s, T1 10–100 s, 135 µs / 600 µs gates, SPAM 99.61%):
-        <a href="https://learn.microsoft.com/en-us/azure/quantum/provider-ionq">Microsoft Learn — IonQ
+        <a href="https://learn.microsoft.com/en-us/azure/quantum/provider-ionq">Microsoft Learn: IonQ
         provider (Azure Quantum)</a>, ms.date 2025-09-17 (Microsoft publishes Aria's spec table; Forte's
         is not on the page). Our H2/Aria are <b>representative noise models for this simulation</b>; the
         blog does not state which Quantinuum model its result used. All
@@ -204,9 +202,9 @@ function drawChart() {
 
   // Honest device band: the rigorous, sourced gate-error FLOOR (solid) up to an
   // idle-inclusive estimate (dashed). Idle dephasing per syndrome round is
-  // schedule-dependent, so the device sits SOMEWHERE in this band — we show the
+  // schedule-dependent, so the device sits SOMEWHERE in this band; we show the
   // range rather than fabricate a single point. With real ion T₂ (~1 s, H2 and
-  // Aria) the band is a sliver — no invented single "operating point".
+  // Aria) the band is a sliver; no invented single "operating point".
   if (info) {
     const g = pal.green || '#3a9';
     const xf = toX(Math.min(info.gateError2q, xMax));
@@ -239,7 +237,7 @@ function drawChart() {
   }
   line('surfacePL', pal.blue, 1.4, true);   // anchor (different metric)
   line('z2PL', pal.red, 2.6, false);        // abelian / surface-equivalent
-  line('fibPL', pal.gold, 2.6, false);      // Fibonacci (distillation-free) — on top
+  line('fibPL', pal.gold, 2.6, false);      // Fibonacci (distillation-free), on top
 
   ctx.fillStyle = pal.textDim; ctx.font = '11px Inter'; ctx.textAlign = 'center';
   ctx.fillText('Physical Error Rate (dephasing)', w / 2, h - 3);
@@ -253,7 +251,7 @@ function renderCards() {
     info.abelianDistillInputs + ' → ' + info.fibonacciDistillInputs + ' states';
   // Honest: the 0 is rigorous (braiding-universality is a theorem); the abelian
   // count is illustrative of one protocol (our φ-distiller at 2 levels), not a
-  // canonical figure — the load-bearing fact is >0 vs 0.
+  // canonical figure; the load-bearing fact is >0 vs 0.
   document.getElementById('distillSub').textContent =
     info.abelianDistillInputs + ' = φ-distiller, 2 levels (illustrative) · rigorous: abelian > 0, '
     + 'Fibonacci braiding-universal → 0';

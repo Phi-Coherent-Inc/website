@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>φCoherent — 2D Qudit Measurement-Based Computation</title>
-<meta name="description" content="Interactive demo: a real two-qudit circuit computed entirely by single-qudit measurements on a 2D qudit cluster (d-level systems). Vertical CZ_d links make it entangling — remove them and the cluster factorizes into two independent computations. Despite random measurement outcomes and a different byproduct correction every branch, the result is exact: fidelity 1 versus the target. Computed live in your browser via WebAssembly. No golden ratio.">
+<title>φCoherent · 2D Qudit Measurement-Based Computation</title>
+<meta name="description" content="Interactive demo: a real two-qudit circuit computed entirely by single-qudit measurements on a 2D qudit cluster (d-level systems). Vertical CZ_d links make it entangling; remove them and the cluster factorizes into two independent computations. Despite random measurement outcomes and a different byproduct correction every branch, the result is exact: fidelity 1 versus the target. Computed live in your browser via WebAssembly. No golden ratio.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://phicoherent.com/demos/qudit-mbqc-2d.html">
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -54,25 +54,25 @@
 
     <div class="stat-card stat-gold">
       <div class="stat-label">One-way fidelity (worst over 120 branches)</div>
-      <div class="stat-value" id="fidVal">—</div>
+      <div class="stat-value" id="fidVal">…</div>
       <div class="stat-sub">vs the directly-composed target unitary</div>
     </div>
 
     <div class="stat-card stat-cyan">
       <div class="stat-label">Distinct feed-forward corrections</div>
-      <div class="stat-value" id="corrVal">—</div>
+      <div class="stat-value" id="corrVal">…</div>
       <div class="stat-sub">random outcomes, exact computation</div>
     </div>
 
     <div class="stat-card stat-gold">
-      <div class="stat-label">Entangling power — with vertical links</div>
-      <div class="stat-value" id="linkVal">—</div>
+      <div class="stat-label">Entangling power, with vertical links</div>
+      <div class="stat-value" id="linkVal">…</div>
       <div class="stat-sub">entropy of U|0,0⟩, up to ln d</div>
     </div>
 
     <div class="stat-card stat-cyan">
-      <div class="stat-label">Anti-wash — no links</div>
-      <div class="stat-value" id="noLinkVal">—</div>
+      <div class="stat-label">Anti-wash, no links</div>
+      <div class="stat-value" id="noLinkVal">…</div>
       <div class="stat-sub">cluster factorizes, entropy 0</div>
     </div>
   </div>
@@ -80,7 +80,7 @@
   <div class="canvas-area">
     <div class="chart-panel" style="height:280px">
       <div class="panel-header">
-        <span class="panel-title">The link is load-bearing — entangling power of the two-qudit circuit vs depth</span>
+        <span class="panel-title">The link is load-bearing: entangling power of the two-qudit circuit vs depth</span>
         <div class="legend">
           <div class="legend-item"><div class="legend-dot" id="dotLink"></div> with CZ_d links</div>
           <div class="legend-item"><div class="legend-dot" id="dotNoLink"></div> no links (factorizes)</div>
@@ -97,24 +97,24 @@
       <canvas id="branchCanvas"></canvas>
     </div>
 
-    <div class="chart-panel" style="margin-top:4px;">
-      <div class="panel-header"><span class="panel-title">What this shows — a real two-qudit algorithm, run only by measuring</span></div>
+    <div class="chart-panel note" style="margin-top:4px;">
+      <div class="panel-header"><span class="panel-title">What this shows: a real two-qudit algorithm, run only by measuring</span></div>
       <div style="padding:14px 18px;font:400 13.5px/1.62 Inter,sans-serif;color:var(--text-muted);">
         <p style="margin:0 0 10px;">This is genuine <b>2D</b> measurement-based computation: an actual
         <b>two-qudit</b> circuit
         <span style="white-space:nowrap;">U = ∏ CZ_d<sup>link</sup>·(J_d(α<sup>A</sup>)⊗J_d(α<sup>B</sup>))</span>
-        carried out entirely by measuring a 2D qudit cluster one qudit at a time — no logical gate is
+        carried out entirely by measuring a 2D qudit cluster one qudit at a time; no logical gate is
         ever applied to the data. Two horizontal rails give single-qudit gates; <b>vertical CZ_d
         links</b> between them supply the entangler. Generalized from qubits to d-level systems,
         d = 2, 3, 5. <b>No φ:</b> measurement × entanglement physics.</p>
         <p style="margin:0 0 10px;">The <b>upper chart</b> is the anti-wash. The entangling power of the
         realized circuit (the entanglement of U applied to a product input) is <b>nonzero with the
-        vertical links</b> — up to the maximum ln d — and <b>identically zero without them</b>: strip
+        vertical links</b> (up to the maximum ln d) and <b>identically zero without them</b>: strip
         the links and the cluster factorizes into two independent single-qudit one-way computations.
         The link is doing the 2D work.</p>
         <p style="margin:0;">The <b>lower chart</b> is the surprise of the one-way model. Every run
-        measures the cluster in a random order of outcomes, so the leftover <b>byproduct</b> — the
-        local generalized-Pauli correction read off the measurement record — is <b>different on every
+        measures the cluster in a random order of outcomes, so the leftover <b>byproduct</b> (the
+        local generalized-Pauli correction read off the measurement record) is <b>different on every
         branch</b> (the scatter). Yet after that classically-controlled correction the output matches
         the target with <b>fidelity 1.000</b>, on every single branch. The existence of such a local
         correction, for every outcome, <em>is</em> the one-way computation theorem. Computed live in
@@ -129,7 +129,7 @@
   by slice. Per-rail measurement-angle feed-forward (including the cross-rail Z-coupling each CZ_d
   link induces, CZ_d(X<sub>d</sub><sup>x</sup>⊗I)=(X<sub>d</sub><sup>x</sup>⊗Z<sub>d</sub><sup>x</sup>)CZ_d)
   keeps the realized unitary fixed across branches; the residual local generalized-Pauli is located
-  against the target by a d⁴ search — in hardware it is the classically-controlled feed-forward. A
+  against the target by a d⁴ search; in hardware it is the classically-controlled feed-forward. A
   non-cluster state would admit no such local correction, so fidelity 1 is meaningful. d ∈ {2,3,5};
   depth ≤ 4 (chart) / 3 (branches). No golden ratio; d = 2 reduces to the qubit one-way model. Not
   realized hardware.
@@ -139,9 +139,9 @@
 <script>
 // ============================================================
 // Real computation: runQudit2dEntangling (entangling power of the target two-
-// qudit circuit vs depth, with vs without the vertical CZ_d links — the
+// qudit circuit vs depth, with vs without the vertical CZ_d links (the
 // anti-wash) + runQudit2dBranches (one-way computation across many Born
-// branches: random byproduct correction each branch, fidelity 1 throughout) —
+// branches: random byproduct correction each branch, fidelity 1 throughout),
 // run off the UI thread in a module Web Worker (assets/js/qudit-mbqc-2d-
 // worker.js). A real two-qudit algorithm computed purely by measurement; no φ.
 // ============================================================
@@ -240,13 +240,13 @@ function drawBranches() {
     ctx.textAlign = 'right'; ctx.fillText(yv.toFixed(0), pad.left - 8, y + 3);
   }
 
-  // correction-index scatter (gold) — visibly random across branches.
+  // correction-index scatter (gold), visibly random across branches.
   ctx.fillStyle = pal.gold;
   branches.forEach((b) => {
     ctx.beginPath(); ctx.arc(toX(b.branch), toY(b.correction), 2.6, 0, 2 * Math.PI); ctx.fill();
   });
 
-  // fidelity = 1.000 band (green) at the top, with label — every branch is exact.
+  // fidelity = 1.000 band (green) at the top, with label; every branch is exact.
   const worst = branches.reduce((m, b) => Math.min(m, b.fidelity), 1);
   ctx.strokeStyle = pal.green; ctx.lineWidth = 2; ctx.beginPath();
   ctx.moveTo(pad.left, pad.top - 6); ctx.lineTo(w - pad.right, pad.top - 6); ctx.stroke();

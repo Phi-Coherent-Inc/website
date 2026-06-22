@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>φCoherent — Quantum Cryptography Demo</title>
-<meta name="description" content="Interactive demo: φCrypt's post-quantum security audit, BB84 quantum key distribution, and quantum RNG quality — computed live in your browser from phi-quantum-crypt-cpp via WebAssembly.">
+<title>φCoherent · Quantum Cryptography Demo</title>
+<meta name="description" content="Interactive demo: φCrypt's post-quantum security audit, BB84 quantum key distribution, and quantum RNG quality, computed live in your browser from phi-quantum-crypt-cpp via WebAssembly.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://phicoherent.com/demos/quantum-cryptography.html">
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -30,6 +30,11 @@
   .qc-panel {
     background: var(--surface); border: 1px solid var(--gold-border);
     border-radius: 12px; padding: 24px 26px;
+    /* Grid items default to min-width:auto, which lets a wide child (the
+       560px audit table) stretch the shared 1fr column and push every panel
+       past the viewport. min-width:0 lets the track shrink so the table
+       scrolls inside its own wrapper instead. */
+    min-width: 0;
   }
   .qc-panel h2 {
     font-family: 'Newsreader', serif; font-weight: 400;
@@ -112,20 +117,47 @@
   .qc-bar { height: 9px; border-radius: 5px; background: var(--card-hover, #2a2a2a); position: relative; overflow: hidden; }
   .qc-bar .fill { position: absolute; top: 0; bottom: 0; background: var(--gold); transition: left .3s, width .3s; }
   .qc-bar .mid { position: absolute; top: -3px; bottom: -3px; left: 50%; width: 1px; background: var(--text-dim); }
+  /* A wide table (the 6-column audit) scrolls horizontally on narrow screens
+     instead of overflowing the page. */
+  .qc-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -4px; }
+  .qc-table-scroll table.qc-audit { min-width: 560px; }
+
+  /* Stat grids that want exactly two columns on desktop. */
+  .qc-results.cols2 { grid-template-columns: repeat(2, 1fr); }
+
   @media (min-width: 920px) { .qc-grid { grid-template-columns: 1fr 1fr; } .qc-panel.span2 { grid-column: 1 / -1; } }
+
+  /* ── Mobile / narrow screens ─────────────────────────────────────────── */
+  @media (max-width: 620px) {
+    .qc-main { padding: calc(var(--demo-header-h, 56px) + 20px) 14px 60px; }
+    .qc-panel { padding: 20px 16px; border-radius: 10px; }
+    .qc-panel h2 { font-size: 20px; }
+    /* Un-float the section tag so it stops overlapping the heading; it becomes
+       a small label above the title. */
+    .qc-panel .tag { float: none; display: block; margin: 0 0 10px; }
+    /* Forced 2-column stat grids collapse to a single column. */
+    .qc-results.cols2 { grid-template-columns: 1fr; }
+    /* Sliders take the full panel width. */
+    .qc-controls { gap: 18px; }
+    .qc-control, .qc-control .slider-row { width: 100%; }
+    .qc-control input[type=range] { flex: 1; width: auto; }
+    .qc-run { width: 100%; }
+    table.qc-audit th, table.qc-audit td { padding: 10px 10px; }
+  }
 </style>
 </head>
 <body>
 
 <header class="demo-header" data-demo="quantum-cryptography"
-        data-title="Quantum Cryptography — φCrypt under quantum attack"></header>
+        data-title="Quantum Cryptography · φCrypt under quantum attack"></header>
 
 <main class="qc-main">
   <p class="qc-lead">
     φCrypt's quantum resistance, computed live in your browser. The post-quantum security
     audit, a BB84 quantum key-distribution session, and the quantum RNG's statistical quality
-    all run on the real <em>phi-quantum-crypt-cpp</em> library compiled to WebAssembly — no
-    server, no pre-baked numbers.
+    run on the real <em>phi-quantum-crypt-cpp</em> library; the live φ-KEM-304 and φDSA
+    roundtrip runs the actual <em>phi-lattice-cpp</em> post-quantum primitives, all compiled
+    to WebAssembly, no server, no pre-baked numbers.
   </p>
   <div class="qc-status" id="status">Loading WebAssembly module…</div>
 
@@ -136,15 +168,47 @@
       <span class="tag">phi-quantum-crypt · security_audit</span>
       <h2>Post-Quantum Security Audit</h2>
       <div class="sub">φHash tiers vs the NIST PQC categories, with the fault-tolerant Grover-attack cost.</div>
-      <table class="qc-audit">
-        <thead>
-          <tr><th>Tier (chandas)</th><th>Digest</th><th>Post-Grover</th><th>NIST PQC</th><th>Fault-tolerant qubits</th><th>Attack runtime</th></tr>
-        </thead>
-        <tbody id="auditBody">
-          <tr><td colspan="6" style="color:var(--text-dim)">—</td></tr>
-        </tbody>
-      </table>
+      <div class="qc-table-scroll">
+        <table class="qc-audit">
+          <thead>
+            <tr><th>Tier</th><th>Digest</th><th>Post-Grover</th><th>NIST PQC</th><th>Fault-tolerant qubits</th><th>Attack runtime</th></tr>
+          </thead>
+          <tbody id="auditBody">
+            <tr><td colspan="6" style="color:var(--text-dim)">…</td></tr>
+          </tbody>
+        </table>
+      </div>
       <div class="qc-callout" id="auditCallout"></div>
+    </section>
+
+    <!-- Panel 1b: Structural cryptanalysis (Simon + period-finding) -->
+    <section class="qc-panel span2">
+      <span class="tag">shor_analysis · Simon + QFT period-finding</span>
+      <h2>Structural cryptanalysis, run live</h2>
+      <div class="sub">Quantum-resistant for a hash means no structural attack beats Grover. These are the actual quantum algorithms (Simon's hidden-XOR-period circuit and QFT period-finding) run on a small truncation of φHash, each with a positive control that recovers a planted period, so a null result has teeth.</div>
+      <div class="qc-results cols2">
+        <div class="qc-stat">
+          <div class="k">Simon's hidden-XOR-period</div>
+          <div class="v" id="simonVerdict" style="font-size:15px">—</div>
+          <div class="u" id="simonSub">&nbsp;</div>
+        </div>
+        <div class="qc-stat">
+          <div class="k">QFT period-finding</div>
+          <div class="v" id="periodVerdict" style="font-size:15px">—</div>
+          <div class="u" id="periodSub">&nbsp;</div>
+        </div>
+        <div class="qc-stat">
+          <div class="k">Positive controls (test has teeth)</div>
+          <div class="v" id="controlVerdict" style="font-size:15px">—</div>
+          <div class="u" id="controlSub">&nbsp;</div>
+        </div>
+        <div class="qc-stat">
+          <div class="k">Serial correlation</div>
+          <div class="v" id="corrVal">—</div>
+          <div class="u">consecutive output bytes · pass &lt; 0.05</div>
+        </div>
+      </div>
+      <div class="qc-callout" id="structScope"></div>
     </section>
 
     <!-- Panel 2: BB84 QKD -->
@@ -168,9 +232,9 @@
         <button class="qc-run" id="bb84Run" disabled>Run session</button>
       </div>
       <div class="qc-results">
-        <div class="qc-stat"><div class="k">QBER</div><div class="v" id="bb84Qber">—</div><div class="u">abort ≥ 11% (BB84 Shor–Preskill bound)</div></div>
-        <div class="qc-stat"><div class="k">Sifted bits</div><div class="v" id="bb84Sifted">—</div><div class="u">matching bases</div></div>
-        <div class="qc-stat"><div class="k">Status</div><div class="v" id="bb84Status" style="font-size:18px">—</div><div class="u" id="bb84StatusSub">&nbsp;</div></div>
+        <div class="qc-stat"><div class="k">QBER</div><div class="v" id="bb84Qber">…</div><div class="u">abort ≥ 11% (BB84 Shor–Preskill bound)</div></div>
+        <div class="qc-stat"><div class="k">Sifted bits</div><div class="v" id="bb84Sifted">…</div><div class="u">matching bases</div></div>
+        <div class="qc-stat"><div class="k">Status</div><div class="v" id="bb84Status" style="font-size:18px">…</div><div class="u" id="bb84StatusSub">&nbsp;</div></div>
       </div>
       <div class="qc-key" id="bb84Key" style="display:none"></div>
     </section>
@@ -192,12 +256,37 @@
       </div>
       <div class="qc-results">
         <div class="qc-stat">
-          <div class="k">Bit balance</div><div class="v" id="qrngBalance">—</div>
+          <div class="k">Bit balance</div><div class="v" id="qrngBalance">…</div>
           <div class="qc-bar-wrap"><div class="qc-bar"><span class="fill" id="qrngBar" style="left:50%;width:0"></span><span class="mid"></span></div></div>
         </div>
-        <div class="qc-stat"><div class="k">Byte χ²</div><div class="v" id="qrngChi">—</div><div class="u">255 df · pass &lt; 330</div></div>
-        <div class="qc-stat"><div class="k">Verdict</div><div class="v" id="qrngVerdict" style="font-size:15px">—</div><div class="u">&nbsp;</div></div>
+        <div class="qc-stat"><div class="k">Byte χ²</div><div class="v" id="qrngChi">…</div><div class="u">255 df · pass &lt; 330</div></div>
+        <div class="qc-stat"><div class="k">Verdict</div><div class="v" id="qrngVerdict" style="font-size:15px">…</div><div class="u">&nbsp;</div></div>
       </div>
+    </section>
+
+    <!-- Panel 4: Post-Quantum KEM + Signature (lattice) -->
+    <section class="qc-panel span2">
+      <span class="tag">phi-lattice · φ-KEM-304 + φDSA (ML-DSA-87)</span>
+      <h2>Post-Quantum KEM &amp; Signature: live roundtrip</h2>
+      <div class="sub">Not an audit table; the actual primitives. A φ-KEM-304 FO-CCA module-LWE key encapsulation (keygen → encaps → decaps) and a φDSA (ML-DSA-87) signature (keygen → sign → verify), both SHAKE-driven, run end-to-end in WebAssembly. Verified: shared-secret agreement, CCA tamper rejection, signature verification, and forgery rejection.</div>
+      <div class="qc-controls">
+        <button class="qc-run" id="pqcRun" disabled>Run roundtrip</button>
+      </div>
+      <div class="qc-results cols2">
+        <div class="qc-stat">
+          <div class="k" id="kemName">φ-KEM-304 · encapsulation</div>
+          <div class="v" id="kemVerdict" style="font-size:15px">…</div>
+          <div class="u" id="kemSub">&nbsp;</div>
+        </div>
+        <div class="qc-stat">
+          <div class="k" id="dsaName">φDSA / ML-DSA-87 · signature</div>
+          <div class="v" id="dsaVerdict" style="font-size:15px">…</div>
+          <div class="u" id="dsaSub">&nbsp;</div>
+        </div>
+        <div class="qc-stat"><div class="k">KEM sizes · latency</div><div class="v" id="kemSizes" style="font-size:15px">…</div><div class="u" id="kemTiming">&nbsp;</div></div>
+        <div class="qc-stat"><div class="k">Signature sizes · latency</div><div class="v" id="dsaSizes" style="font-size:15px">…</div><div class="u" id="dsaTiming">&nbsp;</div></div>
+      </div>
+      <div class="qc-key" id="kemSecret" style="display:none"></div>
     </section>
 
   </div>
@@ -220,7 +309,7 @@ const nextSeed = () => (seedCounter = (seedCounter * 1103515245 + 12345) >>> 0) 
     $('status').textContent = 'Failed to load the WebAssembly module: ' + e;
     return;
   }
-  $('status').textContent = 'Live — computed from phi-quantum-crypt-cpp (WebAssembly).';
+  $('status').textContent = 'Live: computed from phi-quantum-crypt-cpp + phi-lattice-cpp (WebAssembly).';
 
   // ── Panel 1: Security Audit (static) ──
   const rows = PhiCrypto.securityAudit();
@@ -243,6 +332,34 @@ const nextSeed = () => (seedCounter = (seedCounter * 1103515245 + 12345) >>> 0) 
     'Use the balanced tier or higher for quantum-threat deployments. The strongest tier needs ~' +
     (rows[2] ? fmtQubits(rows[2].physicalQubits) : '1.05M') + ' fault-tolerant qubits and ' +
     (rows[2] ? rows[2].runtime : '~10^85 years') + ' to break by Grover search.';
+
+  // ── Panel 1b: Structural cryptanalysis (Simon + period-finding) ──
+  const sa = PhiCrypto.structuralAudit(2);
+  const okBadge = (pass, txt) =>
+    '<span class="qc-badge ' + (pass ? 'pass' : 'fail') + '">' + txt + '</span>';
+  // φHash should show NO structure → "no period found" is the PASS.
+  $('simonVerdict').className = 'v ' + (!sa.simonHashPeriod ? 'good' : 'bad');
+  $('simonVerdict').innerHTML = okBadge(!sa.simonHashPeriod,
+    sa.simonHashPeriod ? 'hidden period found' : 'no hidden period');
+  $('simonSub').textContent = 'φHash · GF(2) constraint rank ' + sa.simonRank + ' / ' + sa.n;
+  $('periodVerdict').className = 'v ' + (!sa.periodHashFound ? 'good' : 'bad');
+  $('periodVerdict').innerHTML = okBadge(!sa.periodHashFound,
+    sa.periodHashFound ? 'integer period found' : 'no integer period');
+  $('periodSub').textContent = 'φHash · QFT of the index register';
+  // Controls must RECOVER their planted periods, else the tests are blind.
+  const ctrlOk = sa.simonControlOk && sa.periodControlOk;
+  $('controlVerdict').className = 'v ' + (ctrlOk ? 'good' : 'bad');
+  $('controlVerdict').innerHTML = okBadge(ctrlOk, ctrlOk ? 'planted periods recovered' : 'control failed');
+  $('controlSub').textContent =
+    'Simon planted ' + sa.simonPlanted + ' → ' + sa.simonRecovered +
+    ' · period planted ' + sa.periodPlanted + ' → ' + sa.periodRecovered;
+  $('corrVal').textContent = sa.serialCorrelation.toFixed(4);
+  $('corrVal').className = 'v ' + (sa.uncorrelated ? 'good' : 'bad');
+  $('structScope').innerHTML =
+    '<strong>Honest scope.</strong> This is a small-instance probe (n = m = ' + sa.n +
+    ', a ' + (1 << (sa.n + sa.m)) + '-dimensional statevector): it detects design-level structure ' +
+    'present at all scales and validates the method with positive controls. It does not certify ' +
+    'full-scale quantum resistance, which is an analytic argument, not a small-qubit experiment.';
 
   // ── Panel 2: BB84 ──
   $('rawBits').addEventListener('input', (e) => { $('rawBitsVal').textContent = e.target.value; });
@@ -269,7 +386,7 @@ const nextSeed = () => (seedCounter = (seedCounter * 1103515245 + 12345) >>> 0) 
       subEl.textContent = 'eavesdropper detected';
       keyEl.style.display = '';
       keyEl.className = 'qc-key aborted';
-      keyEl.textContent = 'SESSION ABORTED — QBER ' + qberPct + '% exceeds the 11% threshold. No key delivered.';
+      keyEl.textContent = 'SESSION ABORTED: QBER ' + qberPct + '% exceeds the 11% threshold. No key delivered.';
     }
   }
   $('bb84Run').addEventListener('click', runBB84);
@@ -297,9 +414,50 @@ const nextSeed = () => (seedCounter = (seedCounter * 1103515245 + 12345) >>> 0) 
   $('qrngRun').addEventListener('click', runQRNG);
   $('qrngRun').disabled = false;
 
+  // ── Panel 4: lattice PQC roundtrip ──
+  function runPQC() {
+    const r = PhiCrypto.latticeRoundtrip(nextSeed());
+
+    // KEM
+    $('kemName').textContent = r.kemName + ' · encapsulation';
+    const kemOk = r.kemAgree && r.kemRejectTamper;
+    const kemEl = $('kemVerdict');
+    kemEl.className = 'v ' + (kemOk ? 'good' : 'bad');
+    kemEl.innerHTML = kemOk
+      ? '<span class="qc-badge pass">Shared secret agreed</span>'
+      : '<span class="qc-badge fail">' + (r.kemAgree ? 'Tamper not rejected' : 'Secret mismatch') + '</span>';
+    $('kemSub').textContent = (r.kemAgree ? 'decaps = encaps' : 'decaps ≠ encaps')
+      + ' · ' + (r.kemRejectTamper ? 'CCA tamper → implicit reject' : 'tamper accepted');
+    $('kemSizes').textContent = 'pk ' + r.kemPkBytes + ' B · ct ' + r.kemCtBytes + ' B · ss ' + r.kemSsBytes + ' B';
+    $('kemTiming').textContent = 'keygen ' + r.kemKeygenMs.toFixed(1) + ' · encaps ' + r.kemEncapsMs.toFixed(1)
+      + ' · decaps ' + r.kemDecapsMs.toFixed(1) + ' ms';
+
+    // DSA
+    $('dsaName').textContent = r.dsaName + ' · signature';
+    const dsaOk = r.dsaVerify && r.dsaRejectForgery;
+    const dsaEl = $('dsaVerdict');
+    dsaEl.className = 'v ' + (dsaOk ? 'good' : 'bad');
+    dsaEl.innerHTML = dsaOk
+      ? '<span class="qc-badge pass">Signature verified</span>'
+      : '<span class="qc-badge fail">' + (r.dsaVerify ? 'Forgery not rejected' : 'Verify failed') + '</span>';
+    $('dsaSub').textContent = (r.dsaVerify ? 'valid signature verifies' : 'valid signature rejected')
+      + ' · ' + (r.dsaRejectForgery ? 'tampered message → reject' : 'forgery accepted');
+    $('dsaSizes').textContent = 'pk ' + r.dsaPkBytes + ' B · sig ' + r.dsaSigBytes + ' B';
+    $('dsaTiming').textContent = 'keygen ' + r.dsaKeygenMs.toFixed(1) + ' · sign ' + r.dsaSignMs.toFixed(1)
+      + ' · verify ' + r.dsaVerifyMs.toFixed(1) + ' ms';
+
+    const secEl = $('kemSecret');
+    secEl.style.display = '';
+    secEl.className = 'qc-key';
+    secEl.textContent = 'Agreed 32-byte shared secret:  ' + r.kemSecretHex;
+  }
+  $('pqcRun').addEventListener('click', runPQC);
+  $('pqcRun').disabled = false;
+
   // Auto-run an initial session/test so the panels aren't empty.
   runBB84();
   runQRNG();
+  runPQC();
 })();
 </script>
 </body>

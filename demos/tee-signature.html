@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>φCoherent — Topological Entanglement Entropy γ</title>
-<meta name="description" content="Interactive demo: the topological entanglement entropy γ — a measured invariant — is log(2 + φ) for the Fibonacci string-net and log 2 for Z₂, and collapses to zero unless the full entanglement spectrum is kept. Computed live in your browser via WebAssembly.">
+<title>φCoherent · Topological Entanglement Entropy γ</title>
+<meta name="description" content="Interactive demo: the topological entanglement entropy γ (a measured invariant) is log(2 + φ) for the Fibonacci string-net and log 2 for Z₂, and collapses to zero unless the full entanglement spectrum is kept. Computed live in your browser via WebAssembly.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://phicoherent.com/demos/tee-signature.html">
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -36,27 +36,36 @@
     <button class="btn-run" id="btnRun">Run TEE Measurement</button>
     <div class="demo-status" id="status">Loading…</div>
 
+    <div class="stat-card" style="border-left:3px solid var(--gold)">
+      <div class="stat-label">Honest scope</div>
+      <div style="font:400 12px/1.55 Inter,sans-serif;color:var(--text-muted);margin-top:6px">
+        φ is the measured quantity here. The topological entanglement entropy comes out as
+        γ = log(2+φ); run the Z₂ toric code through the <em>identical</em> code path and you get
+        log 2 instead. Remove φ and the signature changes, so this passes the anti-wash test.
+      </div>
+    </div>
+
     <div class="stat-card stat-gold">
       <div class="stat-label">Fibonacci string-net</div>
-      <div class="stat-value" id="fibGammaVal">—</div>
+      <div class="stat-value" id="fibGammaVal">…</div>
       <div class="stat-sub">γ = log(2 + φ) ≈ 1.292</div>
     </div>
 
     <div class="stat-card stat-red">
       <div class="stat-label">Z₂ toric (surface-equivalent)</div>
-      <div class="stat-value" id="z2GammaVal">—</div>
+      <div class="stat-value" id="z2GammaVal">…</div>
       <div class="stat-sub">γ = log 2 ≈ 0.693</div>
     </div>
 
     <div class="stat-card stat-cyan">
       <div class="stat-label">Model-swap shift</div>
-      <div class="stat-value" id="shiftVal">—</div>
+      <div class="stat-value" id="shiftVal">…</div>
       <div class="stat-sub">γ<sub>fib</sub> − γ<sub>Z₂</sub> = log((2+φ)/2)</div>
     </div>
 
     <div class="stat-card stat-green">
       <div class="stat-label">Full-rank recovery</div>
-      <div class="stat-value" id="recoverVal">—</div>
+      <div class="stat-value" id="recoverVal">…</div>
       <div class="stat-sub">γ vs analytic at full χ</div>
     </div>
   </div>
@@ -64,7 +73,7 @@
   <div class="canvas-area">
     <div class="chart-panel" style="height:280px">
       <div class="panel-header">
-        <span class="panel-title">Measured γ — Fibonacci log(2 + φ) vs Z₂ log 2</span>
+        <span class="panel-title">Measured γ: Fibonacci log(2 + φ) vs Z₂ log 2</span>
         <div class="legend">
           <div class="legend-item"><div class="legend-dot" id="dotFib"></div> Fibonacci (d = φ)</div>
           <div class="legend-item"><div class="legend-dot" id="dotZ2"></div> Z₂ toric</div>
@@ -76,18 +85,18 @@
 
     <div class="chart-panel" style="height:280px;margin-top:4px">
       <div class="panel-header">
-        <span class="panel-title">Spectrum Collapse — γ vs kept bond dimension χ (full-spectrum invariant)</span>
+        <span class="panel-title">Spectrum Collapse: γ vs kept bond dimension χ (full-spectrum invariant)</span>
         <span class="panel-tag tag-phi">topological order = compositional</span>
       </div>
       <canvas id="collapseCanvas"></canvas>
     </div>
 
-    <div class="chart-panel" style="margin-top:4px;">
-      <div class="panel-header"><span class="panel-title">What this shows — φ in a measured invariant</span></div>
+    <div class="chart-panel note" style="margin-top:4px;">
+      <div class="panel-header"><span class="panel-title">What this shows: φ in a measured invariant</span></div>
       <div style="padding:14px 18px;font:400 13.5px/1.62 Inter,sans-serif;color:var(--text-muted);">
         <p style="margin:0 0 10px;">The <b>topological entanglement entropy</b> γ is the universal
         constant subtracted off the area law of the entanglement entropy:
-        S(A) = α·|∂A| − γ. It is a <b>measured</b> fingerprint of topological order — γ = log D,
+        S(A) = α·|∂A| − γ. It is a <b>measured</b> fingerprint of topological order: γ = log D,
         where D is the total quantum dimension. For the <b>Fibonacci string-net</b>,
         D = √(1 + φ²) so <b>γ = log(2 + φ) ≈ 1.292</b>; for the <b>Z₂ toric code</b>,
         D = 2 so <b>γ = log 2 ≈ 0.693</b>. The bars show the computed γ landing on the dashed
@@ -95,11 +104,11 @@
         log((2 + φ)/2) is exactly the golden-ratio signature.</p>
         <p style="margin:0 0 10px;"><b>The collapse</b> (lower chart) is the deeper point: γ is a
         <b>full-spectrum</b> quantity. As you truncate the entanglement spectrum to bond dimension χ, γ
-        <b>collapses toward 0</b> — at χ = 1 (a product state) there is no topological order at all, and
+        <b>collapses toward 0</b>: at χ = 1 (a product state) there is no topological order at all, and
         the true log(2 + φ) is recovered <i>only</i> at full rank. (χ = 0 here denotes the full,
-        untruncated spectrum — the rightmost point.)</p>
+        untruncated spectrum, the rightmost point.)</p>
         <p style="margin:0;"><b>Where φ is load-bearing:</b> in the value of the <b>measured invariant</b>
-        itself — log(2 + φ) is golden, log 2 is not. And the collapse makes the honest scope explicit:
+        itself: log(2 + φ) is golden, log 2 is not. And the collapse makes the honest scope explicit:
         topological order is a <b>compositional, full-spectrum property</b>, not something any single
         truncated number captures. Computed live in your browser via WebAssembly.</p>
       </div>
@@ -110,7 +119,7 @@
 <div class="caveat-footer">
   <strong>Honest scope.</strong> Both string-nets are simulated. γ is extracted from the exact
   entanglement spectrum; the analytic references are γ = log(2 + φ) (Fibonacci) and γ = log 2 (Z₂). The
-  collapse curve is a controlled truncation of that spectrum, not measurement noise — it demonstrates
+  collapse curve is a controlled truncation of that spectrum, not measurement noise; it demonstrates
   that γ is a property of the <em>whole</em> spectrum, recovered only at full rank. Not realized hardware.
 </div>
 

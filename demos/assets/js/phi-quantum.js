@@ -3,7 +3,7 @@
 //
 // Thin wrapper around the phi-quantum WASM module (compiled from
 // phi-quantum-sim-cpp). Lazy-loads the Emscripten ES6 glue, then exposes three
-// namespaces — PhiCoherent, PhiRecovery, PhiVQE — whose method names match the
+// namespaces (PhiCoherent, PhiRecovery, PhiVQE) whose method names match the
 // demos' original shim functions, so wiring a demo to real computation is a
 // near drop-in swap.
 //
@@ -49,7 +49,7 @@ export const PhiCoherent = {
   // Real surface-code Monte Carlo (Fibonacci-concatenated vs single surface code).
   // Returns [{ k, fibQubits, physical, fibPL, fibLow, fibHigh, singleD,
   //            singleQubits, singlePL, singleLow, singleHigh, gap, winner }].
-  // HEAVY — prefer running via ec-worker.js. `trajectories` tunes accuracy.
+  // HEAVY: prefer running via ec-worker.js. `trajectories` tunes accuracy.
   runFibSurfaceSweep(trajectories = 600) {
     return vecToArray(_module.runFibSurfaceSweep(trajectories >>> 0));
   },
@@ -59,7 +59,7 @@ export const PhiCoherent = {
 export const PhiRecovery = {
   // Fidelity of an Rx(θ) error against the original state (θ in degrees).
   computeFidelity(angleDeg) { return _module.computeFidelity(angleDeg); },
-  // Fidelity after exact time-reversal (circuit_adjoint) — the ≈1.000 headline.
+  // Fidelity after exact time-reversal (circuit_adjoint): the ≈1.000 headline.
   applyRecoveryFidelity(angleDeg) { return _module.applyRecoveryFidelity(angleDeg); },
   // Total PTM contraction 2p(k-1); order clamped to the theorem's {1,2,3} domain.
   contractionFactor(angleDeg, order) { return _module.contractionFactor(angleDeg, order >>> 0); },
@@ -94,6 +94,37 @@ export const PhiVQE = {
   },
   // Exact (FCI) ground-state energy of the molecule's Hamiltonian.
   exactEnergy(molecule) { return _module.exactEnergy(molecule); },
+  // Head-to-head exploit-step comparison on the SAME schedule and eval budget:
+  // random-momentum vs Kiefer-optimal golden-section line search. Returns
+  // { momentum:[best-so-far], golden:[best-so-far], exact, momentumErrMHa, goldenErrMHa }.
+  exploitCompare(molecule, iterations) {
+    const r = _module.runVqeExploitCompare(molecule, iterations >>> 0);
+    return {
+      momentum: vecToArray(r.momentum),
+      golden: vecToArray(r.golden),
+      exact: r.exact,
+      momentumErrMHa: r.momentumErrMHa,
+      goldenErrMHa: r.goldenErrMHa,
+    };
+  },
+  // Reliability over N random restarts at a fixed eval budget: fraction reaching
+  // chemical accuracy (1.6 mHa) with each exploit strategy. Returns
+  // { goldenSuccess, momentumSuccess, goldenMedianMHa, momentumMedianMHa, nSeeds }.
+  reliability(molecule, iterations, nSeeds) {
+    return _module.runVqeReliability(molecule, iterations >>> 0, nSeeds >>> 0);
+  },
+  // The E8 critical-Ising spectrum (Zamolodchikov): 8 masses (units of m₁) that
+  // split into four exact golden pairs. Returns
+  // { masses:[8], pairs:[{a,b,ratio}], phi }.
+  e8Spectrum() {
+    const s = _module.e8GoldenSpectrum();
+    const ratio = vecToArray(s.pairRatio), a = vecToArray(s.pairA), b = vecToArray(s.pairB);
+    return {
+      masses: vecToArray(s.masses),
+      pairs: ratio.map((r, i) => ({ a: a[i], b: b[i], ratio: r })),
+      phi: s.phi,
+    };
+  },
 };
 
 // ── Tunneling ───────────────────────────────────────────────────────────────
@@ -131,7 +162,7 @@ export const PhiTunnel = {
 };
 
 // ── Quantum Cryptography ──────────────────────────────────────────────────────
-// φCrypt under quantum attack — NIST PQC audit, BB84 QKD, and QRNG quality —
+// φCrypt under quantum attack (NIST PQC audit, BB84 QKD, and QRNG quality),
 // computed live from phi-quantum-crypt-cpp (+ the sim Grover oracle) via WASM.
 export const PhiCrypto = {
   // Per-chandas security audit. Returns [{ chandas, outputBytes, postGroverBits,
@@ -152,10 +183,28 @@ export const PhiCrypto = {
   qrngStats(nBytes = 2560, seed = 1) {
     return _module.runQrngStatTest(nBytes >>> 0, seed >>> 0);
   },
+  // Live structural cryptanalysis of φHash: Simon's hidden-XOR-period circuit and
+  // QFT period-finding on a small truncation, each with a positive control that
+  // recovers a planted period. Returns { n, m, simonHashPeriod, simonRank,
+  // simonControlOk, simonPlanted, simonRecovered, periodHashFound, periodControlOk,
+  // periodPlanted, periodRecovered, serialCorrelation, uncorrelated }.
+  structuralAudit(chandas = 2) {
+    return _module.runHashStructuralAudit(chandas | 0);
+  },
+  // One live roundtrip of the suite's ACTUAL post-quantum primitives, from
+  // phi-lattice-cpp: φ-KEM-304 (FO-CCA module-LWE) keygen→encaps→decaps and
+  // φDSA (ML-DSA-87) keygen→sign→verify, both SHAKE-driven. Returns
+  // { kemName, kemAgree, kemRejectTamper, kemPkBytes, kemCtBytes, kemSsBytes,
+  //   kemSecretHex, kemKeygenMs, kemEncapsMs, kemDecapsMs,
+  //   dsaName, dsaVerify, dsaRejectForgery, dsaPkBytes, dsaSigBytes,
+  //   dsaKeygenMs, dsaSignMs, dsaVerifyMs }.
+  latticeRoundtrip(seed = 1) {
+    return _module.runLatticePqcRoundtrip(seed >>> 0);
+  },
 };
 
 // ── Topological QEC (Fibonacci-anyon node-win) ────────────────────────────────
-// d_τ = φ ⇒ universal by braiding alone, distillation-free — the one genuinely
+// d_τ = φ ⇒ universal by braiding alone, distillation-free: the one genuinely
 // load-bearing golden-ratio fact in QEC. HONEST SCOPE: node-win only; NO claim
 // that Fibonacci-anyon QEC beats the surface code on threshold/overhead. The
 // threshold is a small-instance code-capacity surrogate; anyons are simulated.
@@ -171,7 +220,7 @@ export const PhiTopo = {
   },
   // Live code-capacity threshold curve (surrogate). d ∈ {3,5,7}, p ∈ 0.05..0.60;
   // curves cross near p ≈ 0.5. Returns [{ distance, physical, pL, low, high }].
-  // HEAVY — prefer the Web Worker (anyon-worker.js). `trajectories` tunes accuracy.
+  // HEAVY: prefer the Web Worker (anyon-worker.js). `trajectories` tunes accuracy.
   runFibAnyonThreshold(trajectories = 3000) {
     return vecToArray(_module.runFibAnyonThreshold(trajectories >>> 0));
   },
@@ -198,11 +247,40 @@ export const PhiTopo = {
   },
 };
 
+// ── First-class SU(d) Qudit Register (the dimension-flexible substrate) ───────
+// A d-level qudit register (10-state and 12-state modes) driven by
+// the real phi-quantum-types qudit engine. `ops` is a ';'-separated op-script:
+//   X (shift X_d) · Z (clock Z_d) · F / Fi (Fourier / inverse) · P:θ0,…,θ{d-1}.
+export const PhiQudit = {
+  // The register mode for dimension d. Returns { dimension }.
+  modeInfo(d = 10) {
+    const m = _module.runQuditModeInfo(d >>> 0);
+    // surface only the dimension; internal physical fields are intentionally withheld
+    return { dimension: m.dimension };
+  },
+  // Level amplitudes after the op-script on basis state |start>. Returns
+  // [{ level, re, im, prob }].
+  amplitudes(d = 10, start = 0, ops = '') {
+    return vecToArray(_module.runQuditAmplitudes(d >>> 0, start >>> 0, String(ops)))
+      .map((a) => ({ level: a.level, re: a.re, im: a.im, prob: a.prob }));
+  },
+  // Born-rule measurement histogram. Returns [{ level, count }] over `shots`.
+  measure(d = 10, start = 0, ops = '', shots = 1000, seed = 1) {
+    return vecToArray(_module.runQuditMeasure(d >>> 0, start >>> 0, String(ops),
+                                              shots >>> 0, seed >>> 0));
+  },
+  // Generalized Bell pair |Φ_d> = SUM_d (F_d ⊗ I)|0,0> joint distribution.
+  // Returns [{ a, b, prob }] over the d×d outcomes (mass on the diagonal a==b).
+  bellJoint(d = 10) { return vecToArray(_module.runQuditBellJoint(d >>> 0)); },
+  // The pair's measured entanglement: { entropy, lnD, purity }  (entropy → ln d).
+  bellStats(d = 10) { return _module.runQuditBellStats(d >>> 0); },
+};
+
 // ── φPyramid Energy Device (transient startup + feedback loop) ────────────────
 // The CORRECTED atmospheric-energy device: the DC atmospheric circuit drives a
 // 50 Hz mercury slosh (obelisk parametric feedback ramps it, the e^{rt} growth);
 // the slosh→MHD makes 50 Hz AC, which wirelessly drives a synchronous motor.
-// A stateful driver wrapping the VERIFIED phi-pyramid-cpp transient simulator —
+// A stateful driver wrapping the VERIFIED phi-pyramid-cpp transient simulator:
 // one source of truth, no JS physics (so the demo can't drift from the C++).
 export const PhiPyramid = {
   // Create a stateful device-demo driver (an Embind PyramidDemo). Methods:
@@ -223,6 +301,12 @@ export const PhiPyramid = {
   // A frame = { tHour, sun, currentUA, dumpHz, firing, bellHz, carrierMHz, floatMs,
   //             leakFloorUA, selfStarts, separationM, peakDumpHz, firstFireHour }.
   createObeliskPair() { return new _module.ObeliskPairDemo(); },
+  // Coffer MHD core. configure(B_tesla) -> CofferMHDFrame (slosh + fill fixed at the
+  // Giza self-started point: 2.5 mm/s, fill tuned to the 50 Hz bell). Frame:
+  // { bTesla, sloshVelMms, sloshAmpUm, fillFrac, bellHzCheck, fHz, vPeak, emfPeak,
+  //   hartmann, lorentzCoeff, internalROhm, powerDensity, hgMassKg, hgDepthM,
+  //   cofferL, cofferW, cofferDepth }.
+  createCofferMHD() { return new _module.CofferMHD(); },
 };
 
 const api = { ready, isReady, PhiCoherent, PhiRecovery, PhiVQE, PhiTunnel, PhiCrypto, PhiTopo, PhiPyramid };

@@ -4,7 +4,7 @@
 // Web Worker for the Trapped-Ion QEC Companion demo. Runs the exact,
 // code-capacity comparison off the UI thread: an abelian code (Z2 toric =
 // surface-equivalent) vs our non-abelian Fibonacci string-net (d=φ) on
-// identical machinery — scenarios::trapped_ion_qec_sweep — plus the device-level
+// identical machinery (scenarios::trapped_ion_qec_sweep), plus the device-level
 // resource trade (scenarios::ion_device_info) for a real trapped-ion processor.
 // Module worker:  new Worker('assets/js/trapped-ion-worker.js', { type: 'module' })
 //

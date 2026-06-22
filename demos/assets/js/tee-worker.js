@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Phi-Coherent Inc.
 //
 // Web Worker for the Topological Entanglement Entropy γ demo. Computes the
-// measured TEE constant — Fibonacci γ = log(2 + φ) vs Z₂ γ = log 2 — and the
+// measured TEE constant (Fibonacci γ = log(2 + φ) vs Z₂ γ = log 2) and the
 // bond-dimension collapse (γ → 0 at χ = 1, recovering log(2+φ) only at full
 // rank) off the UI thread, from phi-quantum-* via WASM. Module worker:
 //     new Worker('assets/js/tee-worker.js', { type: 'module' })

@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Phi-Coherent Inc.
 //
 // Web Worker for the Fibonacci string-net QEC demo. Runs the exact, dense
-// code-capacity simulation — stringnet::compare_stringnet_vs_surface_sweep —
+// code-capacity simulation (stringnet::compare_stringnet_vs_surface_sweep)
 // off the UI thread. The genuine 2D Levin-Wen Fibonacci code (d=φ) on a torus
 // vs the Z2 toric (= surface-equivalent) on identical machinery, plus the
 // literal SurfaceQEC anchor. Module worker:

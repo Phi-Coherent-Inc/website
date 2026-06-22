@@ -5,37 +5,34 @@
 //   • builds the brand header (logo → site home, title, prev/next, "All Demos")
 //   • a light/dark theme toggle that reuses the site's `phi-theme` localStorage
 //     key, so the choice persists across the site and every demo
-//   • window.PhiTheme — reads the active palette from CSS custom properties and
+//   • window.PhiTheme, which reads the active palette from CSS custom properties and
 //     notifies subscribers on theme change, so canvas / Three.js visualizations
 //     stay legible in both themes.
 //
 // A demo declares only its identity on the header element:
 //   <header class="demo-header" data-demo="vqe-landscape"
-//           data-title="VQE Energy Landscape — Variational Quantum Eigensolver"></header>
+//           data-title="VQE Energy Landscape: Variational Quantum Eigensolver"></header>
 // Load this at the end of <body>:  <script src="assets/demo-header.js"></script>
 
 (function () {
   'use strict';
 
   var DEMOS = [
-    { id: 'trapped-ion-qec',      file: 'trapped-ion-qec.html',      name: 'Trapped-Ion QEC Companion' },
-    { id: 'string-net-qec',       file: 'string-net-qec.html',       name: 'String-Net QEC' },
+    // ── Qudit Architecture (impact-ordered) ──
+    { id: 'qudit-register',       file: 'qudit-register.html',       name: 'First-Class Qudit Register' },
+    { id: 'dual-mode-core',       file: 'dual-mode-core.html',       name: 'Dual-Mode Core' },
+    { id: 'fibonacci-anyons',     file: 'fibonacci-anyons.html',     name: 'Fibonacci Anyons: Braiding & Universality' },
+    { id: 'qudit-mbqc',           file: 'qudit-mbqc.html',           name: 'Qudit MBQC (1D + 2D)' },
+    // ── Topological order, error correction & beyond ──
+    // (topological-qec is a unified host tabbing over standalone sub-demos kept
+    //  embeddable via ?embed=1: trapped-ion-qec + string-net-qec.)
+    { id: 'topological-qec',      file: 'topological-qec.html',      name: 'Topological QEC: Fibonacci vs Surface' },
     { id: 'tee-signature',        file: 'tee-signature.html',        name: 'Topological Entropy γ' },
-    { id: 'mipt',                 file: 'mipt.html',                 name: 'Measurement Transition' },
-    { id: 'mipt-scaling',         file: 'mipt-scaling.html',         name: 'MIPT Finite-Size Scaling' },
-    { id: 'mipt-collapse',        file: 'mipt-collapse.html',        name: 'MIPT Data Collapse' },
-    { id: 'fracton',              file: 'fracton.html',              name: 'Fracton Order' },
-    { id: 'haah-code',            file: 'haah-code.html',            name: 'Haah Code (Type-II)' },
-    { id: 'qudit-mbqc',           file: 'qudit-mbqc.html',           name: 'Qudit MBQC' },
-    { id: 'qudit-mbqc-2d',        file: 'qudit-mbqc-2d.html',        name: '2D Qudit MBQC' },
-    { id: 'modular-data',         file: 'modular-data.html',         name: 'Modular Data & Universality' },
-    { id: 'dual-mode-core',       file: 'dual-mode-core.html',       name: 'Dual-Mode Yoga Core' },
-    { id: 'anyon-braiding',       file: 'anyon-braiding.html',       name: 'Anyon Braiding' },
-    { id: 'time-reversal',        file: 'time-reversal.html',        name: 'Time Reversal' },
     { id: 'vqe-landscape',        file: 'vqe-landscape.html',        name: 'VQE Landscape' },
     { id: 'tunneling',            file: 'tunneling.html',            name: 'Tunneling' },
     { id: 'quantum-cryptography', file: 'quantum-cryptography.html', name: 'Quantum Cryptography' },
-    { id: 'pyramid-energy',       file: 'pyramid-energy.html',       name: 'Pyramid Energy Device' },
+    { id: 'pyramid-energy',         file: 'pyramid-energy.html',         name: 'Pyramid Energy Device' },
+    { id: 'telluric-mhd-designer', file: 'telluric-mhd-designer.html', name: 'Telluric-Resonant MHD Designer' },
   ];
 
   // ── PhiTheme: palette + change subscription ────────────────────────────────
@@ -85,10 +82,19 @@
     PhiTheme._fire();
   }
 
+  // True when the page is embedded in a unified host via ?embed=1; the host
+  // supplies the chrome (logo, title, nav, theme toggle), so the inner demo
+  // hides its own header but keeps PhiTheme live for its canvases.
+  function isEmbedded() {
+    try { return new URLSearchParams(window.location.search).has('embed'); }
+    catch (e) { return false; }
+  }
+
   // ── Build the header ───────────────────────────────────────────────────────
   function build() {
     var header = document.querySelector('.demo-header');
     if (!header) return;
+    if (isEmbedded()) { header.style.display = 'none'; return; }  // host provides the chrome
 
     var id = header.getAttribute('data-demo') || '';
     var title = header.getAttribute('data-title') || 'Interactive Demo';
@@ -98,7 +104,7 @@
     var next = DEMOS[(idx + 1) % DEMOS.length];
 
     header.innerHTML =
-      '<a class="demo-home" href="/" aria-label="φCoherent — home">' +
+      '<a class="demo-home" href="/" aria-label="φCoherent home">' +
         '<img src="/assets/coherent-logo-web.svg" alt="φCoherent Inc." width="176" height="40">' +
       '</a>' +
       '<div class="demo-title">' + title + '</div>' +
@@ -112,6 +118,13 @@
           '<span class="toggle-icon" aria-hidden="true">☾</span>' +
         '</button>' +
       '</nav>';
+
+    // Small screens truncate the inline title, so also render it as a full-width
+    // line below the header (shown only on mobile via CSS), ahead of the content.
+    var mobileTitle = document.createElement('div');
+    mobileTitle.className = 'demo-title-mobile';
+    mobileTitle.textContent = title;
+    header.insertAdjacentElement('afterend', mobileTitle);
 
     document.getElementById('demoThemeToggle').addEventListener('click', function () {
       setTheme(!PhiTheme.isDark());

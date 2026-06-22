@@ -109,6 +109,19 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* On mobile the inline title above is hidden; this full-width band shows the
+   complete title (no truncation) just below the header, before the content. */
+.demo-title-mobile {
+  display: none;
+  font-family: 'Newsreader', Georgia, serif;
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 1.3;
+  color: var(--text);
+  padding: 13px 24px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--nav-border);
+}
 .demo-switch { margin-left: auto; display: flex; align-items: center; gap: 14px; }
 .demo-nav-link {
   font-size: 12px; letter-spacing: 0.06em; text-decoration: none;
@@ -243,6 +256,13 @@ input[type="range"]::-moz-range-thumb {
 .scene-panel, .scene-container { position: relative; }
 .chart-panel { height: 240px; }
 
+/* Explanatory prose panel: a chart-panel that holds a multi-paragraph note
+   rather than a canvas. It must grow to fit its text instead of being clamped
+   to the fixed 240px chart height; without this the overflow:hidden on
+   .chart-panel clips the trailing paragraphs. The inner body carries its own
+   padding/typography. */
+.chart-panel.note { height: auto; overflow: visible; }
+
 .panel-header, .scene-header {
   padding: 12px 16px;
   border-bottom: 1px solid var(--gold-border);
@@ -351,18 +371,20 @@ input[type="range"]::-moz-range-thumb {
   .canvas-area { padding: 14px; }
   .canvas-row { grid-template-columns: 1fr; }
   /* When panels stack they become content-height, so a flex:1 canvas would
-     collapse to its 150px default — give every panel a usable minimum so the
+     collapse to its 150px default, so give every panel a usable minimum so the
      visualizations stay legible on phones. */
   .canvas-panel, .scene-panel { min-height: 340px; }
   .chart-panel { min-height: 220px; }
   .overlay-stats { grid-template-columns: 1fr; }
   .convergence-panel { position: static; width: auto; margin: 12px; }
-  .demo-title { font-size: 14px; }
+  .demo-title { display: none; }
+  .demo-title-mobile { display: block; }
   .demo-nav-link { display: none; }
 }
 
 @media (max-width: 520px) {
   .demo-header { padding: 0 14px; gap: 12px; }
+  .demo-title-mobile { padding: 12px 14px; font-size: 16px; }
   .controls { padding: 18px; gap: 18px; }
   .canvas-area { padding: 12px; gap: 12px; }
   .canvas-panel, .scene-panel { min-height: 300px; }

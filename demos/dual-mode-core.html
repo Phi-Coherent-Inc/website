@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>φCoherent — Dual-Mode Yoga Core: One Intent, Two Modes</title>
-<meta name="description" content="Interactive demo: one quantum intent compiled to two backends at once — the circuit (gate) mode and the anyonic (braiding) mode — reaching the same target with the same fidelity, computed live in your browser from phi-quantum-core-cpp via WebAssembly. φ is load-bearing only in the braiding mode.">
+<title>φCoherent · Dual-Mode Core: One Intent, Two Modes</title>
+<meta name="description" content="Interactive demo: one quantum intent compiled to two backends at once (the circuit, or gate, mode and the anyonic, or braiding, mode) reaching the same target with the same fidelity, computed live in your browser from phi-quantum-core-cpp via WebAssembly. φ is load-bearing only in the braiding mode.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://phicoherent.com/demos/dual-mode-core.html">
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -39,7 +39,7 @@
 <body>
 
 <header class="demo-header" data-demo="dual-mode-core"
-        data-title="Dual-Mode Yoga Core — One Intent, Two Modes"></header>
+        data-title="Dual-Mode Core: One Intent, Two Modes"></header>
 
 <div class="main">
   <div class="controls">
@@ -48,24 +48,24 @@
 
     <div class="stat-card stat-gold">
       <div class="stat-label">One intent · two backends</div>
-      <div class="stat-value" id="agreeVal">—</div>
+      <div class="stat-value" id="agreeVal">…</div>
       <div class="stat-sub">circuit ↔ anyonic agreement</div>
     </div>
 
     <div class="stat-card stat-green">
       <div class="stat-label">Anyonic invariant</div>
-      <div class="stat-value" id="dimVal">—</div>
+      <div class="stat-value" id="dimVal">…</div>
       <div class="stat-sub">total quantum dim D = √(1 + φ²)</div>
     </div>
 
     <div class="stat-card stat-cyan badge-card">
-      <div class="stat-label">Entangler — certification</div>
-      <div id="entanglerBadge" style="margin-top:8px">—</div>
+      <div class="stat-label">Entangler certification</div>
+      <div id="entanglerBadge" style="margin-top:8px">…</div>
     </div>
 
     <div class="stat-card stat-red">
       <div class="stat-label">Worst braid error (any target)</div>
-      <div class="stat-value" id="braidErrVal">—</div>
+      <div class="stat-value" id="braidErrVal">…</div>
       <div class="stat-sub">1 − anyonic fidelity</div>
     </div>
   </div>
@@ -73,7 +73,7 @@
   <div class="canvas-area">
     <div class="chart-panel" style="height:300px">
       <div class="panel-header">
-        <span class="panel-title">Per-Target Fidelity — circuit vs anyonic (zoomed near 1.0)</span>
+        <span class="panel-title">Per-Target Fidelity: circuit vs anyonic (zoomed near 1.0)</span>
         <div class="legend">
           <div class="legend-item"><div class="legend-dot" id="dotCircuit"></div> circuit (gate) mode</div>
           <div class="legend-item"><div class="legend-dot" id="dotAnyonic"></div> anyonic (braiding) mode</div>
@@ -84,28 +84,42 @@
 
     <div class="chart-panel" style="height:240px;margin-top:4px">
       <div class="panel-header">
-        <span class="panel-title">Braiding Cost &amp; Agreement — 1 − fidelity (log) per target</span>
+        <span class="panel-title">Braiding Cost &amp; Agreement: 1 − fidelity (log) per target</span>
         <span class="panel-tag tag-phi">φ load-bearing here</span>
       </div>
       <canvas id="errorCanvas"></canvas>
     </div>
 
-    <div class="chart-panel" style="margin-top:4px;">
+    <div class="chart-panel" style="height:260px;margin-top:4px">
+      <div class="panel-header">
+        <span class="panel-title">Entangling weave: CNOT-class distance collapses as the 6-τ-anyon braid grows</span>
+        <span class="panel-tag tag-phi">certified entangling throughout</span>
+      </div>
+      <canvas id="frontierCanvas"></canvas>
+    </div>
+
+    <div class="chart-panel note" style="margin-top:4px;">
       <div class="panel-header"><span class="panel-title">What this shows</span></div>
       <div style="padding:14px 18px;font:400 13.5px/1.62 Inter,sans-serif;color:var(--text-muted);">
-        <p style="margin:0 0 10px;">The <b>dual-mode yoga core</b> compiles a single quantum
-        <i>intent</i> — a Hadamard, a T-gate, a φ-pseudo-Haar twirl — to <b>two backends at once</b>:
+        <p style="margin:0 0 10px;">The <b>dual-mode core</b> compiles a single quantum
+        <i>intent</i> (a Hadamard, a T-gate, a φ-pseudo-Haar twirl) to <b>two backends at once</b>:
         the familiar <b>circuit (gate) mode</b>, and the <b>anyonic (braiding) mode</b> that realizes the
         same unitary by braiding Fibonacci anyons on a shared weave. Both reach the target at
         fidelity ≈ 1.0; the only difference is a tiny residual <b>braiding error</b> from compiling the
         target into a finite braid word.</p>
         <p style="margin:0 0 10px;">The top chart zooms the y-axis right up against 1.0 so the two
-        modes are distinguishable; the lower chart plots <b>1 − fidelity</b> on a log axis so the braid
-        error — invisible at full scale — becomes legible, annotated with each target's
+        modes are distinguishable; the second chart plots <b>1 − fidelity</b> on a log axis so the braid
+        error, invisible at full scale, becomes legible, annotated with each target's
         <b>braid length</b> and the cross-mode <b>agreement</b>.</p>
+        <p style="margin:0 0 10px;">The third chart is the <b>entangling weave</b>. A two-qubit gate
+        can't come from single-anyon moves; it needs a genuine braid of <b>six τ-anyons</b>, searched
+        live. As the allowed braid grows longer, the realized gate's <b>distance to the CNOT local
+        class</b> collapses (here ~1.9 → 0.19 once the braid reaches length 7), while the output stays
+        <b>certified entangling</b> throughout: Schmidt rank ≥ 2 and positive PPT-negativity on a
+        separable input. Entanglement straight out of braiding, no two-qubit gate ever applied.</p>
         <p style="margin:0;"><b>Where φ is load-bearing:</b> only in the <b>anyonic mode</b>. The braiding
         backend lives on the Fibonacci anyon theory whose total quantum dimension is exactly
-        <b>D = √(1 + φ²) ≈ 1.902</b> — that golden-ratio fact is what makes braiding alone universal. In
+        <b>D = √(1 + φ²) ≈ 1.902</b>. That golden-ratio fact is what makes braiding alone universal. In
         the circuit mode φ plays no special role; it is one gate set among many. Everything here is
         computed live in your browser from <code>phi-quantum-core-cpp</code> via WebAssembly.</p>
       </div>
@@ -115,7 +129,7 @@
 
 <div class="caveat-footer">
   <strong>Honest scope.</strong> Both modes are simulated. The circuit mode is exact gate algebra; the
-  anyonic mode is the Fibonacci-anyon braid representation on a small fusion space — not realized
+  anyonic mode is the Fibonacci-anyon braid representation on a small fusion space, not realized
   hardware. The headline is structural: <em>one API, two interchangeable modes, the same target</em>.
   The golden ratio is load-bearing <em>only</em> in the braiding mode (via the anyon's quantum dimension);
   in the gate mode it is decorative.
@@ -136,6 +150,7 @@ const TARGET_NAMES = ['Hadamard', 'T-gate', 'φ-pseudo-Haar'];
 let worker = null;
 let qubit = null;        // [{ target, circuitFid, anyonicFid, braidError, braidLength, modeAgreement }]
 let entangler = null;    // { leakage, cnotDistance, maxNegativity, schmidtRank, certified }
+let frontier = null;     // [{ len, leakage, cnotDistance, maxNegativity, schmidtRank, certified }]
 let totalDim = null;     // ~1.902
 let isRunning = false;
 
@@ -255,6 +270,58 @@ function drawError() {
   ctx.fillText('1 − fidelity (log)', 0, 0); ctx.restore();
 }
 
+// ── entangler frontier: CNOT-class distance (log) vs allowed 6-anyon braid length
+function drawFrontier() {
+  if (!frontier || !frontier.length) return;
+  const pal = P();
+  const canvas = document.getElementById('frontierCanvas');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * 2; canvas.height = (rect.height - 44) * 2;
+  const ctx = canvas.getContext('2d'); ctx.setTransform(2, 0, 0, 2, 0, 0);
+  const w = rect.width, h = rect.height - 44;
+  ctx.fillStyle = pal.panel; ctx.fillRect(0, 0, w, h);
+
+  const pad = { top: 20, right: 70, bottom: 42, left: 56 };
+  const cw = w - pad.left - pad.right, ch = h - pad.top - pad.bottom;
+  const N = frontier.length;
+  const toX = (i) => pad.left + (N <= 1 ? 0.5 : i / (N - 1)) * cw;
+  // log axis of CNOT-class distance
+  const FLOOR = 1e-3;
+  const logHi = 0.5, logLo = -1.0;             // 10^0.5 ≈ 3.2  down to  10^-1 = 0.1
+  const toY = (v) => {
+    const l = Math.log10(Math.max(FLOOR, v));
+    return pad.top + (1 - Math.max(0, Math.min(1, (l - logLo) / (logHi - logLo)))) * ch;
+  };
+  ctx.strokeStyle = pal.grid; ctx.lineWidth = 0.5; ctx.fillStyle = pal.textDim; ctx.font = '10px Inter';
+  for (let l = Math.ceil(logLo); l <= logHi; l++) {
+    const y = pad.top + (1 - (l - logLo) / (logHi - logLo)) * ch;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+    ctx.textAlign = 'right'; ctx.fillText('1e' + l, pad.left - 8, y + 3);
+  }
+  // distance line
+  ctx.strokeStyle = pal.gold; ctx.lineWidth = 2.4; ctx.beginPath();
+  frontier.forEach((r, i) => { const x = toX(i), y = toY(r.cnotDistance); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+  ctx.stroke();
+  // points coloured by certification; x labels = braid length
+  frontier.forEach((r, i) => {
+    const x = toX(i), y = toY(r.cnotDistance);
+    ctx.fillStyle = r.certified ? pal.green || pal.gold : pal.red || pal.textDim;
+    ctx.beginPath(); ctx.arc(x, y, 4, 0, 2 * Math.PI); ctx.fill();
+    ctx.fillStyle = pal.textDim; ctx.font = '9px Inter'; ctx.textAlign = 'center';
+    ctx.fillText('len ' + r.len, x, h - pad.bottom + 16);
+    ctx.fillText('S=' + r.schmidtRank, x, h - pad.bottom + 29);
+  });
+  // annotate the collapse
+  const last = frontier[frontier.length - 1];
+  ctx.fillStyle = pal.text; ctx.font = '600 11px Inter'; ctx.textAlign = 'left';
+  ctx.fillText('→ CNOT class (d = ' + last.cnotDistance.toExponential(1) + ')',
+               toX(N - 1) + 8, toY(last.cnotDistance) + 4);
+  ctx.save(); ctx.translate(12, h / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillStyle = pal.textDim; ctx.font = '11px Inter'; ctx.textAlign = 'center';
+  ctx.fillText('distance to CNOT class (log)', 0, 0); ctx.restore();
+  ctx.textAlign = 'center'; ctx.fillText('allowed 6-anyon braid length →', (pad.left + w - pad.right) / 2, h - 4);
+}
+
 function renderCards() {
   if (!qubit) return;
   let worstBraid = 0, worstAgree = 1;
@@ -277,14 +344,14 @@ function renderCards() {
   }
 }
 
-function renderAll() { renderCards(); drawChart(); drawError(); }
+function renderAll() { renderCards(); drawChart(); drawError(); drawFrontier(); }
 
 function runCore() {
   if (isRunning || !worker) return;
   isRunning = true;
   document.getElementById('btnRun').classList.add('running');
   document.getElementById('btnRun').textContent = 'Running…';
-  statusEl.textContent = 'Compiling one intent to both modes (circuit + anyonic)…';
+  statusEl.textContent = 'Compiling one intent to both modes, then searching the 6-anyon entangling-weave frontier (a real braid search, ~10s)…';
   worker.postMessage({});
 }
 
@@ -302,9 +369,10 @@ function initWorker() {
     if (!e.data.ok) { statusEl.textContent = 'Error: ' + e.data.error; return; }
     qubit = e.data.qubit;
     entangler = e.data.entangler;
+    frontier = e.data.frontier;
     totalDim = e.data.totalDim;
     statusEl.textContent = 'One intent → two modes · both reach the target · '
-      + (entangler && entangler.certified ? 'entangler certified' : 'entangler check complete');
+      + (entangler && entangler.certified ? 'entangler certified, weave frontier mapped' : 'entangler check complete');
     renderAll();
   };
   worker.onerror = (e) => {

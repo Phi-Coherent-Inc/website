@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>φCoherent · First-Class Qudit Register</title>
+<meta name="description" content="Interactive demo: a first-class multi-state qudit register. Allocate a multi-level register (the qubit is the 2-state special case), apply the generalized gates (shift, clock, Fourier, and a clean phase), and read the amplitude and phase of every level. Sample measurements, then weave two qudits into an entangled pair whose entanglement is computed exactly. Runs the real qudit engine live via WebAssembly.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://phicoherent.com/demos/qudit-register.html">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#C9A830">
+<script>try{if(localStorage.getItem('phi-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/demo.css">
+<style>
+  .caveat-footer {
+    max-width: 1180px; margin: 8px auto 40px; padding: 16px 20px;
+    border: 1px solid var(--gold-border); border-radius: 10px;
+    font: 400 12.5px/1.6 Inter, sans-serif; color: var(--text-muted);
+    background: var(--surface);
+  }
+  .caveat-footer strong { color: var(--text); font-weight: 600; }
+  .dseg { display: flex; gap: 6px; }
+  .dseg button {
+    flex: 1; padding: 8px 0; border: 1px solid var(--gold-border);
+    border-radius: 8px; background: var(--surface); color: var(--text-muted);
+    font: 600 13px Inter, sans-serif; cursor: pointer;
+  }
+  .dseg button.active { background: var(--gold); color: #1C1810; border-color: var(--gold); }
+  .gate-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .gate-grid button {
+    padding: 9px 0; border: 1px solid var(--gold-border); border-radius: 8px;
+    background: var(--surface); color: var(--text); font: 600 13px Inter, sans-serif; cursor: pointer;
+  }
+  .gate-grid button:hover { border-color: var(--gold); }
+  .gate-grid button.wide { grid-column: 1 / 3; }
+  .gate-grid button.ghost { color: var(--text-muted); font-weight: 500; }
+  .opscript {
+    margin-top: 8px; padding: 8px 10px; border: 1px solid var(--gold-border); border-radius: 8px;
+    background: var(--panel); font: 500 12px/1.5 'SF Mono', ui-monospace, monospace;
+    color: var(--text-muted); min-height: 18px; word-break: break-all;
+  }
+  .phase-hue { display:flex; align-items:center; gap:8px; font:400 11px Inter,sans-serif; color:var(--text-muted); margin-top:4px;}
+  .phase-bar { flex:1; height:8px; border-radius:4px;
+    background: linear-gradient(90deg,
+      hsl(0 70% 55%), hsl(60 70% 55%), hsl(120 70% 55%), hsl(180 70% 55%),
+      hsl(240 70% 55%), hsl(300 70% 55%), hsl(360 70% 55%)); }
+</style>
+</head>
+<body>
+
+<header class="demo-header" data-demo="qudit-register"
+        data-title="First-Class Qudit Register"></header>
+
+<div class="main">
+  <div class="controls">
+    <div class="demo-status" id="status">Loading…</div>
+
+    <div class="control-group">
+      <label>Register dimension</label>
+      <div class="dseg" id="dseg">
+        <button data-d="2">d = 2</button>
+        <button data-d="10" class="active">d = 10</button>
+        <button data-d="12">d = 12</button>
+      </div>
+    </div>
+
+    <div class="stat-card stat-gold">
+      <div class="stat-label">Register mode</div>
+      <div class="stat-value" id="modeVal" style="font-size:18px">…</div>
+      <div class="stat-sub" id="modeSub">…</div>
+    </div>
+
+    <div class="control-group">
+      <label>Initial state |j₀⟩ &nbsp;<span id="startLbl" style="color:var(--text-muted)"></span></label>
+      <input type="range" id="startRange" min="0" max="9" value="0" step="1">
+    </div>
+
+    <div class="control-group">
+      <label>Apply a gate (builds the program)</label>
+      <div class="gate-grid">
+        <button data-op="X">X_d &nbsp;shift</button>
+        <button data-op="Z">Z_d &nbsp;clock</button>
+        <button data-op="F">F_d &nbsp;Fourier</button>
+        <button data-op="Fi">F_d† &nbsp;inverse</button>
+        <button class="wide" id="phaseBtn">P(θ) &nbsp;phase ramp&nbsp; <span id="thetaLbl" style="color:var(--text-muted)"></span></button>
+      </div>
+      <input type="range" id="thetaRange" min="0" max="180" value="40" step="1" style="margin-top:6px">
+      <div class="gate-grid" style="margin-top:6px">
+        <button class="ghost" id="undoBtn">⟲ Undo</button>
+        <button class="ghost" id="resetBtn">✕ Reset</button>
+      </div>
+      <div class="opscript" id="opscript">|j₀⟩</div>
+    </div>
+
+    <div class="control-group">
+      <button class="btn-run" id="measureBtn">Measure (2000 shots)</button>
+    </div>
+
+    <div class="stat-card stat-cyan">
+      <div class="stat-label">Two-qudit Bell pair: entanglement (measured)</div>
+      <div class="stat-value" id="entVal">…</div>
+      <div class="stat-sub" id="entSub">S(ρ_A) → ln d</div>
+    </div>
+  </div>
+
+  <div class="canvas-area">
+    <div class="chart-panel" style="height:330px">
+      <div class="panel-header">
+        <span class="panel-title">Qudit register: amplitude (bar) and phase (colour) of every register level</span>
+        <span class="panel-tag tag-phi" id="ampTag">live state</span>
+      </div>
+      <canvas id="ampCanvas"></canvas>
+      <div class="phase-hue"><span>phase −π</span><div class="phase-bar"></div><span>+π</span></div>
+    </div>
+
+    <div class="chart-panel" style="height:300px;margin-top:4px">
+      <div class="panel-header">
+        <span class="panel-title">Generalized Bell pair: SUM_d(F_d⊗I)|0,0⟩ joint outcome distribution (perfect correlation a = b)</span>
+        <span class="panel-tag tag-cyan">entangling weave: F_d then SUM_d</span>
+      </div>
+      <canvas id="bellCanvas"></canvas>
+    </div>
+
+    <div class="chart-panel note" style="margin-top:4px;">
+      <div class="panel-header"><span class="panel-title">What this shows: the dimension-flexible substrate, first-class</span></div>
+      <div style="padding:14px 18px;font:400 13.5px/1.62 Inter,sans-serif;color:var(--text-muted);">
+        <p style="margin:0 0 10px;">This is the architecture's <b>first-class qudit</b>: not a qubit
+        with extra levels bolted on, but a native <b>multi-state register</b> carried by the rich
+        internal state of a single atom. The same atom offers two register sizes, chosen by control-laser
+        frequency alone: a <b>10-state</b> mode and a <b>12-state</b> mode. Each bar above is one state of
+        the register; its height is the probability, its colour the quantum phase. The qubit (d = 2) is
+        just the special case.</p>
+        <p style="margin:0 0 10px;">The gates are the generalized Weyl set. The <b>shift X_d</b>
+        cycles the states, the <b>clock Z_d</b> winds a phase ω<sup>j</sup> = e<sup>2πij/d</sup>
+        onto each, the <b>Fourier F_d</b> spreads a single state into an equal mix of all
+        d (watch one bar become d equal bars), and the <b>phase gate P(θ)</b> is clean: it imprints
+        exactly the angles you ask for, with no distortion. <b>Measure</b> draws samples;
+        the histogram overlays the live probabilities.</p>
+        <p style="margin:0;">The lower panel <b>weaves two qudits</b>: a Fourier on the first, then a
+        SUM_d (the qudit version of a CNOT) onto the second, builds the maximally entangled pair. All
+        the probability lands on the diagonal a = b (perfect correlation). Its entanglement
+        is not asserted but <b>computed</b>: the entropy of one qudit's state comes
+        out to exactly <b>ln d</b>. Everything here runs the real φ-quantum qudit engine, compiled to
+        WebAssembly, live as you click.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="caveat-footer">
+  <strong>Honest scope.</strong> This is an exact state-vector simulation of one (and, for the Bell
+  panel, two) multi-state registers on the real phi-quantum-types qudit engine; the d = 2 case is
+  identical to the qubit path. It simulates the <em>logical</em> register, not the atomic hardware, and
+  no golden ratio enters here. This panel is the dimension-flexible building block itself; the golden
+  ratio is load-bearing elsewhere in the architecture. Not realized hardware.
+</div>
+
+<script src="assets/demo-header.js"></script>
+<script type="module">
+// ============================================================
+// Real computation via the phi-quantum WASM module (PhiQudit namespace):
+//   amplitudes(d, start, ops) → per-level {level, re, im, prob}
+//   measure(d, start, ops, shots, seed) → Born histogram {level, count}
+//   bellJoint(d) / bellStats(d) → generalized Bell pair + measured entropy (→ ln d)
+//   modeInfo(d) → the register mode for dimension d
+// Lightweight: runs on the main thread, re-rendered on every click.
+// ============================================================
+import { ready, PhiQudit } from './assets/js/phi-quantum.js';
+
+const P = () => window.PhiTheme.palette();
+const statusEl = document.getElementById('status');
+
+let d = 10, start = 0, theta = 40, ops = [], shots = 0, measCounts = null;
+let amps = [], bell = [], bstats = null;
+
+function phaseHue(re, im) { let a = Math.atan2(im, re); return ((a + Math.PI) / (2 * Math.PI)) * 360; }
+
+function setupCanvas(id) {
+  const canvas = document.getElementById(id);
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const foot = id === 'ampCanvas' ? 64 : 44;
+  canvas.width = rect.width * 2; canvas.height = (rect.height - foot) * 2;
+  const ctx = canvas.getContext('2d'); ctx.setTransform(2, 0, 0, 2, 0, 0);
+  const w = rect.width, h = rect.height - foot, pal = P();
+  ctx.fillStyle = pal.panel; ctx.fillRect(0, 0, w, h);
+  return { ctx, w, h, pal };
+}
+
+// ── amplitude/phase bars (+ optional measurement histogram overlay) ───────────
+function drawAmp() {
+  if (!amps.length) return;
+  const { ctx, w, h, pal } = setupCanvas('ampCanvas');
+  const pad = { top: 18, right: 18, bottom: 38, left: 48 };
+  const cw = w - pad.left - pad.right, ch = h - pad.top - pad.bottom;
+  const N = amps.length;
+  const yMax = 1.0;
+  const toY = (v) => pad.top + (1 - v / yMax) * ch;
+
+  // y grid
+  ctx.strokeStyle = pal.grid; ctx.lineWidth = 0.5; ctx.fillStyle = pal.textDim; ctx.font = '10px Inter';
+  for (let i = 0; i <= 5; i++) {
+    const yv = i / 5, y = toY(yv);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+    ctx.textAlign = 'right'; ctx.fillText(yv.toFixed(1), pad.left - 7, y + 3);
+  }
+
+  const slot = cw / N, bw = Math.min(slot * 0.62, 46);
+  const totShots = measCounts ? measCounts.reduce((s, c) => s + c.count, 0) : 0;
+  amps.forEach((a, i) => {
+    const cx = pad.left + slot * (i + 0.5);
+    // probability bar, coloured by phase
+    const y = toY(a.prob);
+    ctx.fillStyle = a.prob > 1e-6 ? `hsl(${phaseHue(a.re, a.im).toFixed(0)} 65% 55%)` : pal.grid;
+    ctx.fillRect(cx - bw / 2, y, bw, toY(0) - y);
+    // measurement histogram overlay (outline)
+    if (measCounts) {
+      const f = measCounts[i].count / Math.max(1, totShots), my = toY(f);
+      ctx.strokeStyle = pal.text; ctx.lineWidth = 1.6;
+      ctx.strokeRect(cx - bw / 2, my, bw, toY(0) - my);
+    }
+    // level label
+    ctx.fillStyle = pal.textDim; ctx.font = '9px Inter'; ctx.textAlign = 'center';
+    ctx.fillText(String(i), cx, h - pad.bottom + 14);
+  });
+
+  ctx.fillStyle = pal.textDim; ctx.font = '11px Inter'; ctx.textAlign = 'center';
+  ctx.fillText('register level  (' + N + ' levels)', (pad.left + w - pad.right) / 2, h - 4);
+  ctx.save(); ctx.translate(11, h / 2); ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = 'center'; ctx.fillText('probability', 0, 0); ctx.restore();
+  document.getElementById('ampTag').textContent = measCounts ? (totShots + ' shots vs prob') : 'live state';
+}
+
+// ── generalized Bell joint distribution (d×d heatmap) ─────────────────────────
+function drawBell() {
+  if (!bell.length) return;
+  const { ctx, w, h, pal } = setupCanvas('bellCanvas');
+  const N = d, cell = Math.min((h - 38) / N, (w - 120) / N);
+  const ox = (w - cell * N) / 2 + 10, oy = 12;
+  let pmax = 0; bell.forEach((r) => { if (r.prob > pmax) pmax = r.prob; });
+  bell.forEach((r) => {
+    const t = pmax > 0 ? r.prob / pmax : 0;
+    // gold heat on the diagonal, faint elsewhere
+    ctx.fillStyle = r.prob > 1e-9 ? `hsl(45 80% ${28 + 40 * t}%)` : pal.grid;
+    ctx.globalAlpha = r.prob > 1e-9 ? 1 : 0.18;
+    ctx.fillRect(ox + r.b * cell, oy + r.a * cell, cell - 1.5, cell - 1.5);
+    ctx.globalAlpha = 1;
+  });
+  // axes labels
+  ctx.fillStyle = pal.textDim; ctx.font = '10px Inter'; ctx.textAlign = 'center';
+  ctx.fillText('qudit B outcome  b  →', ox + cell * N / 2, oy + cell * N + 22);
+  ctx.save(); ctx.translate(ox - 14, oy + cell * N / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillText('qudit A outcome  a  →', 0, 0); ctx.restore();
+  ctx.textAlign = 'left'; ctx.fillStyle = pal.text; ctx.font = '600 11px Inter';
+  ctx.fillText('p = 1/d on the diagonal', ox + cell * N + 14, oy + 16);
+}
+
+function renderModeCard() {
+  const m = PhiQudit.modeInfo(d);
+  document.getElementById('modeVal').textContent = 'd = ' + m.dimension;
+  document.getElementById('modeSub').textContent = m.dimension + ' states · selected in software';
+}
+
+function renderOpscript() {
+  const el = document.getElementById('opscript');
+  el.innerHTML = '|' + start + '⟩' + ops.map((o) => {
+    if (o.startsWith('P:')) return ' → <b>P(θ)</b>';
+    return ' → <b>' + ({ X: 'X_d', Z: 'Z_d', F: 'F_d', Fi: 'F_d†' }[o] || o) + '</b>';
+  }).join('');
+}
+
+function recompute() {
+  amps = PhiQudit.amplitudes(d, start, ops.join(';'));
+  bell = PhiQudit.bellJoint(d);
+  bstats = PhiQudit.bellStats(d);
+  document.getElementById('entVal').textContent = 'S = ' + bstats.entropy.toFixed(4) + ' nats';
+  document.getElementById('entSub').textContent =
+    'ln d = ' + bstats.lnD.toFixed(4) + '  ·  purity 1/d = ' + bstats.purity.toFixed(4);
+  renderOpscript();
+  drawAmp(); drawBell();
+}
+
+function phaseRampToken() {
+  // P(θ) as a linear ramp e^{i·j·θ}: angles 0, θ, 2θ, …  (a clean, visible phase winding)
+  const th = theta * Math.PI / 180;
+  const ang = []; for (let j = 0; j < d; j++) ang.push((j * th).toFixed(5));
+  return 'P:' + ang.join(',');
+}
+
+// ── controls ──────────────────────────────────────────────────────────────────
+function selectD(nd) {
+  d = nd;
+  document.querySelectorAll('#dseg button').forEach((b) => b.classList.toggle('active', +b.dataset.d === d));
+  const sr = document.getElementById('startRange'); sr.max = d - 1; if (start > d - 1) start = 0; sr.value = start;
+  document.getElementById('startLbl').textContent = '= ' + start;
+  ops = []; measCounts = null;
+  renderModeCard(); recompute();
+}
+
+document.querySelectorAll('#dseg button').forEach((b) =>
+  b.addEventListener('click', () => selectD(+b.dataset.d)));
+
+document.getElementById('startRange').addEventListener('input', (e) => {
+  start = +e.target.value; document.getElementById('startLbl').textContent = '= ' + start;
+  measCounts = null; recompute();
+});
+
+document.querySelectorAll('.gate-grid button[data-op]').forEach((b) =>
+  b.addEventListener('click', () => { ops.push(b.dataset.op); measCounts = null; recompute(); }));
+
+document.getElementById('thetaRange').addEventListener('input', (e) => {
+  theta = +e.target.value; document.getElementById('thetaLbl').textContent = theta + '°';
+});
+document.getElementById('phaseBtn').addEventListener('click', () => {
+  ops.push(phaseRampToken()); measCounts = null; recompute();
+});
+document.getElementById('undoBtn').addEventListener('click', () => { ops.pop(); measCounts = null; recompute(); });
+document.getElementById('resetBtn').addEventListener('click', () => { ops = []; measCounts = null; recompute(); });
+document.getElementById('measureBtn').addEventListener('click', () => {
+  shots = 2000;
+  measCounts = PhiQudit.measure(d, start, ops.join(';'), shots, (Date.now() & 0xffff) || 7);
+  drawAmp();
+});
+
+window.addEventListener('resize', () => { drawAmp(); drawBell(); });
+// redraw on theme toggle
+new MutationObserver(() => { drawAmp(); drawBell(); })
+  .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+(async function init() {
+  try {
+    statusEl.textContent = 'Loading qudit engine…';
+    await ready();
+    statusEl.textContent = 'Ready. Click a gate to drive the register.';
+    document.getElementById('thetaLbl').textContent = theta + '°';
+    document.getElementById('startLbl').textContent = '= ' + start;
+    selectD(10);
+  } catch (e) {
+    statusEl.textContent = 'Failed to load: ' + e.message;
+  }
+})();
+</script>
+</body>
+</html>

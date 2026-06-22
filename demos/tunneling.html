@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>φCoherent — Quantum Tunneling: Order ⊗ Flow</title>
-<meta name="description" content="Interactive demo: the two principles of quantum tunneling — the golden-ratio Cantor band structure (order) and dissipative tunneling dynamics (flow) — joined at the Wick rotation, computed live from phi-quantum-tunnel-cpp via WebAssembly.">
+<title>φCoherent · Quantum Tunneling: Order ⊗ Flow</title>
+<meta name="description" content="Interactive demo: the two principles of quantum tunneling, the golden-ratio Cantor band structure (order) and dissipative tunneling dynamics (flow), joined at the Wick rotation, computed live from phi-quantum-tunnel-cpp via WebAssembly.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://phicoherent.com/demos/tunneling.html">
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -20,11 +20,11 @@
 <body>
 
 <header class="demo-header" data-demo="tunneling"
-        data-title="Quantum Tunneling — Order ⊗ Flow (φ ⊗ e)"></header>
+        data-title="Quantum Tunneling: Order ⊗ Flow (φ ⊗ e)"></header>
 
 <p id="duality" style="max-width:1100px;margin:6px auto 0;padding:0 24px;color:var(--text-muted);font-size:13px;line-height:1.6;text-align:center;">
   Tunneling has <strong>two principles</strong>, joined at the Wick rotation
-  <em>t ↔ iτ</em> — the two axes of the complex exponential e<sup>z</sup>:
+  <em>t ↔ iτ</em>, the two axes of the complex exponential e<sup>z</sup>:
   the reversible golden-ratio <strong>spectrum</strong> (order, in space) and the
   irreversible <strong>dynamics</strong> (flow, in time).
 </p>
@@ -32,7 +32,7 @@
 <div class="main">
   <div class="controls">
     <div class="control-group">
-      <label style="color:var(--gold)">Order — φ spatial spectrum (reversible)</label>
+      <label style="color:var(--gold)">Order: φ spatial spectrum (reversible)</label>
       <label>Generation (cells = F<sub>n</sub>)</label>
       <div class="slider-row">
         <input type="range" id="gen" min="2" max="18" step="1" value="12">
@@ -46,7 +46,7 @@
     </div>
 
     <div class="control-group">
-      <label style="color:var(--demo-cyan,#1f8aa0)">Flow — dissipative dynamics (irreversible)</label>
+      <label style="color:var(--demo-cyan,#1f8aa0)">Flow: dissipative dynamics (irreversible)</label>
       <label>Tunnel splitting Δ</label>
       <div class="slider-row">
         <input type="range" id="delta" min="0.5" max="2.0" step="0.1" value="1.0">
@@ -61,24 +61,34 @@
 
     <div class="demo-status" id="status">Loading…</div>
 
+    <div class="stat-card" style="border-left:3px solid var(--gold)">
+      <div class="stat-label">Honest scope</div>
+      <div style="font:400 12px/1.55 Inter,sans-serif;color:var(--text-muted);margin-top:6px">
+        φ is the inflation factor of the Fibonacci substitution that builds this lattice, so the
+        Cantor band structure and the Kohmoto invariant are genuinely quasiperiodic-golden. Honest
+        scope: the dephasing threshold itself is not φ-specific; the golden structure lives in the
+        spectrum, not the bath coupling.
+      </div>
+    </div>
+
     <div class="stat-card stat-gold">
       <div class="stat-label">Lattice size · O(log N) reach</div>
-      <div class="stat-value" id="reach">—</div>
+      <div class="stat-value" id="reach">…</div>
       <div class="stat-sub">trace-map scan to gen 35</div>
     </div>
     <div class="stat-card stat-gold">
       <div class="stat-label">Allowed band measure</div>
-      <div class="stat-value" id="frac">—</div>
+      <div class="stat-value" id="frac">…</div>
       <div class="stat-sub">grid-sampled · → Cantor set</div>
     </div>
     <div class="stat-card stat-cyan">
       <div class="stat-label">Tunneling coherence</div>
-      <div class="stat-value" id="coh">—</div>
+      <div class="stat-value" id="coh">…</div>
       <div class="stat-sub">late ⟨Z⟩ envelope · γ<sub>φ</sub>→0 recurs</div>
     </div>
     <div class="stat-card stat-green">
       <div class="stat-label">Linear entropy S (readout)</div>
-      <div class="stat-value" id="ent">—</div>
+      <div class="stat-value" id="ent">…</div>
       <div class="stat-sub">e washes · the dissipator is the engine</div>
     </div>
   </div>
@@ -107,7 +117,7 @@
     <!-- Real-world payoff (φ · order): photonic Fibonacci mirror transmission -->
     <div class="canvas-panel" style="flex:0 0 260px;">
       <div class="panel-header">
-        <span class="panel-title">Photonic Fibonacci mirror · transmission T(λ) — a fabricable device</span>
+        <span class="panel-title">Photonic Fibonacci mirror · transmission T(λ): a fabricable device</span>
         <span class="panel-tag tag-phi">φ load-bearing · real optics</span>
       </div>
       <canvas id="photonicCanvas"></canvas>
@@ -116,31 +126,31 @@
 </div>
 
 <p id="explainer" style="max-width:1100px;margin:8px auto 40px;padding:0 24px;color:var(--text-muted);font-size:13.5px;line-height:1.7;">
-  <strong>Left — Order (φ · spatial · reversible).</strong> The Kohmoto–Kadanoff–Tang trace
+  <strong>Left: Order (φ · spatial · reversible).</strong> The Kohmoto–Kadanoff–Tang trace
   map (1983) computes the Cantor band-membership of a Fibonacci golden-ratio
-  superlattice in <strong>O(log N)</strong> — a gen-35 ≈ 9.2-million-cell lattice in
+  superlattice in <strong>O(log N)</strong>: a gen-35 ≈ 9.2-million-cell lattice in
   milliseconds. Here φ is genuinely load-bearing: the golden ratio <em>is</em> the
   recurrence (the silver-ratio word breaks the invariant). The allowed-fraction shown
   is a grid-sampled estimate of the shrinking Cantor measure.
   <br><br>
-  <strong>Bottom — the real-world payoff (φ · optics).</strong> The exact same Kohmoto
+  <strong>Bottom: the real-world payoff (φ · optics).</strong> The exact same Kohmoto
   trace map drives a <em>fabricable device</em>: a quarter-wave TiO₂/SiO₂ dielectric
-  multilayer stacked in the Fibonacci word — a photonic quasicrystal mirror. Its
+  multilayer stacked in the Fibonacci word: a photonic quasicrystal mirror. Its
   transmission spectrum T(λ) carries the φ signature as <em>fractal (Cantor) band
   gaps</em> (gold), where a periodic Bragg stack has only simple, evenly-spaced gaps.
   The optical layer matrices are unimodular, so their half-traces obey the identical
-  golden trace map with a conserved Kohmoto invariant — φ is load-bearing here by the
+  golden trace map with a conserved Kohmoto invariant: φ is load-bearing here by the
   same mechanism, now in classical optics you could build on a bench.
   <br><br>
-  <strong>Right — Flow (irreversible dynamics · time).</strong> The same two wells, now in
+  <strong>Right: Flow (irreversible dynamics · time).</strong> The same two wells, now in
   time: H = −(Δ/2)X drives <em>coherent tunneling</em> between them, while a bath
   (rate γ<sub>φ</sub>) dephases it. With γ<sub>φ</sub>=0 the population ⟨Z⟩ oscillates
-  and <em>recurs</em> forever — reversible, no decay. Turn the bath on and the
+  and <em>recurs</em> forever, reversible, no decay. Turn the bath on and the
   oscillation <em>irreversibly damps to localization</em>: the dissipator (the
   OPERATOR) is the engine. The constant <em>e</em> washes (it's notation); the rising
   entropy is a readout, not the cause.
   <br><br>
-  The two are <strong>orthogonal registers</strong> joined only at the Wick rotation —
+  The two are <strong>orthogonal registers</strong> joined only at the Wick rotation:
   φ orders the spatial spectrum, the operator drives the irreversible flow. They
   compose; there is no φ×e fusion. We do <strong>not</strong> claim φ governs the
   dynamics, nor that e governs the spectrum, nor any speed-up over diagonalization.
@@ -304,7 +314,7 @@ function renderPhi() {
   drawBands(G, epsA, epsB);
   drawPhotonic(G);
   const row = staircase ? staircase.find(r => r.gen === G) : null;
-  document.getElementById('frac').textContent = row ? row.allowedFraction.toFixed(4) : '—';
+  document.getElementById('frac').textContent = row ? row.allowedFraction.toFixed(4) : '…';
 }
 function renderE() {
   drawDynamics(parseFloat(document.getElementById('delta').value),

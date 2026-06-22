@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>φCoherent Inc. · Deep-Technology Research</title>
-<meta name="description" content="φCoherent Inc. builds quantum computing, AGI, compression, and cryptography systems derived from a single mathematical identity. Zero free parameters. Ontario, Canada.">
+<meta name="description" content="φCoherent Inc. builds compression codecs, cryptographic protocols, quantum computing, and AGI from first principles, with every constant derived from natural mathematical identities. Zero free parameters. Ontario, Canada.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://phicoherent.com/">
 
@@ -12,13 +12,13 @@
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://phicoherent.com/">
 <meta property="og:title" content="φCoherent Inc. · Deep-Technology Research">
-<meta property="og:description" content="Quantum computing, compression, AGI, and cryptography. Every system derives from a single mathematical identity.">
+<meta property="og:description" content="Compression, cryptography, quantum computing, and AGI, built from first principles. Every constant derives from natural mathematical identities.">
 <meta property="og:image" content="https://phicoherent.com/assets/phi_qubit_spiral_hero.svg">
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="φCoherent Inc. · Deep-Technology Research">
-<meta name="twitter:description" content="Quantum computing, compression, AGI, and cryptography. Every system derives from a single mathematical identity.">
+<meta name="twitter:description" content="Compression, cryptography, quantum computing, and AGI, built from first principles. Every constant derives from natural mathematical identities.">
 
 <!-- Icons -->
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -598,6 +598,9 @@ section {
 }
 .badge-done   { background: rgba(201,168,48,0.14); color: var(--gold); }
 .badge-active { background: var(--green-bg); color: var(--green); }
+/* Demo descriptor badge (e.g. the φ-native PQC adversarial testbed). */
+.badge-phi    { background: rgba(201,168,48,0.16); color: var(--gold); }
+.demo-card .badge { margin-bottom: 8px; }
 .callout {
   background: var(--gold-subtle);
   border: 1px solid var(--gold-border);
@@ -663,8 +666,8 @@ section {
 #ip {}
 .ip-cols {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 52px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 44px;
   margin-top: 44px;
 }
 .ip-col-label {
@@ -992,8 +995,8 @@ footer {
     <a href="#foundation">Foundation</a>
     <a href="#pillars">Technology</a>
     <a href="#cryptography">Cryptography</a>
-    <a href="#demos">Demos</a>
     <a href="#machine">Machine</a>
+    <a href="#demos">Demos</a>
     <a href="#market">Market</a>
     <a href="#invest">Invest</a>
   </nav>
@@ -1016,8 +1019,8 @@ footer {
   <a href="#compression" class="mobile-nav-link">Compression</a>
   <a href="#cryptography" class="mobile-nav-link">Cryptography</a>
   <a href="#quantum" class="mobile-nav-link">Quantum</a>
-  <a href="#demos" class="mobile-nav-link">Demos</a>
   <a href="#machine" class="mobile-nav-link">Machine</a>
+  <a href="#demos" class="mobile-nav-link">Demos</a>
   <a href="#agi" class="mobile-nav-link">Intelligence</a>
   <a href="#market" class="mobile-nav-link">Market</a>
   <a href="#invest" class="mobile-nav-link">Invest</a>
@@ -1036,9 +1039,9 @@ footer {
       <p class="hero-tagline reveal reveal-delay-2">Designs grounded in <span class="phi-guard">φ</span>Coherent mathematics.</p>
       <div class="ruled reveal reveal-delay-2"></div>
       <p class="hero-body reveal reveal-delay-3">
-        We build quantum computing systems, AGI architectures, compression codecs, and
-        cryptographic protocols, all derived from <em>a single mathematical identity</em>.
-        Zero free parameters. Every system composes.
+        We build compression codecs, cryptographic protocols, quantum computing, and AGI from
+        <em>first principles</em>: every constant derives from natural mathematical identities,
+        not hand-tuning. Zero free parameters. Every system composes.
       </p>
       <div class="hero-cta reveal reveal-delay-4">
         <a class="btn-primary" href="#invest">Investment Overview</a>
@@ -1053,13 +1056,13 @@ footer {
     <div class="container">
       <div class="foundation-inner">
         <span class="overline reveal">The Foundation</span>
-        <div class="foundation-eq reveal reveal-delay-1">One identity.</div>
-        <p class="foundation-sub reveal reveal-delay-1">Every system we build derives from it.</p>
+        <div class="foundation-eq reveal reveal-delay-1">First principles.</div>
+        <p class="foundation-sub reveal reveal-delay-1">Every system we build derives from them.</p>
         <div class="ruled ruled-center reveal reveal-delay-2"></div>
         <p class="foundation-body reveal reveal-delay-2">
           Zero free parameters.<br>
           When <em>every constant, every dimension, every transform</em>
-          is constrained by a single mathematical identity,
+          is fixed by natural mathematical identities,
           systems stop fighting themselves.
           <em>They compose.</em>
         </p>
@@ -1080,7 +1083,7 @@ footer {
         <div class="card reveal reveal-delay-1">
           <span class="card-label">Pillar I</span>
           <h3>Compression</h3>
-          <p>A complete audio · image · video codec family. Lossless by default, deterministic across architectures. Already outperforms FLAC on all lossless metrics. Core to the AGI sensory pipeline.</p>
+          <p>A complete audio · image · video codec family. Lossless by default, deterministic across architectures. Built to carry one coherent signal across the AGI sensory pipeline and our core systems, not to chase any single benchmark.</p>
         </div>
         <div class="card reveal reveal-delay-2">
           <span class="card-label">Pillar II</span>
@@ -1090,7 +1093,7 @@ footer {
         <div class="card reveal reveal-delay-3">
           <span class="card-label">Pillar III</span>
           <h3>Quantum Computing</h3>
-          <p>Production-grade quantum simulation across statevector, stabilizer, MPS, and photonic methods, together with a genuine 2D Fibonacci string-net topological code (d_τ = φ) that holds its own against the industry-standard surface code on a fair, like-for-like comparison. It adds exact time-reversal recovery for known error types and proven closed-form analytics, and it is benchmarked against the published specifications of 6 real devices: IBM Heron R2, IBM Eagle R3, Google Willow, IonQ Forte, IonQ Aria, and Quantinuum H2. It also includes a complete, patent-pending design for the physical machine itself: a neutral-atom quantum processor that is reconfigured entirely in software.</p>
+          <p>A full quantum-simulation stack, statevector to photonic, cross-validated against Stim. A genuine 2D Fibonacci string-net code (d_τ = φ) holds its own against the surface code on a fair, same-metric comparison. Plus a patent-pending design for the machine itself: a neutral-atom processor reconfigured entirely in software.</p>
         </div>
         <div class="card reveal reveal-delay-4">
           <span class="card-label">Pillar IV</span>
@@ -1112,7 +1115,7 @@ footer {
         <tbody>
           <tr>
             <td class="codec-name">Audio</td>
-            <td class="codec-desc">Lossless: beats FLAC in compression ratio, encode speed, and decode speed across all tested material. Lossy levels in active development.</td>
+            <td class="codec-desc">Lossless: ~3–5% smaller than FLAC -8 across all tested material, bit-exact round-trip on every architecture. Encode speed still trails FLAC and is under active optimization. Lossy levels in development.</td>
             <td class="codec-status"><span class="badge badge-done">Complete</span></td>
           </tr>
           <tr>
@@ -1127,13 +1130,13 @@ footer {
           </tr>
           <tr>
             <td class="codec-name">Base</td>
-            <td class="codec-desc">Lossless general-purpose codec. Beats zlib on all RPC payload classes. Blockchain-deterministic. ~45% bandwidth reduction on crypto sync traffic.</td>
+            <td class="codec-desc">Lossless general-purpose codec. Beats zlib-6 across the protocol's payload classes, enforced as a regression gate. Deterministic across nodes.</td>
             <td class="codec-status"><span class="badge badge-done">Complete</span></td>
           </tr>
         </tbody>
       </table>
       <div class="callout reveal">
-        <strong>Why codecs are central:</strong> They are the sensory pipeline for the AGI architecture. Completion of the audio and video codecs directly enables the full HEAR and SEE perceptual front-end — gating the integrated φAGI deployment.
+        <strong>Why codecs are central:</strong> They are the sensory pipeline for the AGI architecture, designed to carry one coherent signal across every core system rather than to win codec benchmarks in isolation. Completion of the audio and video codecs directly enables the full HEAR and SEE perceptual front-end, gating the integrated φAGI deployment. The codecs keep improving as we optimize further.
       </div>
     </div>
   </section>
@@ -1162,6 +1165,11 @@ footer {
           <div class="stat-body">A Module-LWE KEM (φKEM) and an ML-DSA-87 signature (φDSA). Security rests on a <em>computed</em> lattice-reduction estimate, not on test vectors. φ-KEM-304 reaches a quantum core-SVP cost of about 387, well beyond NIST Category 5's 232.</div>
         </div>
         <div class="stat-card reveal reveal-delay-4">
+          <div class="stat-num" style="font-size:1.4rem;">2<sup>−285</sup></div>
+          <div class="stat-title">Reed–Muller reconciliation that earns its place</div>
+          <div class="stat-body">φKEM carries each message bit in a first-order Reed–Muller code, decoded by a Walsh–Hadamard transform. It is the one internal layer held to a measured anti-wash test: at equal rate, the code drives the decryption-failure probability from 2<sup>−69</sup> un-coded (not CCA-sound) to 2<sup>−285</sup>. It is standard coding theory, not a golden-ratio trick, and it adds no hardness: security still reduces to Module-LWE. But without it the KEM is not CCA-sound.</div>
+        </div>
+        <div class="stat-card reveal reveal-delay-4">
           <div class="stat-num">0</div>
           <div class="stat-title">Algebraic assumptions, hash-only mode</div>
           <div class="stat-body">Prefer the conservative path? Run φSign · φHash · φCipher standalone. No lattice, no curves, no factoring; security rests on hash collision resistance alone. The lattice arm is an option, never a requirement.</div>
@@ -1182,7 +1190,7 @@ footer {
           <div class="stat-body">
             Our quantum simulation suite stress-tested φCrypt against the principal known quantum attack vectors.
             The strongest hash level achieves <strong>304-bit post-Grover security</strong>, NIST Category 5 (equivalent to AES-256 against a quantum adversary). The fastest tier reaches 116-bit post-Grover (NIST Category 3), so Category 5 deployments use the balanced tier or higher.
-            Simon's algorithm and quantum period-finding (noiseless simulation) found no exploitable algebraic structure in hash outputs.
+            Simon's algorithm and QFT period-finding, run live in the demo on a small truncation of φHash, find no hidden period, each with a positive control that recovers a planted period so the null result has teeth. This is a design-level, small-instance probe; full-scale resistance is an analytic argument, not a small-qubit experiment.
             A full-scale quantum preimage attack on the strongest tier would require <strong>~1 million physical qubits</strong> and an estimated <strong>10<sup>85</sup> years</strong> on the most capable available hardware.
             The lattice arm (φKEM · φDSA) reduces to Module-LWE; its parameters are held to a <strong>computed core-SVP / BKZ estimate</strong>, not to test vectors.
             End-to-end quantum key distribution integrated with φCrypt: verified 0% QBER on a noiseless simulated channel, with reliable eavesdropper detection above the 11% QBER error threshold.
@@ -1206,6 +1214,7 @@ footer {
       </div>
       <div class="demo-grid" style="margin-top:30px;">
         <a class="card demo-card reveal reveal-delay-1" href="demos/quantum-cryptography.html">
+          <span class="badge badge-phi" style="align-self:flex-end">φ-native PQC · adversarial testbed</span>
           <span class="card-label">Post-Quantum · live in WebAssembly</span>
           <h3>Quantum Cryptography</h3>
           <p>Run the post-quantum primitives live in your browser. φ-KEM-304 (Module-LWE) does keygen, encapsulate, and decapsulate; φDSA (ML-DSA-87) does keygen, sign, and verify, both from phi-lattice-cpp compiled to WebAssembly. Shared-secret agreement, CCA tamper rejection, and forgery rejection are checked at real wire sizes and per-operation latency. The same panel audits φCrypt against the NIST PQC categories, runs a BB84 session that catches an eavesdropper, and stress-tests the quantum RNG.</p>
@@ -1226,12 +1235,12 @@ footer {
         <div class="stat-card reveal reveal-delay-1">
           <div class="stat-num">16 / 16</div>
           <div class="stat-title">Cross-validated against Stim v1.14.0</div>
-          <div class="stat-body">Our Clifford/stabilizer simulator reproduces Stim — the standard QEC simulator — on all 16 reference checks: Bell and GHZ stabilizers, CNOT propagation, mid-circuit measurement and reset, and repetition-code syndrome extraction. The surface-code union-find decoder corrects every weight-1 error and drives the logical error rate down with code distance (code-capacity threshold ~10%).</div>
+          <div class="stat-body">Our Clifford/stabilizer simulator reproduces Stim (the standard QEC simulator) on all 16 reference checks: Bell and GHZ stabilizers, CNOT propagation, mid-circuit measurement and reset, and repetition-code syndrome extraction. The surface-code union-find decoder corrects every weight-1 error and drives the logical error rate down with code distance (code-capacity threshold ~10%).</div>
         </div>
         <div class="stat-card reveal reveal-delay-2">
-          <div class="stat-num">0.002 mHa</div>
-          <div class="stat-title">VQE chemical accuracy on H₂</div>
-          <div class="stat-body">Noiseless variational simulation reaches chemical accuracy on molecular hydrogen — 800× inside the accepted threshold. Lithium hydride is solved to 0.034 milliHartree error versus the exact reference. Both benchmark molecules solved exactly by a minimal circuit.</div>
+          <div class="stat-num">0.0006 mHa</div>
+          <div class="stat-title">VQE accuracy on H₂ and LiH</div>
+          <div class="stat-body">Noiseless variational simulation reaches molecular hydrogen to about 0.0006 milliHartree and lithium hydride to about 0.0005 milliHartree against the exact reference, over 2500× inside the chemical-accuracy threshold, both with a minimal hardware-efficient circuit.</div>
         </div>
         <div class="stat-card reveal reveal-delay-3">
           <div class="stat-num">6</div>
@@ -1239,26 +1248,19 @@ footer {
           <div class="stat-body">IBM Heron R2 · IBM Eagle R3 · Google Willow · IonQ Forte · IonQ Aria · Quantinuum H2. Device parameters from published vendor specs &amp; papers, applied through a Pauli-twirled noise model.</div>
         </div>
         <div class="stat-card reveal reveal-delay-4">
-          <div class="stat-num">62</div>
-          <div class="stat-title">Passing tests in the quantum-simulation suite</div>
-          <div class="stat-body">The phi-quantum-sim suite — 62 tests, all green — is snapshot-pinned and reproducible from source in minutes. Includes photonic and time-reversal recovery sweeps, and the 16-anchor cross-validation against Stim, the standard reference simulator.</div>
+          <div class="stat-num">20</div>
+          <div class="stat-title">Test programs in the quantum-simulation suite</div>
+          <div class="stat-body">The phi-quantum-sim suite (20 test programs, all green) is snapshot-pinned and reproducible from source in minutes. It covers the surface-code and Fibonacci string-net sweeps, VQE convergence, photonic simulation, and the 16-anchor cross-validation against Stim, the standard reference simulator.</div>
         </div>
         <div class="stat-card stat-card--wide reveal reveal-delay-4">
           <div class="stat-num" style="font-size:1rem; letter-spacing:.08em; color: var(--accent, #c8a95a);">Genuine Fibonacci String-Net Code</div>
-          <div class="stat-title">Competitive with the surface code — a fair, same-metric comparison</div>
-          <div class="stat-body">A real 2D Levin–Wen Fibonacci topological code — quantum dimension d_τ = φ, a true logical qubit on a torus, not a 1D surrogate — measured against the surface code's own topological order on identical machinery: same lattice, noise, projective syndrome, minimum-weight decoder, metric, and code distance. On that honest axis the Fibonacci code is competitive — consistently a touch better. Exact, no analytical shortcuts; the multi-distance threshold is the scoped next step. Run it live in the String-Net QEC demo.</div>
-        </div>
-        <div class="stat-card stat-card--wide reveal reveal-delay-4">
-          <div class="stat-num" style="font-size:1rem; letter-spacing:.08em; color: var(--accent, #c8a95a);">Exact Time-Reversal Recovery</div>
-          <div class="stat-title">Fidelity = 1.000 at all tested error angles · PTM Eigenvalue Theorem proved</div>
-          <div class="stat-body">
-            When an error type is characterized, the framework constructs the exact inverse operation and recovers the original quantum state to machine precision — fidelity = 1.000 (to 1e-12) at all tested error magnitudes. Without recovery, two-qubit state fidelity falls to 0.729 at the maximum error angle (π/4). The underlying phi-weighted channel obeys a proved closed-form theorem: total error contraction depends only on error rate and N-nacci order, independent of how errors distribute across axes. Verified across a 5-point angle sweep.
-          </div>
+          <div class="stat-title">Competitive with the surface code: a fair, same-metric comparison</div>
+          <div class="stat-body">A real 2D Levin–Wen Fibonacci topological code (quantum dimension d_τ = φ, a true logical qubit on a torus, not a 1D surrogate) measured against the surface code's own topological order on identical machinery: same lattice, noise, projective syndrome, minimum-weight decoder, metric, and code distance. On that honest axis the Fibonacci code is competitive, consistently a touch better. Exact, no analytical shortcuts; the multi-distance threshold is the scoped next step. Run it live in the String-Net QEC demo.</div>
         </div>
         <div class="stat-card stat-card--wide reveal reveal-delay-4">
           <div class="stat-num" style="font-size:1rem; letter-spacing:.08em; color: var(--accent, #c8a95a);">Self-Dual Code Locus</div>
           <div class="stat-title">Structural symmetry guarantee by construction</div>
-          <div class="stat-body">A structural symmetry property — equal protection against both classes of quantum error — is guaranteed by construction at every level of the ensemble. Fibonacci parity patterns make this automatic: roughly two-thirds of all N-nacci distances satisfy the requirement without manual tuning. The ensemble also includes an independent symmetry auditor that verifies fundamental physical constraints on any circuit unitary.</div>
+          <div class="stat-body">A structural symmetry property, equal protection against both classes of quantum error, is guaranteed by construction at every level of the ensemble. Fibonacci parity patterns make this automatic: roughly two-thirds of all N-nacci distances satisfy the requirement without manual tuning. The ensemble also includes an independent symmetry auditor that verifies fundamental physical constraints on any circuit unitary.</div>
         </div>
       </div>
       <div class="tags reveal">
@@ -1268,109 +1270,11 @@ footer {
         <span class="tag">Entanglement distillation</span>
         <span class="tag">φ-spaced phase estimation</span>
         <span class="tag">Photonic simulation</span>
-        <span class="tag">Exact time-reversal recovery</span>
         <span class="tag">Structural symmetry guarantee</span>
         <span class="tag">Quantum cryptography validated</span>
         <span class="tag">6 hardware noise models</span>
-        <span class="tag">Shor-resistant validated</span>
+        <span class="tag">No structural attack beats Grover</span>
         <span class="tag">AGPL + commercial license</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- ── INTERACTIVE DEMOS ──────────────────────── -->
-  <section id="demos" aria-labelledby="demos-h2">
-    <div class="container">
-      <span class="overline reveal">Pillar III &nbsp;·&nbsp; Interactive</span>
-      <h2 class="section-h2 reveal reveal-delay-1" id="demos-h2">
-        Run the simulations<br>in your browser.
-      </h2>
-      <div class="ruled reveal reveal-delay-1"></div>
-      <p class="demos-intro reveal reveal-delay-1">
-        Each demo runs the actual <span class="phi-guard">φ</span>Coherent C++ engine,
-        compiled to WebAssembly — real surface-code decoding, real time-reversal recovery,
-        and a real variational eigensolver, computed live as you adjust the controls.
-      </p>
-      <h3 class="reveal reveal-delay-1" style="font:600 13px/1.3 Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--accent,#c8a95a);margin:14px 2px 2px;">Qudit Architecture</h3>
-      <p class="reveal reveal-delay-1" style="font:400 14.5px/1.6 Newsreader,serif;color:var(--text-muted);margin:0 2px 14px;max-width:60ch;">The SU(d) qudit core, end to end — the first-class d-level register, the dual-mode (gate ↔ braid) engine, Fibonacci-anyon braiding, the fusion algebra, and qudit measurement-based computation. Ordered most-impactful first.</p>
-      <div class="demo-grid">
-        <a class="card demo-card reveal reveal-delay-1" href="demos/qudit-register.html">
-          <span class="card-label">SU(d) substrate · d = 10 / 12</span>
-          <h3>First-Class Qudit Register</h3>
-          <p>The flexible building block itself, hands-on. Set up a register on a single atom in either a 10-state or 12-state mode, chosen in software, then drive it with the full set of operations and watch the strength and phase of every state respond live. Link two of them into an entangled pair and see the entanglement measured exactly. The ordinary qubit is just the special case. Computed live, no φ.</p>
-          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
-        </a>
-        <a class="card demo-card reveal reveal-delay-3" href="demos/dual-mode-core.html">
-          <span class="card-label">Architecture · yoga core</span>
-          <h3>Dual-Mode Yoga Core</h3>
-          <p>The substrate-agnostic core: one logical intent carried in two modes behind a single API — a gate on the state-vector backend, or a Fibonacci anyon braid synthesized live — agreeing to the braid-approximation error. Plus a certified entangling weave (entanglement proven by negativity and Schmidt rank) and the synthesis frontier. The φ-load-bearing core the corpus itself can't supply.</p>
-          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
-        </a>
-        <a class="card demo-card reveal reveal-delay-2" href="demos/fibonacci-anyons.html">
-          <span class="card-label">Topological · d_τ = φ</span>
-          <h3>Fibonacci Anyons: Braiding &amp; Universality</h3>
-          <p>Where the golden ratio is genuinely load-bearing, in two views. <b>Braiding:</b> a Fibonacci anyon's quantum dimension is exactly φ, making it universal by braiding alone — no magic-state distillation; braid the worldlines and watch fidelity decay under real superconducting noise, with the honest off-φ Ising comparator alongside. <b>Modular data:</b> the Fibonacci S/T matrices, S²=I, Verlinde recovering τ×τ=1+τ, and φ read straight off the S-matrix — with the twist that both Fibonacci and Ising have <em>consistent</em> modular data; what separates them is universality, not consistency.</p>
-          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
-        </a>
-        <a class="card demo-card reveal reveal-delay-3" href="demos/qudit-mbqc.html">
-          <span class="card-label">Measurement-based · qudit cluster (1D + 2D)</span>
-          <h3>Qudit Measurement-Based Computation</h3>
-          <p>Measurement <em>is</em> the computation, generalized from qubits to d-level systems (d = 2, 3, 5) — now in one place, with a 1D/2D toggle. <b>1D:</b> a qudit cluster resource state whose entanglement is the graph cut times ln d (a flat area law), and one-way J_d-chains that realize any single-qudit unitary at fidelity 1. <b>2D:</b> a real two-qudit algorithm run purely by measurement — vertical CZ_d links make it genuinely entangling (strip them and it factorizes), and every random-outcome branch corrects back to an exact result. Computed live, no φ.</p>
-          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
-        </a>
-      </div>
-
-      <h3 class="reveal reveal-delay-1" style="font:600 13px/1.3 Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--accent,#c8a95a);margin:14px 2px 2px;">Topological Order, Error Correction &amp; Beyond</h3>
-      <p class="reveal reveal-delay-1" style="font:400 14.5px/1.6 Newsreader,serif;color:var(--text-muted);margin:0 2px 14px;max-width:60ch;">String-net &amp; surface-code QEC, measurement-induced transitions, fracton orders, time-reversal recovery, the variational eigensolver, golden-ratio tunneling, post-quantum cryptography, and the φ-pyramid device.</p>
-      <div class="demo-grid">
-        <a class="card demo-card reveal reveal-delay-1" href="demos/topological-qec.html">
-          <span class="card-label">Topological QEC · d_τ = φ · 2 views</span>
-          <h3>Topological QEC: Fibonacci vs Surface</h3>
-          <p>Non-abelian Fibonacci (d_τ = φ) error correction on identical machinery to the abelian baselines, in two tabs. <em>Trapped-ion companion</em> — alongside Microsoft + Quantinuum's trapped-ion QEC, run their abelian code class and our Fibonacci string-net under real Quantinuum H2 / IonQ Aria noise; Fibonacci is braiding-universal, so its distillation cost drops to zero. <em>String-net vs surface</em> — a genuine 2D Levin-Wen Fibonacci code compared fairly against the surface code: same lattice, noise, decoder, metric. Honest, code-capacity, computed live.</p>
-          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
-        </a>
-        <a class="card demo-card reveal reveal-delay-2" href="demos/tee-signature.html">
-          <span class="card-label">Measured invariant · γ = log(2+φ)</span>
-          <h3>Topological Entanglement Entropy</h3>
-          <p>φ appears in a <em>measured</em> quantity: the doubled-Fibonacci string-net's topological entanglement entropy is γ = log(2+φ), against the Z₂ toric code's γ = log 2 — through the identical code path. Swapping the model shifts γ by exactly log((2+φ)/2). Then watch γ collapse to zero under Schmidt-rank truncation: topological order lives in the full entanglement spectrum. Computed live.</p>
-          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
-        </a>
-        <a class="card demo-card reveal reveal-delay-2" href="demos/measurement-transition.html">
-          <span class="card-label">Measurement · phase transition · 3 views</span>
-          <h3>Measurement-Induced Transition</h3>
-          <p>The measurement pole made a bulk effect, in three tabs. <em>Bulk:</em> entangling gates compete with projective measurements at rate p — below a critical rate entanglement wins (volume-law), above it repeated collapse forces an area-law; sweep p and watch the order parameter fall off a cliff. <em>Finite-size scaling:</em> the Clifford-tableau route, exact to 20 qubits, where the tripartite-mutual-information curves cross at p_c ≈ 0.15. <em>Data collapse:</em> drag p_c and ν to snap four sizes onto one universal curve and read off the exponent. Computed live, no φ.</p>
-          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
-        </a>
-        <a class="card demo-card reveal reveal-delay-2" href="demos/fracton-order.html">
-          <span class="card-label">Fracton order · X-cube + Haah Type-II</span>
-          <h3>Fracton Topological Order</h3>
-          <p>A class of order beyond anyons, in two tabs. <em>X-cube:</em> an L×L×L lattice with <em>sub-extensive</em> ground-state degeneracy (k = 6L−3, growing with size) and excitations that <em>cannot move</em> in isolation — from a from-scratch GF(2) stabilizer engine, contrasted against the 3D toric code. <em>Haah's Type-II:</em> the strongest fracton order, every logical operator fractal with no string operators at all; its irregular degeneracy lands exactly on k(2ᵐ)=4L−2 at powers of two — the type-II fingerprint. Computed live, no φ.</p>
-          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
-        </a>
-        <a class="card demo-card reveal reveal-delay-2" href="demos/time-reversal.html">
-          <span class="card-label">Exact Recovery</span>
-          <h3>Time-Reversal Recovery</h3>
-          <p>Drive an error on the Bloch sphere and apply the constructed inverse — fidelity returns to 1.000, with the PTM-eigenvalue contraction computed in real time.</p>
-          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
-        </a>
-        <a class="card demo-card reveal reveal-delay-3" href="demos/vqe-landscape.html">
-          <span class="card-label">VQE</span>
-          <h3>Energy Landscape</h3>
-          <p>Explore the variational energy surface for H₂ and LiH and watch the optimizer descend to chemical accuracy against the exact ground state.</p>
-          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
-        </a>
-        <a class="card demo-card reveal reveal-delay-3" href="demos/tunneling.html">
-          <span class="card-label">Quasiperiodic</span>
-          <h3>Golden-Ratio Tunneling</h3>
-          <p>Watch the Cantor band structure of a Fibonacci superlattice form generation by generation — the O(log N) Kohmoto trace map scans a 9.2-million-cell golden lattice in milliseconds — then see the same trace map drive a fabricable photonic quasicrystal mirror, its transmission spectrum carrying φ as fractal optical band gaps.</p>
-          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
-        </a>
-        <a class="card demo-card reveal reveal-delay-4" href="demos/pyramid-energy.html">
-          <span class="card-label">Atmospheric Energy · idealized</span>
-          <h3>Pyramid Energy Device</h3>
-          <p>Cold-start the idealized φ-pyramid resonant transducer: the DC atmospheric circuit drives a 50 Hz mercury slosh, the obelisk parametric feedback ramps it (the e<sup>rt</sup> growth), and the slosh→MHD makes 50 Hz AC that wirelessly drives a synchronous motor — locked to the Schumann harmonic. Energy-conserved end to end (it sells coherence, not watts); the startup and feedback loop computed live from phi-pyramid-cpp.</p>
-          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
-        </a>
       </div>
     </div>
   </section>
@@ -1409,7 +1313,7 @@ footer {
         <div class="card reveal reveal-delay-3">
           <span class="card-label">The Physical Machine</span>
           <h3>One Atom, Two Machines</h3>
-          <p>Single atoms are held in place by a grid of laser beams. Tuning the control laser switches each atom between two stable settings, giving either a 10-state or a 12-state building block out of the very same hardware. Neighbouring atoms are briefly linked so they can perform operations together. This part is a hardware design we have not yet built.</p>
+          <p>Single atoms are held in place by a grid of laser beams. Tuning the control laser reconfigures each atom between stable settings, giving a multi-level building block out of the very same hardware, with its dimension set in software. Neighbouring atoms are briefly linked so they can perform operations together. This part is a hardware design we have not yet built.</p>
         </div>
         <div class="card reveal reveal-delay-1">
           <span class="card-label">The Control Signal</span>
@@ -1429,7 +1333,7 @@ footer {
       </div>
 
       <div class="callout reveal">
-        <strong>Where it stands:</strong> This is a design, and we are deliberately precise about how far each part has come. Three pieces already run as working, tested software: the flexible computing core, its clean control operations, and the math that makes the golden ratio the best possible choice for keeping the system cool. One piece is documented rather than simulated: the heating suppression is proven on paper inside our code, and the long stability it produces is backed by published laboratory experiments (a 2022 result in the journal <em>Nature</em>). The remaining pieces are hardware we have not yet built: the atom-based chip, the light-based control network, and the most advanced form of the error protection. We claim exactly this much, and no more. You can try the computing core yourself in the live <a href="demos/qudit-register.html">qudit register demo</a>.
+        <strong>Where it stands:</strong> This is a design, and we are deliberately precise about how far each part has come. Three pieces already run as working, tested software: the flexible computing core, its clean control operations, and the number theory proving the golden ratio is the most resonance-avoiding ratio there is. One piece is documented rather than simulated: the step from that resonance avoidance to suppressed heating is a known result from Floquet prethermalization theory that we cite rather than re-derive, and the long coherence it produces is backed by a published laboratory experiment (a 2022 result in the journal <em>Nature</em>). The remaining pieces are hardware we have not yet built: the atom-based chip, the light-based control network, and the most advanced form of the error protection. We claim exactly this much, and no more. You can try the computing core yourself in the live <a href="demos/qudit-register.html">qudit register demo</a>.
       </div>
 
       <div class="tags reveal">
@@ -1447,6 +1351,80 @@ footer {
     </div>
   </section>
 
+  <!-- ── INTERACTIVE DEMOS ──────────────────────── -->
+  <section id="demos" aria-labelledby="demos-h2">
+    <div class="container">
+      <span class="overline reveal">Pillar III &nbsp;·&nbsp; Interactive</span>
+      <h2 class="section-h2 reveal reveal-delay-1" id="demos-h2">
+        Run the simulations<br>in your browser.
+      </h2>
+      <div class="ruled reveal reveal-delay-1"></div>
+      <p class="demos-intro reveal reveal-delay-1">
+        Each demo runs the actual <span class="phi-guard">φ</span>Coherent C++ engine,
+        compiled to WebAssembly: real string-net and surface-code decoding, a real
+        variational eigensolver, and real golden-ratio quasicrystal spectra, computed
+        live as you adjust the controls.
+      </p>
+      <h3 class="reveal reveal-delay-1" style="font:600 13px/1.3 Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--accent,#c8a95a);margin:14px 2px 2px;">Qudit Architecture</h3>
+      <p class="reveal reveal-delay-1" style="font:400 14.5px/1.6 Newsreader,serif;color:var(--text-muted);margin:0 2px 14px;max-width:60ch;">The SU(d) qudit core, end to end: the first-class d-level register, the dual-mode (gate ↔ braid) engine, Fibonacci-anyon braiding, the fusion algebra, and qudit measurement-based computation. Ordered most-impactful first.</p>
+      <div class="demo-grid">
+        <a class="card demo-card reveal reveal-delay-1" href="demos/qudit-register.html">
+          <span class="card-label">SU(d) substrate · multi-level</span>
+          <h3>First-Class Qudit Register</h3>
+          <p>The flexible building block itself, hands-on. Set up a register on a multi-level atom, dimension set in software, then drive it with the full set of operations and watch the strength and phase of every state respond live. Link two of them into an entangled pair and see the entanglement measured exactly. The ordinary qubit is just the special case. Computed live, no φ.</p>
+          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card demo-card reveal reveal-delay-3" href="demos/dual-mode-core.html">
+          <span class="card-label">Architecture · gate ↔ braid</span>
+          <h3>Dual-Mode Core</h3>
+          <p>The substrate-agnostic core: one logical intent carried in two modes behind a single API: a gate on the state-vector backend, or a Fibonacci anyon braid synthesized live, agreeing to the braid-approximation error. Plus a certified entangling weave (entanglement proven by negativity and Schmidt rank) and the synthesis frontier. This is the one genuinely φ-load-bearing piece of the architecture: in the anyonic mode the golden ratio sets the braiding's F and R symbols, not just the naming.</p>
+          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card demo-card reveal reveal-delay-2" href="demos/fibonacci-anyons.html">
+          <span class="card-label">Topological · d_τ = φ</span>
+          <h3>Fibonacci Anyons: Braiding &amp; Universality</h3>
+          <p>Where the golden ratio is genuinely load-bearing, in two views. <b>Braiding:</b> a Fibonacci anyon's quantum dimension is exactly φ, making it universal by braiding alone, with no magic-state distillation; braid the worldlines and watch fidelity decay under real superconducting noise, with the honest off-φ Ising comparator alongside. <b>Modular data:</b> the Fibonacci S/T matrices, S²=I, Verlinde recovering τ×τ=1+τ, and φ read straight off the S-matrix, with the twist that both Fibonacci and Ising have <em>consistent</em> modular data; what separates them is universality, not consistency.</p>
+          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card demo-card reveal reveal-delay-3" href="demos/qudit-mbqc.html">
+          <span class="card-label">Measurement-based · qudit cluster (1D + 2D)</span>
+          <h3>Qudit Measurement-Based Computation</h3>
+          <p>Measurement <em>is</em> the computation, generalized from qubits to d-level systems (d = 2, 3, 5), now in one place, with a 1D/2D toggle. <b>1D:</b> a qudit cluster resource state whose entanglement is the graph cut times ln d (a flat area law), and one-way J_d-chains that realize any single-qudit unitary at fidelity 1. <b>2D:</b> a real two-qudit algorithm run purely by measurement: vertical CZ_d links make it genuinely entangling (strip them and it factorizes), and every random-outcome branch corrects back to an exact result. Computed live, no φ.</p>
+          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
+        </a>
+      </div>
+
+      <h3 class="reveal reveal-delay-1" style="font:600 13px/1.3 Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--accent,#c8a95a);margin:48px 2px 2px;">Topological Order, Error Correction &amp; Beyond</h3>
+      <p class="reveal reveal-delay-1" style="font:400 14.5px/1.6 Newsreader,serif;color:var(--text-muted);margin:0 2px 14px;max-width:60ch;">A genuine 2D Fibonacci string-net code against the surface code, the topological entanglement entropy signature γ = log(2+φ), the variational eigensolver, and golden-ratio tunneling.</p>
+      <div class="demo-grid">
+        <a class="card demo-card reveal reveal-delay-1" href="demos/topological-qec.html">
+          <span class="card-label">Topological QEC · d_τ = φ · 2 views</span>
+          <h3>Topological QEC: Fibonacci vs Surface</h3>
+          <p>Non-abelian Fibonacci (d_τ = φ) error correction on identical machinery to the abelian baselines, in two tabs. <em>Trapped-ion companion</em>: alongside Microsoft + Quantinuum's trapped-ion QEC, run their abelian code class and our Fibonacci string-net under real Quantinuum H2 / IonQ Aria noise; Fibonacci is braiding-universal, so its distillation cost drops to zero. <em>String-net vs surface</em>: a genuine 2D Levin-Wen Fibonacci code compared fairly against the surface code: same lattice, noise, decoder, metric. Honest, code-capacity, computed live.</p>
+          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card demo-card reveal reveal-delay-2" href="demos/tee-signature.html">
+          <span class="card-label">Measured invariant · γ = log(2+φ)</span>
+          <h3>Topological Entanglement Entropy</h3>
+          <p>φ appears in a <em>measured</em> quantity: the doubled-Fibonacci string-net's topological entanglement entropy is γ = log(2+φ), against the Z₂ toric code's γ = log 2, through the identical code path. Swapping the model shifts γ by exactly log((2+φ)/2). Then watch γ collapse to zero under Schmidt-rank truncation: topological order lives in the full entanglement spectrum. Computed live.</p>
+          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card demo-card reveal reveal-delay-3" href="demos/vqe-landscape.html">
+          <span class="card-label">VQE · golden-section search</span>
+          <h3>Energy Landscape</h3>
+          <p>A real variational energy surface for H₂ and LiH, and the honest place the golden ratio is load-bearing here: golden-section line search is minimax-optimal for a unimodal slice (Kiefer 1953), so it reaches chemical accuracy on 100% of random restarts while random-momentum search lags at a fixed budget. The shot-budget split is decorative; the search is where φ earns its place. Plus the four exact golden pairs of the E8 critical-Ising mass spectrum.</p>
+          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card demo-card reveal reveal-delay-3" href="demos/tunneling.html">
+          <span class="card-label">Quasiperiodic</span>
+          <h3>Golden-Ratio Tunneling</h3>
+          <p>Watch the Cantor band structure of a Fibonacci superlattice form generation by generation (the O(log N) Kohmoto trace map scans a 9.2-million-cell golden lattice in milliseconds), then see the same trace map drive a fabricable photonic quasicrystal mirror, its transmission spectrum carrying φ as fractal optical band gaps.</p>
+          <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
+        </a>
+      </div>
+    </div>
+  </section>
+
   <!-- ── AGI ────────────────────────────────────── -->
   <section id="agi" aria-labelledby="agi-h2">
     <div class="container">
@@ -1457,20 +1435,20 @@ footer {
       <div class="agi-cols reveal" role="table" aria-label="φAGI architecture">
         <div class="agi-col" role="rowgroup">
           <span class="agi-col-label">Sense &nbsp;·&nbsp; Perceive</span>
-          <div class="agi-row"><strong>Feel</strong> — somatic awareness</div>
-          <div class="agi-row"><strong>Smell</strong> — chemical signal</div>
-          <div class="agi-row"><strong>Taste</strong> — gustatory input</div>
-          <div class="agi-row"><strong>Hear</strong> — φAudio codec front-end</div>
-          <div class="agi-row"><strong>See</strong> — φVisual codec front-end</div>
-          <div class="agi-row"><strong>Fuse</strong> — multimodal integration</div>
+          <div class="agi-row"><strong>Feel</strong>: somatic awareness</div>
+          <div class="agi-row"><strong>Smell</strong>: chemical signal</div>
+          <div class="agi-row"><strong>Taste</strong>: gustatory input</div>
+          <div class="agi-row"><strong>Hear</strong>: φAudio codec front-end</div>
+          <div class="agi-row"><strong>See</strong>: φVisual codec front-end</div>
+          <div class="agi-row"><strong>Fuse</strong>: multimodal integration</div>
         </div>
         <div class="agi-col" role="rowgroup">
           <span class="agi-col-label">Think &nbsp;·&nbsp; Cognition</span>
-          <div class="agi-row"><strong>Language</strong> — text encoding</div>
-          <div class="agi-row"><strong>Reasoning</strong> — logical inference</div>
-          <div class="agi-row"><strong>Memory</strong> — episodic store</div>
-          <div class="agi-row"><strong>World Model</strong> — environment state</div>
-          <div class="agi-row"><strong>Metacognition</strong> — self-monitoring</div>
+          <div class="agi-row"><strong>Language</strong>: text encoding</div>
+          <div class="agi-row"><strong>Reasoning</strong>: logical inference</div>
+          <div class="agi-row"><strong>Memory</strong>: episodic store</div>
+          <div class="agi-row"><strong>World Model</strong>: environment state</div>
+          <div class="agi-row"><strong>Metacognition</strong>: self-monitoring</div>
           <div class="agi-row"><strong>Theory of Mind</strong></div>
         </div>
         <div class="agi-col" role="rowgroup">
@@ -1484,8 +1462,8 @@ footer {
         </div>
       </div>
       <p class="agi-note reveal">
-        Every weight, every dimension, every constant derives from a single mathematical identity.
-        No empirical tuning. No hyperparameter search. The architecture is not discovered —
+        Every weight, every dimension, every constant derives from natural mathematical identities.
+        No empirical tuning. No hyperparameter search. The architecture is not discovered:
         it is <em>derived.</em>
       </p>
     </div>
@@ -1494,38 +1472,32 @@ footer {
   <!-- ── IP PORTFOLIO ───────────────────────────── -->
   <section id="ip" aria-labelledby="ip-h2">
     <div class="container">
-      <span class="overline reveal">The Platform &nbsp;·&nbsp; 8 Methods &nbsp;·&nbsp; 16 Designs</span>
+      <span class="overline reveal">The Platform &nbsp;·&nbsp; 5 Methods &nbsp;·&nbsp; 11 Designs</span>
       <h2 class="section-h2 reveal reveal-delay-1" id="ip-h2">
         Deep IP.<br>Built in parallel.
       </h2>
       <div class="ip-cols">
         <div class="reveal reveal-delay-1">
-          <span class="ip-col-label">Eight Methods</span>
+          <span class="ip-col-label">Five Methods</span>
           <ul class="dot-list">
-            <li>φCrypt — unified cryptographic standard</li>
+            <li>φCrypt: unified cryptographic standard</li>
             <li>Signal decomposition framework</li>
             <li>Coherent AI architecture</li>
             <li>Quantum computing framework</li>
-            <li>Cellular framework — mathematical substrate for all systems</li>
-            <li>Materials hierarchy — composition derived from atomic structure</li>
-            <li>Microstructure design</li>
-            <li>Impeller fluid dynamics</li>
+            <li>Cellular framework: mathematical substrate for all systems</li>
           </ul>
         </div>
         <div class="reveal reveal-delay-2">
           <span class="ip-col-label">Four Software Designs</span>
           <ul class="dot-list">
-            <li>φCoherent codec family — audio · image · video · base</li>
+            <li>φCoherent codec family: audio · image · video · base</li>
             <li>φCrypt reference implementation + OpenSSL provider</li>
-            <li>Quantum computing stack — 26 packages, 7 functional layers</li>
-            <li>Coherent AI models — φAGI sensory + cognitive suite</li>
+            <li>Quantum computing stack: 33 packages, 7 functional layers</li>
+            <li>Coherent AI models: φAGI sensory + cognitive suite</li>
           </ul>
-          <span class="ip-sub-label">Six Hardware Designs</span>
-          <ul class="dot-list">
-            <li>Bearings · Gyroscope · Impeller</li>
-            <li>Centrifugal pump · Ram pump · Nozzle</li>
-          </ul>
-          <span class="ip-sub-label">Quantum Computer &nbsp;·&nbsp; Unified SU(d) Qudit Patent</span>
+        </div>
+        <div class="reveal reveal-delay-3">
+          <span class="ip-col-label">Quantum Computer &nbsp;·&nbsp; Unified Patent</span>
           <ul class="dot-list">
             <li>Neutral-atom qudit processor, reconfigured entirely in software</li>
             <li>Golden-ratio control signal that suppresses heating and extends coherence</li>
@@ -1533,10 +1505,27 @@ footer {
             <li>Integrated photonic control and gentle optical readout</li>
             <li>One unified patent, 20 claims across six independent statutory branches</li>
           </ul>
-          <div class="callout" style="margin-top: 20px;">
-            <strong>License structure:</strong> All IP owned by Phi-Coherent Inc. Published under AGPLv3 with commercial licensing available. Revenue flows to Phi-Coherent Inc.
-          </div>
         </div>
+      </div>
+
+      <span class="ip-col-label reveal" style="margin-top:46px;">One Hardware Design</span>
+      <div class="demo-grid">
+        <a class="card demo-card reveal" href="demos/pyramid-energy.html">
+          <span class="card-label">Atmospheric Energy</span>
+          <h3>Telluric-Resonant MHD</h3>
+          <p>Our engineering paradigm applied to energy: a φ-tuned resonant transducer that couples the Earth's natural atmospheric field to a magnetohydrodynamic (MHD) conversion stage. Cold-start the idealized model and watch the atmospheric circuit drive a 50 Hz fluid oscillation, a parametric feedback loop ramp it up, and the MHD stage turn it into 50 Hz AC locked to the planet's Schumann resonance. It is energy-conserved end to end (it organizes coherence, it does not manufacture watts); the full startup and feedback loop is computed live from phi-pyramid-cpp.</p>
+          <span class="demo-launch">Launch the interactive model <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="card demo-card reveal reveal-delay-1" href="demos/telluric-mhd-designer.html">
+          <span class="card-label">MHD System Designer</span>
+          <h3>Telluric-Resonant MHD Designer</h3>
+          <p>An interactive first-principles designer for a generic Telluric-Resonant MHD system. Set the electrode separation, telluric field strength, vessel geometry, and working fluid, then watch the tool auto-tune the liquid-metal fill depth to lock bell resonance onto any Schumann mode. The MHD stage chops the telluric DC into an AC broadcast at a user-selectable harmonic. All five design conditions — telluric tap, source power, bell resonance, Hartmann regime, and chop signal — are checked live with honest physics (Rayleigh streaming; no Eckart at ELF).</p>
+          <span class="demo-launch">Launch the MHD designer <span aria-hidden="true">→</span></span>
+        </a>
+      </div>
+
+      <div class="callout reveal" style="margin-top: 28px;">
+        <strong>License structure:</strong> All IP owned by Phi-Coherent Inc. Published under AGPLv3 with commercial licensing available. Revenue flows to Phi-Coherent Inc.
       </div>
     </div>
   </section>
@@ -1583,28 +1572,28 @@ footer {
           <p style="font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--gold);margin-bottom:20px;" class="reveal">Use of Funds</p>
           <div class="use-row reveal reveal-delay-1">
             <div class="use-num">1</div>
-            <div class="use-text"><strong>Research team</strong> — 3 to 5 PhD researchers spanning electrical, mechanical, chemical, quantum, and applied mathematics to advance patents and experimental proof</div>
+            <div class="use-text"><strong>Research team</strong>: 3 to 5 PhD researchers spanning electrical, mechanical, chemical, quantum, and applied mathematics to advance patents and experimental proof</div>
           </div>
           <div class="use-row reveal reveal-delay-2">
             <div class="use-num">2</div>
-            <div class="use-text"><strong>Research acceleration</strong> — lossy codec completion, full AGI sensory integration, quantum hardware validation partnerships</div>
+            <div class="use-text"><strong>Research acceleration</strong>: lossy codec completion, full AGI sensory integration, quantum hardware validation partnerships</div>
           </div>
           <div class="use-row reveal reveal-delay-3">
             <div class="use-num">3</div>
-            <div class="use-text"><strong>Patent prosecution</strong> — full protection of the φCoherent method and design IP portfolio across key jurisdictions</div>
+            <div class="use-text"><strong>Patent prosecution</strong>: full protection of the φCoherent method and design IP portfolio across key jurisdictions</div>
           </div>
           <div class="use-row reveal reveal-delay-4">
             <div class="use-num">4</div>
-            <div class="use-text"><strong>Licensing go-to-market</strong> — commercial licensing across codec, cryptography, quantum, AI, and hardware verticals</div>
+            <div class="use-text"><strong>Licensing go-to-market</strong>: commercial licensing across codec, cryptography, quantum, AI, and hardware verticals</div>
           </div>
         </div>
         <div>
           <div class="gov-panel reveal reveal-delay-1">
             <h4>Canadian Government Pathway</h4>
-            <div class="gov-row"><strong>NRC-IRAP</strong> — Industrial R&amp;D funding eligible</div>
-            <div class="gov-row"><strong>NSERC Alliance</strong> — Academic partnership-ready</div>
-            <div class="gov-row"><strong>SR&amp;ED / Ontario ITC</strong> — Qualified R&amp;D expenditures</div>
-            <div class="gov-row"><strong>SDTC</strong> — Sustainable tech + advanced manufacturing tracks</div>
+            <div class="gov-row"><strong>NRC-IRAP</strong>: Industrial R&amp;D funding eligible</div>
+            <div class="gov-row"><strong>NSERC Alliance</strong>: Academic partnership-ready</div>
+            <div class="gov-row"><strong>SR&amp;ED / Ontario ITC</strong>: Qualified R&amp;D expenditures</div>
+            <div class="gov-row"><strong>SDTC</strong>: Sustainable tech + advanced manufacturing tracks</div>
           </div>
           <div class="contact-block reveal reveal-delay-2">
             <p class="contact-label">Reach out</p>

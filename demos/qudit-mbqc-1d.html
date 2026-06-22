@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>φCoherent · Qudit Measurement-Based Computation</title>
+<meta name="description" content="Interactive demo: measurement-based (one-way) quantum computation generalized to qudits (d-level systems). A 2D qudit cluster state is the resource: its entanglement equals the number of edges crossing a cut, each carrying ln d, giving an area law. One-way J_d-chains then compute any single-qudit unitary by measurement and feed-forward, with fidelity 1. Anti-wash: the entangling gadget produces entanglement only with the vertical link. Computed live in your browser via WebAssembly. No golden ratio.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://phicoherent.com/demos/qudit-mbqc.html">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#C9A830">
+<script>try{if(localStorage.getItem('phi-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/demo.css">
+<style>
+  .caveat-footer {
+    max-width: 1180px; margin: 8px auto 40px; padding: 16px 20px;
+    border: 1px solid var(--gold-border); border-radius: 10px;
+    font: 400 12.5px/1.6 Inter, sans-serif; color: var(--text-muted);
+    background: var(--surface);
+  }
+  .caveat-footer strong { color: var(--text); font-weight: 600; }
+  .dseg { display: flex; gap: 6px; }
+  .dseg button {
+    flex: 1; padding: 8px 0; border: 1px solid var(--gold-border);
+    border-radius: 8px; background: var(--surface); color: var(--text-muted);
+    font: 600 14px Inter, sans-serif; cursor: pointer;
+  }
+  .dseg button.active { background: var(--gold); color: #1C1810; border-color: var(--gold); }
+</style>
+</head>
+<body>
+
+<header class="demo-header" data-demo="qudit-mbqc"
+        data-title="Qudit Measurement-Based Computation"></header>
+
+<div class="main">
+  <div class="controls">
+    <button class="btn-run" id="btnRun">Run Qudit MBQC</button>
+    <div class="demo-status" id="status">Loading…</div>
+
+    <div class="control-group">
+      <label>Qudit dimension d (prime)</label>
+      <div class="dseg" id="dseg">
+        <button data-d="2">d = 2</button>
+        <button data-d="3" class="active">d = 3</button>
+        <button data-d="5">d = 5</button>
+      </div>
+    </div>
+
+    <div class="stat-card stat-gold">
+      <div class="stat-label">Graph-state stabilizers fix |G⟩</div>
+      <div class="stat-value" id="defectVal">…</div>
+      <div class="stat-sub">K_v = X_d(v)·∏Z_d(u) defect ≈ 0</div>
+    </div>
+
+    <div class="stat-card stat-cyan">
+      <div class="stat-label">Entanglement = graph cut (max error)</div>
+      <div class="stat-value" id="cutErrVal">…</div>
+      <div class="stat-sub">S(A) = rank<sub>GF(d)</sub>(Γ)·ln d, exact</div>
+    </div>
+
+    <div class="stat-card stat-gold">
+      <div class="stat-label">Entangling gadget, with vertical link</div>
+      <div class="stat-value" id="linkVal">…</div>
+      <div class="stat-sub">≈ ln d (maximal CZ_d entanglement)</div>
+    </div>
+
+    <div class="stat-card stat-cyan">
+      <div class="stat-label">Anti-wash, no link</div>
+      <div class="stat-value" id="noLinkVal">…</div>
+      <div class="stat-sub">product state, entropy 0</div>
+    </div>
+  </div>
+
+  <div class="canvas-area">
+    <div class="chart-panel" style="height:280px">
+      <div class="panel-header">
+        <span class="panel-title">Cluster-state area law: 2×M cut entropy is constant in M, quantized in ln d</span>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" id="dotA2"></div> d = 2 → 2·ln 2</div>
+          <div class="legend-item"><div class="legend-dot" id="dotA3"></div> d = 3 → 2·ln 3</div>
+          <div class="legend-item"><div class="legend-dot" id="dotA5"></div> d = 5 → 2·ln 5</div>
+        </div>
+      </div>
+      <canvas id="areaCanvas"></canvas>
+    </div>
+
+    <div class="chart-panel" style="height:280px;margin-top:4px">
+      <div class="panel-header">
+        <span class="panel-title">One-way computation fidelity: measured J_d-chain vs the unitary, across chain depth</span>
+        <span class="panel-tag tag-phi">exact universal computation</span>
+      </div>
+      <canvas id="fidCanvas"></canvas>
+    </div>
+
+    <div class="chart-panel note" style="margin-top:4px;">
+      <div class="panel-header"><span class="panel-title">What this shows: measurement is computation, on a qudit resource state</span></div>
+      <div style="padding:14px 18px;font:400 13.5px/1.62 Inter,sans-serif;color:var(--text-muted);">
+        <p style="margin:0 0 10px;">Measurement-based (one-way) quantum computation turns the
+        measurement "ground" of quantum mechanics into the <b>engine</b> of computation: first you
+        build a fixed, highly entangled <b>cluster state</b>, then you compute purely by measuring
+        its qudits one at a time and feeding outcomes forward. Here it is generalized from qubits to
+        <b>qudits</b> (d-level systems) for d = 2, 3, 5. <b>No φ:</b> this is
+        measurement × entanglement physics.</p>
+        <p style="margin:0 0 10px;">The <b>upper chart</b> is the resource state. On a 2×M grid the
+        entanglement across the left/right cut is exactly the number of edges crossing it times
+        <b>ln d</b> (two edges, so <b>2·ln d</b>) and that stays flat as the lattice grows wider:
+        an <b>area law</b>, quantized in ln d. Entanglement lives in the crossings, the loom made
+        exact. The <b>lower chart</b> is the computation: a chain of measured <b>J_d = F_d·D(θ⃗)</b>
+        gadgets realizes an arbitrary single-qudit unitary, and the byproduct-corrected output
+        matches the directly applied unitary with <b>fidelity 1</b> at every depth and every d.</p>
+        <p style="margin:0;">The cards verify the rest: the generalized graph-state stabilizers
+        <b>fix</b> the state (defect ≈ 0); the measured cut entropy <b>matches</b> rank·ln d to
+        machine precision; and the entangling gadget produces entanglement <b>only with</b> its
+        vertical link (≈ ln d) and a product state <b>without</b> it (entropy 0): the anti-wash that
+        proves the link is doing the work. Computed live in your browser via WebAssembly.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="caveat-footer">
+  <strong>Honest scope.</strong> Exact state-vector simulation of small qudit systems. The cut-rank
+  formula S(A) = rank<sub>GF(d)</sub>(Γ)·ln d holds for prime d (so GF(d) is a field); d ∈ {2,3,5}.
+  The area-law sweep uses 2×M grids (M ≤ 4); the one-way chains run to depth 6. No golden ratio enters
+  (qudit MBQC is measurement-and-entanglement physics), and the d = 2 column reduces to the familiar
+  qubit one-way computer. Not realized hardware.
+</div>
+
+<script src="assets/demo-header.js"></script>
+<script>
+// ============================================================
+// Real computation: runQuditAreaLaw (2×M cluster cut entropy = 2·ln d, flat in
+// M, an area law quantized in ln d), runQuditChainFidelity (measured J_d-chain
+// vs unitary, fidelity 1 across depth, d ∈ {2,3,5}), and runQuditClusterStats
+// (stabilizer defect, cut-match error, entangling-gadget link vs no-link
+// entropy), run off the UI thread in a module Web Worker
+// (assets/js/qudit-mbqc-worker.js). Measurement-based computation on a qudit
+// cluster resource state; no φ.
+// ============================================================
+
+const P = () => window.PhiTheme.palette();
+
+let worker = null;
+let area = null;      // [{ M, rank, entD2, entD3, entD5 }]
+let fidelity = null;  // [{ depth, fidD2, fidD3, fidD5 }]
+let stats = null;     // { d, defect, cutMatchError, linkEntropy, noLinkEntropy, lnD }
+let selD = 3;
+let isRunning = false;
+
+const statusEl = document.getElementById('status');
+
+function dColors() { const p = P(); return { 2: p.cyan, 3: p.gold, 5: p.blue }; }
+
+function legendColors() {
+  const c = dColors();
+  document.getElementById('dotA2').style.background = c[2];
+  document.getElementById('dotA3').style.background = c[3];
+  document.getElementById('dotA5').style.background = c[5];
+}
+
+function setupCanvas(id, pad) {
+  const canvas = document.getElementById(id);
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * 2; canvas.height = (rect.height - 44) * 2;
+  const ctx = canvas.getContext('2d'); ctx.setTransform(2, 0, 0, 2, 0, 0);
+  const w = rect.width, h = rect.height - 44;
+  const pal = P();
+  ctx.fillStyle = pal.panel; ctx.fillRect(0, 0, w, h);
+  return { ctx, w, h, pal };
+}
+
+// ── area law: three flat lines (entropy vs grid width M) at 2·ln d ─────────────
+function drawArea() {
+  if (!area || !area.length) return;
+  const { ctx, w, h, pal } = setupCanvas('areaCanvas');
+  const pad = { top: 22, right: 70, bottom: 40, left: 56 };
+  const cw = w - pad.left - pad.right, ch = h - pad.top - pad.bottom;
+  const N = area.length;
+  const toX = (i) => pad.left + (N <= 1 ? 0.5 : i / (N - 1)) * cw;
+  const yMax = 2 * Math.log(5) * 1.18;
+  const toY = (v) => pad.top + (1 - v / yMax) * ch;
+
+  ctx.strokeStyle = pal.grid; ctx.lineWidth = 0.5; ctx.fillStyle = pal.textDim; ctx.font = '10px Inter';
+  for (let i = 0; i <= 6; i++) {
+    const yv = yMax * i / 6, y = toY(yv);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+    ctx.textAlign = 'right'; ctx.fillText(yv.toFixed(1), pad.left - 8, y + 3);
+  }
+
+  const c = dColors();
+  const series = [
+    { key: 'entD2', color: c[2], label: '2·ln 2' },
+    { key: 'entD3', color: c[3], label: '2·ln 3' },
+    { key: 'entD5', color: c[5], label: '2·ln 5' },
+  ];
+  series.forEach((s) => {
+    ctx.strokeStyle = s.color; ctx.lineWidth = 2.4; ctx.beginPath();
+    area.forEach((p, i) => { const x = toX(i), y = toY(p[s.key]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ctx.stroke();
+    area.forEach((p, i) => {
+      ctx.fillStyle = s.color;
+      ctx.beginPath(); ctx.arc(toX(i), toY(p[s.key]), 3, 0, 2 * Math.PI); ctx.fill();
+    });
+    const last = area[area.length - 1];
+    ctx.fillStyle = pal.text; ctx.font = '600 11px Inter'; ctx.textAlign = 'left';
+    ctx.fillText(s.label + ' = ' + last[s.key].toFixed(2), toX(N - 1) + 7, toY(last[s.key]) + 4);
+  });
+
+  ctx.fillStyle = pal.textDim; ctx.font = '9px Inter'; ctx.textAlign = 'center';
+  area.forEach((p, i) => { ctx.fillText('2×' + p.M + ' (rank ' + p.rank + ')', toX(i), h - pad.bottom + 15); });
+  ctx.font = '11px Inter';
+  ctx.fillText('grid width M  (system grows →)', (pad.left + w - pad.right) / 2, h - 3);
+  ctx.save(); ctx.translate(12, h / 2); ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = 'center'; ctx.fillText('cut entropy (nats)', 0, 0); ctx.restore();
+}
+
+// ── fidelity: three lines pinned at 1.0 across chain depth ─────────────────────
+function drawFid() {
+  if (!fidelity || !fidelity.length) return;
+  const { ctx, w, h, pal } = setupCanvas('fidCanvas');
+  const pad = { top: 22, right: 70, bottom: 40, left: 56 };
+  const cw = w - pad.left - pad.right, ch = h - pad.top - pad.bottom;
+  const N = fidelity.length;
+  const toX = (i) => pad.left + (N <= 1 ? 0.5 : i / (N - 1)) * cw;
+  const yMin = 0.9, yMax = 1.012;
+  const toY = (v) => pad.top + (1 - (v - yMin) / (yMax - yMin)) * ch;
+
+  ctx.strokeStyle = pal.grid; ctx.lineWidth = 0.5; ctx.fillStyle = pal.textDim; ctx.font = '10px Inter';
+  for (let i = 0; i <= 5; i++) {
+    const yv = yMin + (1.0 - yMin) * i / 5, y = toY(yv);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+    ctx.textAlign = 'right'; ctx.fillText(yv.toFixed(2), pad.left - 8, y + 3);
+  }
+
+  const c = dColors();
+  const series = [
+    { key: 'fidD2', color: c[2], label: 'd = 2' },
+    { key: 'fidD3', color: c[3], label: 'd = 3' },
+    { key: 'fidD5', color: c[5], label: 'd = 5' },
+  ];
+  // slight vertical offset per-series so the three coincident lines at 1.0 stay visible.
+  const off = { fidD2: -0.0025, fidD3: 0.0, fidD5: 0.0025 };
+  series.forEach((s) => {
+    ctx.strokeStyle = s.color; ctx.lineWidth = 2.4; ctx.beginPath();
+    fidelity.forEach((p, i) => { const x = toX(i), y = toY(p[s.key] + off[s.key]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ctx.stroke();
+    fidelity.forEach((p, i) => {
+      ctx.fillStyle = s.color;
+      ctx.beginPath(); ctx.arc(toX(i), toY(p[s.key] + off[s.key]), 3, 0, 2 * Math.PI); ctx.fill();
+    });
+    const last = fidelity[fidelity.length - 1];
+    ctx.fillStyle = pal.text; ctx.font = '600 11px Inter'; ctx.textAlign = 'left';
+    ctx.fillText(s.label + ': ' + last[s.key].toFixed(3), toX(N - 1) + 7, toY(last[s.key] + off[s.key]) + 4);
+  });
+
+  ctx.fillStyle = pal.textDim; ctx.font = '9px Inter'; ctx.textAlign = 'center';
+  fidelity.forEach((p, i) => { ctx.fillText('depth ' + p.depth, toX(i), h - pad.bottom + 15); });
+  ctx.font = '11px Inter';
+  ctx.fillText('J_d-chain depth (single-qudit unitaries composed)', (pad.left + w - pad.right) / 2, h - 3);
+  ctx.save(); ctx.translate(12, h / 2); ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = 'center'; ctx.fillText('one-way fidelity', 0, 0); ctx.restore();
+}
+
+function fmtSci(x) {
+  if (x === 0) return '0';
+  if (Math.abs(x) < 1e-6) return x.toExponential(1).replace('e', '×10^');
+  return x.toFixed(4);
+}
+
+function renderCards() {
+  if (!stats) return;
+  document.getElementById('defectVal').textContent = fmtSci(stats.defect);
+  document.getElementById('cutErrVal').textContent = fmtSci(stats.cutMatchError);
+  document.getElementById('linkVal').textContent = stats.linkEntropy.toFixed(4);
+  document.getElementById('noLinkVal').textContent = fmtSci(stats.noLinkEntropy);
+}
+
+function renderAll() { renderCards(); drawArea(); drawFid(); }
+
+function runQudit() {
+  if (isRunning || !worker) return;
+  isRunning = true;
+  document.getElementById('btnRun').classList.add('running');
+  document.getElementById('btnRun').textContent = 'Measuring…';
+  statusEl.textContent = 'Building qudit cluster states + running one-way J_d-chains (d ∈ {2,3,5})…';
+  worker.postMessage({ d: selD, maxM: 4, maxDepth: 6 });
+}
+
+function initWorker() {
+  try {
+    worker = new Worker('assets/js/qudit-mbqc-worker.js', { type: 'module' });
+  } catch (e) {
+    statusEl.textContent = 'This demo needs a web server (WASM can’t load from file://).';
+    return;
+  }
+  worker.onmessage = (e) => {
+    isRunning = false;
+    document.getElementById('btnRun').classList.remove('running');
+    document.getElementById('btnRun').textContent = 'Run Qudit MBQC';
+    if (!e.data.ok) { statusEl.textContent = 'Error: ' + e.data.error; return; }
+    area = e.data.area; fidelity = e.data.fidelity; stats = e.data.stats;
+    statusEl.textContent = 'Measured · d = ' + selD + ' cluster fixed (defect ' + fmtSci(stats.defect)
+      + ') · cut entropy = rank·ln d · one-way fidelity 1.000';
+    renderAll();
+  };
+  worker.onerror = (e) => {
+    isRunning = false;
+    statusEl.textContent = 'Worker error: ' + (e.message || 'failed to load WASM');
+  };
+}
+
+document.getElementById('dseg').addEventListener('click', (ev) => {
+  const b = ev.target.closest('button[data-d]'); if (!b) return;
+  selD = parseInt(b.getAttribute('data-d'), 10);
+  document.querySelectorAll('#dseg button').forEach((x) => x.classList.toggle('active', x === b));
+  runQudit();
+});
+
+window.addEventListener('resize', () => { if (area) renderAll(); });
+window.PhiTheme && window.PhiTheme.onChange(() => { legendColors(); if (area) renderAll(); });
+
+document.getElementById('btnRun').addEventListener('click', runQudit);
+
+legendColors();
+initWorker();
+setTimeout(runQudit, 400);
+</script>
+</body>
+</html>
