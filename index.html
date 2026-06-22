@@ -602,6 +602,8 @@ section {
 .badge-active { background: var(--green-bg); color: var(--green); }
 /* Demo descriptor badge (e.g. the φ-native PQC adversarial testbed). */
 .badge-phi    { background: rgba(201,168,48,0.16); color: var(--gold); }
+/* IP status: bordered gold, distinct from the solid "Complete" badge. */
+.badge-patent { background: rgba(201,168,48,0.10); color: var(--gold); border: 1px solid var(--gold-border); }
 .demo-card .badge { margin-bottom: 8px; }
 .callout {
   background: var(--gold-subtle);
@@ -1285,6 +1287,7 @@ footer {
   <section id="machine" aria-labelledby="machine-h2">
     <div class="container">
       <span class="overline reveal">Pillar III &nbsp;·&nbsp; The Machine</span>
+      <span class="badge badge-patent reveal" style="margin-bottom:14px;">Patent Pending</span>
       <h2 class="section-h2 reveal reveal-delay-1" id="machine-h2">
         We didn't just simulate it.<br>We designed the computer.
       </h2>
@@ -1513,12 +1516,14 @@ footer {
       <span class="ip-col-label reveal" style="margin-top:46px;">One Hardware Design</span>
       <div class="demo-grid">
         <a class="card demo-card reveal" href="demos/pyramid-energy.html">
+          <span class="badge badge-patent">Patent Pending</span>
           <span class="card-label">Atmospheric Energy</span>
           <h3>Telluric-Resonant MHD</h3>
           <p>Our engineering paradigm applied to energy: a φ-tuned resonant transducer that couples the Earth's natural atmospheric field to a magnetohydrodynamic (MHD) conversion stage. Cold-start the idealized model and watch the atmospheric circuit drive a 50 Hz fluid oscillation, a parametric feedback loop ramp it up, and the MHD stage turn it into 50 Hz AC locked to the planet's Schumann resonance. It is energy-conserved end to end (it organizes coherence, it does not manufacture watts); the full startup and feedback loop is computed live from phi-pyramid-cpp.</p>
           <span class="demo-launch">Launch the interactive model <span aria-hidden="true">→</span></span>
         </a>
         <a class="card demo-card reveal reveal-delay-1" href="demos/telluric-mhd-designer.html">
+          <span class="badge badge-patent">Patent Pending</span>
           <span class="card-label">MHD System Designer</span>
           <h3>Telluric-Resonant MHD Designer</h3>
           <p>An interactive first-principles designer for a generic Telluric-Resonant MHD system. Set the electrode separation, telluric field strength, vessel geometry, and working fluid, then watch the tool auto-tune the liquid-metal fill depth to lock bell resonance onto any Schumann mode. The MHD stage chops the telluric DC into an AC broadcast at a user-selectable harmonic. All five design conditions — telluric tap, source power, bell resonance, Hartmann regime, and chop signal — are checked live with honest physics (Rayleigh streaming; no Eckart at ELF).</p>
