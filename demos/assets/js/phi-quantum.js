@@ -16,38 +16,20 @@
 // available here, but the demo runs it in a Web Worker (assets/js/ec-worker.js)
 // so the real surface-code Monte Carlo never blocks the UI thread.
 
+import { createWasmRuntime, vecToArray, currentVersion } from './phi-wasm-runtime.js';
+
+// Lazy-loaded WASM module (set on first ready()). The namespace methods below
+// reference it directly; the load lifecycle, cache-busting, and vecToArray
+// marshalling live in the shared phi-wasm-runtime.js (from phi-wasm-cpp).
 let _module = null;
-let _modulePromise = null;
-
-// Cache-busting: when this wrapper is imported as phi-quantum.js?v=TOKEN, carry the
-// same ?v= onto the WASM glue and the .wasm itself so a new deploy never serves a
-// stale binary. No version ⇒ no query (unchanged behavior).
-const _ver = (() => { try { return new URL(import.meta.url).search || ''; } catch (e) { return ''; } })();
-
-async function loadModule() {
-  const { default: createPhiQuantum } = await import('../wasm/phi_quantum.js' + _ver);
-  return createPhiQuantum(_ver ? { locateFile: (path, prefix) => prefix + path + _ver } : undefined);
-}
+const _rt = createWasmRuntime('../wasm/phi_quantum.js', currentVersion(import.meta.url));
 
 // Resolve (once) the WASM module; returns the namespace API.
 export function ready() {
-  if (!_modulePromise) {
-    _modulePromise = loadModule().then((m) => { _module = m; return api; });
-  }
-  return _modulePromise;
+  return _rt.ready().then((m) => { _module = m; return api; });
 }
 
-export function isReady() { return _module !== null; }
-
-// Marshal an Embind register_vector handle into a plain JS array, freeing the
-// handle afterwards. Elements that are value_objects are already plain objects.
-function vecToArray(v) {
-  const out = [];
-  const n = v.size();
-  for (let i = 0; i < n; i++) out.push(v.get(i));
-  if (typeof v.delete === 'function') v.delete();
-  return out;
-}
+export function isReady() { return _rt.isReady(); }
 
 // ── Error Correction ─────────────────────────────────────────────────────────
 export const PhiCoherent = {
@@ -281,38 +263,9 @@ export const PhiQudit = {
   bellStats(d = 10) { return _module.runQuditBellStats(d >>> 0); },
 };
 
-// ── φPyramid Energy Device (transient startup + feedback loop) ────────────────
-// The CORRECTED atmospheric-energy device: the DC atmospheric circuit drives a
-// 50 Hz mercury slosh (obelisk parametric feedback ramps it, the e^{rt} growth);
-// the slosh→MHD makes 50 Hz AC, which wirelessly drives a synchronous motor.
-// A stateful driver wrapping the VERIFIED phi-pyramid-cpp transient simulator:
-// one source of truth, no JS physics (so the demo can't drift from the C++).
-export const PhiPyramid = {
-  // Create a stateful device-demo driver (an Embind PyramidDemo). Methods:
-  //   configure(fieldScale, obeliskKV, mode) → frame   (re-seed the device)
-  //   reset() → frame                                   (cold start, same config)
-  //   step(dtSeconds) → frame                           (advance the transient)
-  // A frame = { t, sloshV, envelope, emf, acPower, motorRpm,
-  //             stageDc, stageSeed, stageParametric, stageSaturate, stageAc,
-  //             stageMotor, vSs, nSync, fHz, pumpReservoirW, seedReservoirW,
-  //             selfSustaining }. Call .delete() on the driver when done.
-  createDemo() { return new _module.PyramidDemo(); },
-  // The Schumann chamber ladder: every void → its tuned harmonic (n=3, n=7 predicted).
-  // Returns [{ n, freqHz, lengthM, predicted, host }] for n=2..8.
-  chamberLadder() { return vecToArray(_module.chamberLadder()); },
-  // The OBELISK-PAIR system (a self-contained coupled system, NOT the pyramid device).
-  //   configure(separationM, apexHarvestUA, sunriseH, daylightH) → frame
-  //   reset() → frame ; step(dtHours) → frame  (march the dawn → spin-up day)
-  // A frame = { tHour, sun, currentUA, dumpHz, firing, bellHz, carrierMHz, floatMs,
-  //             leakFloorUA, selfStarts, separationM, peakDumpHz, firstFireHour }.
-  createObeliskPair() { return new _module.ObeliskPairDemo(); },
-  // Coffer MHD core. configure(B_tesla) -> CofferMHDFrame (slosh + fill fixed at the
-  // Giza self-started point: 2.5 mm/s, fill tuned to the 50 Hz bell). Frame:
-  // { bTesla, sloshVelMms, sloshAmpUm, fillFrac, bellHzCheck, fHz, vPeak, emfPeak,
-  //   hartmann, lorentzCoeff, internalROhm, powerDensity, hgMassKg, hgDepthM,
-  //   cofferL, cofferW, cofferDepth }.
-  createCofferMHD() { return new _module.CofferMHD(); },
-};
+// The φPyramid energy-device demo now lives in its own module (phi_pyramid.wasm,
+// built from phi-pyramid-cpp/web) and its own wrapper, ./phi-pyramid.js, which
+// exposes the PhiPyramid namespace. pyramid-energy.html imports from there.
 
-const api = { ready, isReady, PhiCoherent, PhiRecovery, PhiVQE, PhiTunnel, PhiCrypto, PhiTopo, PhiPyramid };
+const api = { ready, isReady, PhiCoherent, PhiRecovery, PhiVQE, PhiTunnel, PhiCrypto, PhiTopo };
 export default api;
