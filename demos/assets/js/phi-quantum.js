@@ -263,22 +263,9 @@ export const PhiQudit = {
   bellStats(d = 10) { return _module.runQuditBellStats(d >>> 0); },
 };
 
-// ── Eigenvalue Atlas (the unifying lens) ─────────────────────────────────────
-export const PhiAtlas = {
-  // Four physics objects classified by one law (phi::classify_eigenvalue): each
-  // eigenvalue's position on the unit circle names its identity gate. Returns
-  // [{ system, systemName, param, re, im, modulus, gate, gateName, gateConstant,
-  //    firstClassPole }]. Systems: 0 fusion · 1 tunnel · 2 decoherence · 3 braid.
-  // Gates: 0 ENTROPY(e) · 1 ORDER(phi) · 2 IRREGULARITY(delta) · 3 PHASE(pi) · 4 FLOOR(gamma).
-  run(tunnelGen = 8, epsA = 0.5, epsB = -0.5, nEnergies = 480, p = 0.1, order = 2) {
-    return vecToArray(_module.runEigenvalueAtlas(
-      tunnelGen >>> 0, epsA, epsB, nEnergies >>> 0, p, order >>> 0));
-  },
-};
-
 // The φPyramid energy-device demo now lives in its own module (phi_pyramid.wasm,
 // built from phi-pyramid-cpp/web) and its own wrapper, ./phi-pyramid.js, which
 // exposes the PhiPyramid namespace. pyramid-energy.html imports from there.
 
-const api = { ready, isReady, PhiCoherent, PhiRecovery, PhiVQE, PhiTunnel, PhiCrypto, PhiTopo, PhiQudit, PhiAtlas };
+const api = { ready, isReady, PhiCoherent, PhiRecovery, PhiVQE, PhiTunnel, PhiCrypto, PhiTopo };
 export default api;
