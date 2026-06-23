@@ -1275,6 +1275,7 @@ footer {
         <span class="tag">Chemical-accuracy variational simulation</span>
         <span class="tag">Entanglement distillation</span>
         <span class="tag">φ-spaced phase estimation</span>
+        <span class="tag">Qudit SU(d) gate synthesis</span>
         <span class="tag">Photonic simulation</span>
         <span class="tag">Structural symmetry guarantee</span>
         <span class="tag">Quantum cryptography validated</span>
@@ -1373,24 +1374,24 @@ footer {
         live as you adjust the controls.
       </p>
       <h3 class="reveal reveal-delay-1" style="font:600 13px/1.3 Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--accent,#c8a95a);margin:14px 2px 2px;">Qudit Architecture</h3>
-      <p class="reveal reveal-delay-1" style="font:400 14.5px/1.6 Newsreader,serif;color:var(--text-muted);margin:0 2px 14px;max-width:60ch;">The SU(d) qudit core, end to end: the first-class d-level register, the dual-mode (gate ↔ braid) engine, Fibonacci-anyon braiding, the fusion algebra, and qudit measurement-based computation. Ordered most-impactful first.</p>
+      <p class="reveal reveal-delay-1" style="font:400 14.5px/1.6 Newsreader,serif;color:var(--text-muted);margin:0 2px 14px;max-width:60ch;">The SU(d) qudit core, end to end: the first-class d-level register and its gate synthesis, the dual-mode (gate ↔ braid) engine, Fibonacci-anyon braiding, the fusion algebra, and qudit measurement-based computation. Ordered most-impactful first.</p>
       <div class="demo-grid">
         <a class="card demo-card reveal reveal-delay-1" href="demos/qudit-register.html">
           <span class="card-label">SU(d) substrate · multi-level</span>
           <h3>First-Class Qudit Register</h3>
-          <p>The flexible building block itself, hands-on. Set up a register on a multi-level atom, dimension set in software, then drive it with the full set of operations and watch the strength and phase of every state respond live. Link two of them into an entangled pair and see the entanglement measured exactly. The ordinary qubit is just the special case. Computed live, no φ.</p>
+          <p>The flexible building block itself, hands-on. Set up a register on a multi-level atom, dimension set in software, then drive it with the full set of operations and watch the strength and phase of every state respond live; link two into an entangled pair measured exactly. A synthesis panel then compiles targets into the register's native gates: a bidirectional co-adaptive search that beats a one-directional one, at the dimension you select. The ordinary qubit is just the special case; the golden ratio enters only as the synthesis gate's angle (the search itself carries the win). Computed live.</p>
           <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
         </a>
         <a class="card demo-card reveal reveal-delay-3" href="demos/dual-mode-core.html">
           <span class="card-label">Architecture · gate ↔ braid</span>
           <h3>Dual-Mode Core</h3>
-          <p>The substrate-agnostic core: one logical intent carried in two modes behind a single API: a gate on the state-vector backend, or a Fibonacci anyon braid synthesized live, agreeing to the braid-approximation error. Plus a certified entangling weave (entanglement proven by negativity and Schmidt rank) and the synthesis frontier. This is the one genuinely φ-load-bearing piece of the architecture: in the anyonic mode the golden ratio sets the braiding's F and R symbols, not just the naming.</p>
+          <p>The substrate-agnostic core: one logical intent carried in two modes behind a single API: a gate on the state-vector backend, or a Fibonacci anyon braid synthesized live, agreeing to the braid-approximation error. Plus a certified entangling weave (entanglement proven by negativity and Schmidt rank) and a qudit synthesis comparison where the bidirectional co-adaptive search wins beyond d = 2. This is the one genuinely φ-load-bearing piece of the architecture: in the anyonic mode the golden ratio sets the braiding's F and R symbols, not just the naming.</p>
           <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
         </a>
         <a class="card demo-card reveal reveal-delay-2" href="demos/fibonacci-anyons.html">
           <span class="card-label">Topological · d_τ = φ</span>
           <h3>Fibonacci Anyons: Braiding &amp; Universality</h3>
-          <p>Where the golden ratio is genuinely load-bearing, in two views. <b>Braiding:</b> a Fibonacci anyon's quantum dimension is exactly φ, making it universal by braiding alone, with no magic-state distillation; braid the worldlines and watch fidelity decay under real superconducting noise, with the honest off-φ Ising comparator alongside. <b>Modular data:</b> the Fibonacci S/T matrices, S²=I, Verlinde recovering τ×τ=1+τ, and φ read straight off the S-matrix, with the twist that both Fibonacci and Ising have <em>consistent</em> modular data; what separates them is universality, not consistency.</p>
+          <p>Where the golden ratio is genuinely load-bearing, in two views. <b>Braiding:</b> a Fibonacci anyon's quantum dimension is exactly φ, making it universal by braiding alone, with no magic-state distillation; braid the worldlines and watch fidelity decay under real superconducting noise, with the honest off-φ Ising control alongside, and see universality made constructive: the co-adaptive search that finds the multi-anyon braid where Solovay–Kitaev cannot run. <b>Modular data:</b> the Fibonacci S/T matrices, S²=I, Verlinde recovering τ×τ=1+τ, and φ read straight off the S-matrix, with the twist that both Fibonacci and Ising have <em>consistent</em> modular data; what separates them is universality, not consistency.</p>
           <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
         </a>
         <a class="card demo-card reveal reveal-delay-3" href="demos/qudit-mbqc.html">
