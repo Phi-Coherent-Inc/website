@@ -63,7 +63,17 @@ self.onmessage = async () => {
     }
     if (typeof fv.delete === 'function') fv.delete();
     const totalDim = mod.fibTotalQuantumDim();
-    self.postMessage({ ok: true, qubit, entangler, frontier, totalDim });
+    // Qudit synthesis scoreboard: mean error per strategy on the D>2 fusion qudit,
+    // at a matched node budget (exhaustive vs meet-in-the-middle vs co-adaptive).
+    const sv = mod.runQuditSynthScoreboard();
+    const scoreboard = [];
+    for (let i = 0; i < sv.size(); i++) {
+      const r = sv.get(i);
+      scoreboard.push({ strategy: r.strategy, dim: r.dim, nStrands: r.nStrands,
+                        error: r.error, braidLength: r.braidLength, nTargets: r.nTargets });
+    }
+    if (typeof sv.delete === 'function') sv.delete();
+    self.postMessage({ ok: true, qubit, entangler, frontier, totalDim, scoreboard });
   } catch (err) {
     self.postMessage({ ok: false, error: String((err && err.message) || err) });
   }

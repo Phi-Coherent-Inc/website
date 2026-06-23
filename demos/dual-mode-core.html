@@ -100,6 +100,23 @@
       <canvas id="frontierCanvas"></canvas>
     </div>
 
+    <div class="chart-panel" style="margin-top:4px;">
+      <div class="panel-header">
+        <span class="panel-title">Fusion-qudit synthesis: which search compiles the braid best (D &gt; 2)</span>
+        <span class="panel-tag tag-phi">bidirectional co-adaptive</span>
+      </div>
+      <div style="padding:6px 18px 16px;font:400 13px/1.55 Inter,sans-serif;color:var(--text-muted);">
+        <p style="margin:6px 0 10px;">Mean residual error compiling random reachable targets on the
+        D-dimensional fusion qudit, at a <b>matched search budget</b> — lower is better. The
+        <b>co-adaptive</b> beam (grow a prefix and a suffix together, each scored against the other)
+        gets meet-in-the-middle's reach <i>and</i> beam pruning, so it beats both one-directional
+        <b>exhaustive</b> search and static <b>meet-in-the-middle</b>. Solovay–Kitaev does not apply at
+        D &gt; 2. <span style="opacity:.8">(Full D = 2…8 sweep: package benchmark
+        <code>bench_coadaptive_synth</code>.)</span></p>
+        <table id="synthTable" style="width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:12.5px;"></table>
+      </div>
+    </div>
+
     <div class="chart-panel note" style="margin-top:4px;">
       <div class="panel-header"><span class="panel-title">What this shows</span></div>
       <div style="padding:14px 18px;font:400 13.5px/1.62 Inter,sans-serif;color:var(--text-muted);">
@@ -357,6 +374,32 @@ function runCore() {
   worker.postMessage({});
 }
 
+function renderScoreboard(rows) {
+  const table = document.getElementById('synthTable');
+  if (!table || !rows || !rows.length) return;
+  const label = { exhaustive: 'exhaustive (1-directional)',
+                  mitm: 'meet-in-the-middle (static)',
+                  coadaptive: 'co-adaptive (bidirectional)' };
+  const dims = [...new Set(rows.map((r) => r.dim))].sort((a, b) => a - b);
+  let html = '<thead><tr style="text-align:left;color:var(--text);">'
+           + '<th style="padding:4px 8px;">Fusion qudit</th><th style="padding:4px 8px;">Strategy</th>'
+           + '<th style="padding:4px 8px;text-align:right;">Mean error ↓</th>'
+           + '<th style="padding:4px 8px;text-align:right;">Mean length</th></tr></thead><tbody>';
+  for (const d of dims) {
+    const group = rows.filter((r) => r.dim === d);
+    const best = Math.min(...group.map((r) => r.error));
+    group.forEach((r, i) => {
+      const win = r.error <= best + 1e-9;
+      html += '<tr style="border-top:1px solid var(--gold-border,rgba(160,118,18,0.18));">'
+        + `<td style="padding:4px 8px;color:var(--text);">${i === 0 ? 'D = ' + d : ''}</td>`
+        + `<td style="padding:4px 8px;${win ? 'color:var(--gold);font-weight:600;' : ''}">${label[r.strategy] || r.strategy}</td>`
+        + `<td style="padding:4px 8px;text-align:right;${win ? 'color:var(--gold);font-weight:600;' : 'color:var(--text);'}">${r.error.toFixed(3)}${win ? ' ◀' : ''}</td>`
+        + `<td style="padding:4px 8px;text-align:right;">${r.braidLength.toFixed(1)}</td></tr>`;
+    });
+  }
+  table.innerHTML = html + '</tbody>';
+}
+
 function initWorker() {
   try {
     worker = new Worker('assets/js/dual-mode-worker.js', { type: 'module' });
@@ -373,6 +416,7 @@ function initWorker() {
     entangler = e.data.entangler;
     frontier = e.data.frontier;
     totalDim = e.data.totalDim;
+    renderScoreboard(e.data.scoreboard);
     statusEl.textContent = 'One intent → two modes · both reach the target · '
       + (entangler && entangler.certified ? 'entangler certified, weave frontier mapped' : 'entangler check complete');
     renderAll();
