@@ -73,7 +73,7 @@
     </div>
 
     <div class="stat-card stat-cyan">
-      <div class="stat-label">Anti-wash, no links</div>
+      <div class="stat-label">Control: no links</div>
       <div class="stat-value" id="noLinkVal">…</div>
       <div class="stat-sub">cluster factorizes, entropy 0</div>
     </div>
@@ -109,7 +109,7 @@
         ever applied to the data. Two horizontal rails give single-qudit gates; <b>vertical CZ_d
         links</b> between them supply the entangler. Generalized from qubits to d-level systems,
         d = 2, 3, 5. <b>No φ:</b> measurement × entanglement physics.</p>
-        <p style="margin:0 0 10px;">The <b>upper chart</b> is the anti-wash. The entangling power of the
+        <p style="margin:0 0 10px;">The <b>upper chart</b> is the control. The entangling power of the
         realized circuit (the entanglement of U applied to a product input) is <b>nonzero with the
         vertical links</b> (up to the maximum ln d) and <b>identically zero without them</b>: strip
         the links and the cluster factorizes into two independent single-qudit one-way computations.
@@ -142,7 +142,7 @@
 // ============================================================
 // Real computation: runQudit2dEntangling (entangling power of the target two-
 // qudit circuit vs depth, with vs without the vertical CZ_d links (the
-// anti-wash) + runQudit2dBranches (one-way computation across many Born
+// control) + runQudit2dBranches (one-way computation across many Born
 // branches: random byproduct correction each branch, fidelity 1 throughout),
 // run off the UI thread in a module Web Worker (assets/js/qudit-mbqc-2d-
 // worker.js). A real two-qudit algorithm computed purely by measurement; no φ.

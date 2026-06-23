@@ -6,7 +6,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>φCoherent · Qudit Measurement-Based Computation</title>
-<meta name="description" content="Interactive demo: measurement-based (one-way) quantum computation generalized to qudits (d-level systems). A 2D qudit cluster state is the resource: its entanglement equals the number of edges crossing a cut, each carrying ln d, giving an area law. One-way J_d-chains then compute any single-qudit unitary by measurement and feed-forward, with fidelity 1. Anti-wash: the entangling gadget produces entanglement only with the vertical link. Computed live in your browser via WebAssembly. No golden ratio.">
+<meta name="description" content="Interactive demo: measurement-based (one-way) quantum computation generalized to qudits (d-level systems). A 2D qudit cluster state is the resource: its entanglement equals the number of edges crossing a cut, each carrying ln d, giving an area law. One-way J_d-chains then compute any single-qudit unitary by measurement and feed-forward, with fidelity 1. Control: the entangling gadget produces entanglement only with the vertical link. Computed live in your browser via WebAssembly. No golden ratio.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://phicoherent.com/demos/qudit-mbqc.html">
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -73,7 +73,7 @@
     </div>
 
     <div class="stat-card stat-cyan">
-      <div class="stat-label">Anti-wash, no link</div>
+      <div class="stat-label">Control: no link</div>
       <div class="stat-value" id="noLinkVal">…</div>
       <div class="stat-sub">product state, entropy 0</div>
     </div>
@@ -119,7 +119,7 @@
         <p style="margin:0;">The cards verify the rest: the generalized graph-state stabilizers
         <b>fix</b> the state (defect ≈ 0); the measured cut entropy <b>matches</b> rank·ln d to
         machine precision; and the entangling gadget produces entanglement <b>only with</b> its
-        vertical link (≈ ln d) and a product state <b>without</b> it (entropy 0): the anti-wash that
+        vertical link (≈ ln d) and a product state <b>without</b> it (entropy 0): the control that
         proves the link is doing the work. Computed live in your browser via WebAssembly.</p>
       </div>
     </div>
