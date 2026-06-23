@@ -268,6 +268,11 @@ export const PhiQudit = {
   bellJoint(d = 10) { return vecToArray(_module.runQuditBellJoint(d >>> 0)); },
   // The pair's measured entanglement: { entropy, lnD, purity }  (entropy → ln d).
   bellStats(d = 10) { return _module.runQuditBellStats(d >>> 0); },
+  // GATE synthesis: compile SU(d) targets into the native gate set {X_d,F_d,T_d}.
+  // Mean error per search strategy (one-directional beam vs co-adaptive) at a
+  // matched budget, shown at D=3,5. Returns [{ strategy, dim, error, gateLength,
+  // nTargets }]. ~0.15 s — run deferred.
+  gateSynthScoreboard() { return vecToArray(_module.runQuditGateSynthScoreboard()); },
 };
 
 // The φPyramid energy-device demo now lives in its own module (phi_pyramid.wasm,

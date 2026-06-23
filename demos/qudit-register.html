@@ -128,6 +128,25 @@
       <canvas id="bellCanvas"></canvas>
     </div>
 
+    <div class="chart-panel" style="margin-top:4px;">
+      <div class="panel-header">
+        <span class="panel-title">Gate synthesis: compiling an SU(d) target into the native gate set</span>
+        <span class="panel-tag tag-phi">bidirectional co-adaptive</span>
+      </div>
+      <div style="padding:6px 18px 16px;font:400 13px/1.55 Inter,sans-serif;color:var(--text-muted);">
+        <p style="margin:6px 0 10px;">Driving the register by hand is one thing; compiling an arbitrary
+        target into the native gates is the <b>synthesis</b> problem. X_d and F_d are Clifford and only
+        generate a finite group — adding one non-Clifford <b>T_d</b> (a phase at the <b>golden angle</b>,
+        the maximally irrational rotation, the zero-free-parameter choice that makes the set universal
+        with no low-order resonances) makes <code>{X_d, F_d, T_d}</code> dense in SU(d). Finding a short
+        word for a target is then a search; the <b>bidirectional co-adaptive</b> search (grow a prefix and
+        a suffix together, each scored against the other) reaches lower mean error than a one-directional
+        beam at a matched budget. Shown at D = 3, 5; the advantage holds at this register's D = 10, 12 too,
+        at a larger search budget (package benchmark <code>bench_qudit_gate_synth</code>).</p>
+        <table id="synthTable" style="width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:12.5px;"></table>
+      </div>
+    </div>
+
     <div class="chart-panel note" style="margin-top:4px;">
       <div class="panel-header"><span class="panel-title">What this shows: the dimension-flexible substrate, first-class</span></div>
       <div style="padding:14px 18px;font:400 13.5px/1.62 Inter,sans-serif;color:var(--text-muted);">
@@ -157,9 +176,11 @@
 <div class="caveat-footer">
   <strong>Honest scope.</strong> This is an exact state-vector simulation of one (and, for the Bell
   panel, two) multi-state registers on the real phi-quantum-types qudit engine; the d = 2 case is
-  identical to the qubit path. It simulates the <em>logical</em> register, not the atomic hardware, and
-  no golden ratio enters here. This panel is the dimension-flexible building block itself; the golden
-  ratio is load-bearing elsewhere in the architecture. Not realized hardware.
+  identical to the qubit path. It simulates the <em>logical</em> register, not the atomic hardware. The
+  register substrate itself is golden-free; the only place the golden ratio enters is the synthesis
+  panel's non-Clifford gate T_d, where the golden (maximally irrational) angle is the zero-free-parameter
+  choice that makes the gate set universal — and even there it is the <em>structure</em> (the
+  bidirectional search) that carries the win, not the constant. Not realized hardware.
 </div>
 
 <script src="assets/demo-header.js?v=20260622"></script>
@@ -172,7 +193,7 @@
 //   modeInfo(d) → the register mode for dimension d
 // Lightweight: runs on the main thread, re-rendered on every click.
 // ============================================================
-import { ready, PhiQudit } from './assets/js/phi-quantum.js?v=20260622';
+import { ready, PhiQudit } from './assets/js/phi-quantum.js?v=20260623';
 
 const P = () => window.PhiTheme.palette();
 const statusEl = document.getElementById('status');
@@ -333,6 +354,33 @@ window.addEventListener('resize', () => { drawAmp(); drawBell(); });
 new MutationObserver(() => { drawAmp(); drawBell(); })
   .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
+function renderSynthBoard() {
+  const table = document.getElementById('synthTable');
+  if (!table || !PhiQudit) return;
+  let rows;
+  try { rows = PhiQudit.gateSynthScoreboard(); } catch (e) { return; }
+  if (!rows || !rows.length) return;
+  const dims = [...new Set(rows.map((r) => r.dim))].sort((a, b) => a - b);
+  let html = '<thead><tr style="text-align:left;color:var(--text);">'
+    + '<th style="padding:4px 8px;">Qudit</th><th style="padding:4px 8px;">Search</th>'
+    + '<th style="padding:4px 8px;text-align:right;">Mean error ↓</th>'
+    + '<th style="padding:4px 8px;text-align:right;">Mean length</th></tr></thead><tbody>';
+  for (const d of dims) {
+    const group = rows.filter((r) => r.dim === d);
+    const best = Math.min(...group.map((r) => Math.max(0, r.error)));
+    group.forEach((r, i) => {
+      const e = Math.max(0, r.error);                 // clamp FP −0.000
+      const win = e <= best + 1e-9;
+      html += '<tr style="border-top:1px solid var(--gold-border,rgba(160,118,18,0.18));">'
+        + `<td style="padding:4px 8px;color:var(--text);">${i === 0 ? 'd = ' + d : ''}</td>`
+        + `<td style="padding:4px 8px;${win ? 'color:var(--gold);font-weight:600;' : ''}">${r.strategy}</td>`
+        + `<td style="padding:4px 8px;text-align:right;${win ? 'color:var(--gold);font-weight:600;' : 'color:var(--text);'}">${e.toFixed(3)}${win ? ' ◀' : ''}</td>`
+        + `<td style="padding:4px 8px;text-align:right;">${r.gateLength.toFixed(1)}</td></tr>`;
+    });
+  }
+  table.innerHTML = html + '</tbody>';
+}
+
 (async function init() {
   try {
     statusEl.textContent = 'Loading qudit engine…';
@@ -341,6 +389,7 @@ new MutationObserver(() => { drawAmp(); drawBell(); })
     document.getElementById('thetaLbl').textContent = theta + '°';
     document.getElementById('startLbl').textContent = '= ' + start;
     selectD(10);
+    setTimeout(renderSynthBoard, 60);   // ~0.15 s of synthesis compute, off first paint
   } catch (e) {
     statusEl.textContent = 'Failed to load: ' + e.message;
   }
