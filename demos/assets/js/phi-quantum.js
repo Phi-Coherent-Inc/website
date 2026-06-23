@@ -232,6 +232,13 @@ export const PhiTopo = {
   feasibilityBudget() {
     return _module.feasibilityBudget();
   },
+  // Braid SYNTHESIS on the multi-anyon fusion qudit (D = F_N > 2): the constructive
+  // side of universality. Mean compile error per search strategy at a matched node
+  // budget. Returns [{ strategy, dim, nStrands, error, braidLength, nTargets }].
+  // ~0.6 s of compute — run deferred, off the first paint.
+  quditSynthScoreboard() {
+    return vecToArray(_module.runQuditSynthScoreboard());
+  },
 };
 
 // ── First-class SU(d) Qudit Register (the dimension-flexible substrate) ───────

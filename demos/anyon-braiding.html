@@ -125,6 +125,24 @@
 
     <div class="chart-panel">
       <div class="panel-header">
+        <span class="panel-title">Universality, made constructive: finding the braid on the D &gt; 2 qudit</span>
+        <span class="panel-tag tag-phi">bidirectional co-adaptive</span>
+      </div>
+      <div style="padding:6px 18px 16px;font:400 13px/1.55 Inter,sans-serif;color:var(--text-muted);">
+        <p style="margin:6px 0 10px;">Universality guarantees a braid <i>exists</i> for any target gate.
+        <b>Finding</b> it on the multi-anyon fusion qudit (dimension D = F<sub>N</sub> &gt; 2) is the
+        synthesis problem — and Solovay–Kitaev does not apply there. Mean residual error compiling random
+        reachable targets at a <b>matched search budget</b>, lower is better: the <b>co-adaptive</b> search
+        (grow a prefix and a suffix together, each scored against the other) gets meet-in-the-middle's
+        reach <i>and</i> beam pruning, beating one-directional <b>exhaustive</b> search and static
+        <b>meet-in-the-middle</b>. <span style="opacity:.8">(Full D = 2…8 sweep: package benchmark
+        <code>bench_coadaptive_synth</code>.)</span></p>
+        <table id="synthTable" style="width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:12.5px;"></table>
+      </div>
+    </div>
+
+    <div class="chart-panel">
+      <div class="panel-header">
         <span class="panel-title">Logical Error Rate vs Physical Error Rate (code-capacity surrogate)</span>
         <div class="legend">
           <div class="legend-item"><div class="legend-dot" id="dotD3"></div> d = 3</div>
@@ -166,7 +184,7 @@
 
 <script src="assets/demo-header.js?v=20260622"></script>
 <script type="module">
-import { ready, PhiTopo } from './assets/js/phi-quantum.js?v=20260622';
+import { ready, PhiTopo } from './assets/js/phi-quantum.js?v=20260623';
 
 const P = () => window.PhiTheme.palette();
 const braidNSlider = document.getElementById('braidN');
@@ -498,6 +516,35 @@ function initWorker() {
 window.addEventListener('resize', () => { drawBraid(); drawFusion(); drawInterferometer(); drawFidelity(); drawChart(); });
 window.PhiTheme && window.PhiTheme.onChange(() => { legendColors(); drawBraid(); drawFusion(); drawInterferometer(); drawFidelity(); drawChart(); });
 
+function renderSynthBoard() {
+  const table = document.getElementById('synthTable');
+  if (!table || !PhiTopo) return;
+  let rows;
+  try { rows = PhiTopo.quditSynthScoreboard(); } catch (e) { return; }
+  if (!rows || !rows.length) return;
+  const label = { exhaustive: 'exhaustive (1-directional)',
+                  mitm: 'meet-in-the-middle (static)',
+                  coadaptive: 'co-adaptive (bidirectional)' };
+  const dims = [...new Set(rows.map((r) => r.dim))].sort((a, b) => a - b);
+  let html = '<thead><tr style="text-align:left;color:var(--text);">'
+    + '<th style="padding:4px 8px;">Fusion qudit</th><th style="padding:4px 8px;">Strategy</th>'
+    + '<th style="padding:4px 8px;text-align:right;">Mean error ↓</th>'
+    + '<th style="padding:4px 8px;text-align:right;">Mean length</th></tr></thead><tbody>';
+  for (const d of dims) {
+    const group = rows.filter((r) => r.dim === d);
+    const best = Math.min(...group.map((r) => r.error));
+    group.forEach((r, i) => {
+      const win = r.error <= best + 1e-9;
+      html += '<tr style="border-top:1px solid var(--gold-border,rgba(160,118,18,0.18));">'
+        + `<td style="padding:4px 8px;color:var(--text);">${i === 0 ? 'D = ' + d : ''}</td>`
+        + `<td style="padding:4px 8px;${win ? 'color:var(--gold);font-weight:600;' : ''}">${label[r.strategy] || r.strategy}</td>`
+        + `<td style="padding:4px 8px;text-align:right;${win ? 'color:var(--gold);font-weight:600;' : 'color:var(--text);'}">${r.error.toFixed(3)}${win ? ' ◀' : ''}</td>`
+        + `<td style="padding:4px 8px;text-align:right;">${r.braidLength.toFixed(1)}</td></tr>`;
+    });
+  }
+  table.innerHTML = html + '</tbody>';
+}
+
 (async function init() {
   legendColors();
   try {
@@ -516,6 +563,7 @@ window.PhiTheme && window.PhiTheme.onChange(() => { legendColors(); drawBraid();
     statusEl.textContent = 'Fibonacci anyons (d_τ = φ): braiding is universal, no distillation.';
     initWorker();
     setTimeout(runThreshold, 400);
+    setTimeout(renderSynthBoard, 60);   // ~0.6 s of synthesis compute, off the first paint
   } catch (e) {
     statusEl.textContent = 'This demo needs a web server (WASM can’t load from file://).';
   }
