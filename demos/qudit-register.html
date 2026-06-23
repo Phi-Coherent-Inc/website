@@ -141,8 +141,9 @@
         with no low-order resonances) makes <code>{X_d, F_d, T_d}</code> dense in SU(d). Finding a short
         word for a target is then a search; the <b>bidirectional co-adaptive</b> search (grow a prefix and
         a suffix together, each scored against the other) reaches lower mean error than a one-directional
-        beam at a matched budget. Shown at D = 3, 5; the advantage holds at this register's D = 10, 12 too,
-        at a larger search budget (package benchmark <code>bench_qudit_gate_synth</code>).</p>
+        beam at a matched budget. This runs at the register's <b>selected dimension</b> — switch the size
+        on the left (d = 2 → 10 → 12) to watch the co-adaptive advantage grow with d. (Full sweep at a
+        larger budget: package benchmark <code>bench_qudit_gate_synth</code>.)</p>
         <table id="synthTable" style="width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:12.5px;"></table>
       </div>
     </div>
@@ -193,7 +194,7 @@
 //   modeInfo(d) → the register mode for dimension d
 // Lightweight: runs on the main thread, re-rendered on every click.
 // ============================================================
-import { ready, PhiQudit } from './assets/js/phi-quantum.js?v=20260623';
+import { ready, PhiQudit } from './assets/js/phi-quantum.js?v=20260624';
 
 const P = () => window.PhiTheme.palette();
 const statusEl = document.getElementById('status');
@@ -322,6 +323,7 @@ function selectD(nd) {
   document.getElementById('startLbl').textContent = '= ' + start;
   ops = []; measCounts = null;
   renderModeCard(); recompute();
+  scheduleSynth(d);                 // synthesis panel follows the selected dimension
 }
 
 document.querySelectorAll('#dseg button').forEach((b) =>
@@ -354,31 +356,42 @@ window.addEventListener('resize', () => { drawAmp(); drawBell(); });
 new MutationObserver(() => { drawAmp(); drawBell(); })
   .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
-function renderSynthBoard() {
+const _synthCache = {};
+
+function renderSynthTable(rows, dd) {
   const table = document.getElementById('synthTable');
-  if (!table || !PhiQudit) return;
-  let rows;
-  try { rows = PhiQudit.gateSynthScoreboard(); } catch (e) { return; }
-  if (!rows || !rows.length) return;
-  const dims = [...new Set(rows.map((r) => r.dim))].sort((a, b) => a - b);
+  if (!table || !rows || !rows.length) return;
+  const best = Math.min(...rows.map((r) => Math.max(0, r.error)));
   let html = '<thead><tr style="text-align:left;color:var(--text);">'
     + '<th style="padding:4px 8px;">Qudit</th><th style="padding:4px 8px;">Search</th>'
     + '<th style="padding:4px 8px;text-align:right;">Mean error ↓</th>'
     + '<th style="padding:4px 8px;text-align:right;">Mean length</th></tr></thead><tbody>';
-  for (const d of dims) {
-    const group = rows.filter((r) => r.dim === d);
-    const best = Math.min(...group.map((r) => Math.max(0, r.error)));
-    group.forEach((r, i) => {
-      const e = Math.max(0, r.error);                 // clamp FP −0.000
-      const win = e <= best + 1e-9;
-      html += '<tr style="border-top:1px solid var(--gold-border,rgba(160,118,18,0.18));">'
-        + `<td style="padding:4px 8px;color:var(--text);">${i === 0 ? 'd = ' + d : ''}</td>`
-        + `<td style="padding:4px 8px;${win ? 'color:var(--gold);font-weight:600;' : ''}">${r.strategy}</td>`
-        + `<td style="padding:4px 8px;text-align:right;${win ? 'color:var(--gold);font-weight:600;' : 'color:var(--text);'}">${e.toFixed(3)}${win ? ' ◀' : ''}</td>`
-        + `<td style="padding:4px 8px;text-align:right;">${r.gateLength.toFixed(1)}</td></tr>`;
-    });
-  }
+  rows.forEach((r, i) => {
+    const e = Math.max(0, r.error);                   // clamp FP −0.000
+    const win = e <= best + 1e-9;
+    html += '<tr style="border-top:1px solid var(--gold-border,rgba(160,118,18,0.18));">'
+      + `<td style="padding:4px 8px;color:var(--text);">${i === 0 ? 'd = ' + dd : ''}</td>`
+      + `<td style="padding:4px 8px;${win ? 'color:var(--gold);font-weight:600;' : ''}">${r.strategy}</td>`
+      + `<td style="padding:4px 8px;text-align:right;${win ? 'color:var(--gold);font-weight:600;' : 'color:var(--text);'}">${e.toFixed(3)}${win ? ' ◀' : ''}</td>`
+      + `<td style="padding:4px 8px;text-align:right;">${r.gateLength.toFixed(1)}</td></tr>`;
+  });
   table.innerHTML = html + '</tbody>';
+}
+
+// Synthesize at the register's currently-selected dimension (matches the left
+// selector). Cached per d; shows a brief notice while the ~sub-second search runs.
+function scheduleSynth(dd) {
+  const table = document.getElementById('synthTable');
+  if (!table || !PhiQudit) return;
+  if (_synthCache[dd]) { renderSynthTable(_synthCache[dd], dd); return; }
+  table.innerHTML = `<tbody><tr><td style="padding:8px;color:var(--text-muted)">`
+    + `compiling targets at d = ${dd} …</td></tr></tbody>`;
+  setTimeout(() => {
+    let rows;
+    try { rows = PhiQudit.gateSynthScoreboard(dd); } catch (e) { return; }
+    _synthCache[dd] = rows;
+    if (d === dd) renderSynthTable(rows, dd);          // ignore if selection moved on
+  }, 30);
 }
 
 (async function init() {
@@ -388,8 +401,7 @@ function renderSynthBoard() {
     statusEl.textContent = 'Ready. Click a gate to drive the register.';
     document.getElementById('thetaLbl').textContent = theta + '°';
     document.getElementById('startLbl').textContent = '= ' + start;
-    selectD(10);
-    setTimeout(renderSynthBoard, 60);   // ~0.15 s of synthesis compute, off first paint
+    selectD(10);                        // also triggers the synthesis panel for d=10
   } catch (e) {
     statusEl.textContent = 'Failed to load: ' + e.message;
   }
