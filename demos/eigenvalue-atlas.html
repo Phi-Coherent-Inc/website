@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>φCoherent · Eigenvalue Atlas: One Law, Four Physics</title>
+<meta name="description" content="Interactive demo: four independent quantum-physics objects — the quantum dimension, the Fibonacci tunnelling spectrum, a decoherence channel, and anyon braiding — classified by one law. Where each eigenvalue sits on the unit circle names its identity gate (φ order, e entropy, δ irregularity, π phase, γ floor), computed live from phi-quantum-sim-cpp via WebAssembly.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://phicoherent.com/demos/eigenvalue-atlas.html">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#C9A830">
+<script>try{if(localStorage.getItem('phi-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/demo.css?v=20260623">
+</head>
+<body>
+
+<header class="demo-header" data-demo="eigenvalue-atlas"
+        data-title="Eigenvalue Atlas: One Law, Four Physics"></header>
+
+<p id="intro" style="max-width:1100px;margin:6px auto 0;padding:0 24px;color:var(--text-muted);font-size:13px;line-height:1.6;text-align:center;">
+  Four independent objects from four different demos, read through <strong>one law</strong>.
+  Each is a linear map; <strong>where its eigenvalue sits relative to the unit circle</strong>
+  decides which identity it belongs to. A real eigenvalue can leave the circle through
+  exactly three gates — <span style="color:var(--gold)">+1 growth (φ)</span>,
+  <span style="color:#c0392b">−1 doubling (δ)</span>,
+  <span style="color:#8a63d2">a complex pair (π)</span> — over the
+  <span style="color:#1f8aa0">contracting interior (e)</span>. That is the whole map; there is
+  no fourth coplanar gate. The same classifier reads every system below.
+</p>
+
+<div class="main">
+  <div class="controls">
+    <div class="control-group">
+      <label style="color:var(--gold)">Fibonacci tunnelling spectrum (φ load-bearing)</label>
+      <label>Generation (cells = F<sub>n</sub>)</label>
+      <div class="slider-row">
+        <input type="range" id="gen" min="3" max="13" step="1" value="9">
+        <span class="slider-value" id="genVal">9</span>
+      </div>
+      <label>On-site contrast (ε<sub>A</sub> − ε<sub>B</sub>)</label>
+      <div class="slider-row">
+        <input type="range" id="contrast" min="0.2" max="1.5" step="0.1" value="1.0">
+        <span class="slider-value" id="contrastVal">1.0</span>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label style="color:#1f8aa0">Decoherence channel (neutral physics)</label>
+      <label>Error rate p</label>
+      <div class="slider-row">
+        <input type="range" id="perr" min="0.02" max="0.45" step="0.01" value="0.10">
+        <span class="slider-value" id="perrVal">0.10</span>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>Show systems</label>
+      <label class="chk"><input type="checkbox" id="s0" checked> Quantum dimension (fusion)</label>
+      <label class="chk"><input type="checkbox" id="s1" checked> Fibonacci tunnelling</label>
+      <label class="chk"><input type="checkbox" id="s2" checked> Decoherence channel</label>
+      <label class="chk"><input type="checkbox" id="s3" checked> Anyon braiding</label>
+    </div>
+
+    <div class="demo-status" id="status">Loading…</div>
+
+    <div class="stat-card" style="border-left:3px solid var(--gold)">
+      <div class="stat-label">Honest scope</div>
+      <div class="stat-sub" style="line-height:1.5">
+        φ is genuinely load-bearing at <strong>ORDER</strong> (the quantum dimension <em>is</em> φ)
+        and as the <strong>PHASE</strong> structure (braiding-universality needs the exact F/R
+        symbols). The <strong>δ</strong> and <strong>e</strong> gates here are neutral physics —
+        a golden drive was measured <em>not</em> special on the δ axis, so no claim is made there.
+      </div>
+    </div>
+  </div>
+
+  <div class="canvas-area">
+    <div class="canvas-row" style="grid-template-columns:1fr">
+      <div class="canvas-panel">
+        <div class="panel-header">
+          <span class="panel-title">The unit circle · every eigenvalue, one classifier</span>
+          <span class="panel-tag tag-phi">classify_eigenvalue</span>
+        </div>
+        <canvas id="circleCanvas"></canvas>
+      </div>
+    </div>
+    <div class="canvas-row" style="grid-template-columns:1fr">
+      <div class="canvas-panel">
+        <div class="panel-header">
+          <span class="panel-title">One φ-quasicrystal spectrum paints three gates (energy →)</span>
+          <span class="panel-tag tag-phi">φ load-bearing</span>
+        </div>
+        <canvas id="stripCanvas" style="height:90px"></canvas>
+      </div>
+    </div>
+    <div id="legend" class="legend-row"></div>
+  </div>
+</div>
+
+<style>
+  .chk{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text);font-weight:400;margin:3px 0;cursor:pointer}
+  .chk input{accent-color:var(--gold)}
+  .legend-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+  .legend-item{flex:1 1 150px;background:var(--card);border-radius:8px;padding:9px 11px;border-left:3px solid var(--gold)}
+  .legend-name{font-size:12px;font-weight:600;color:var(--text)}
+  .legend-sub{font-size:11px;color:var(--text-muted);margin-top:2px;line-height:1.4}
+  .legend-count{font-size:18px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}
+</style>
+
+<script type="module">
+import { ready, PhiAtlas } from './assets/js/phi-quantum.js?v=20260623';
+
+// gate index → display. Matches phi::IdentityGate: 0 e · 1 φ · 2 δ · 3 π · 4 γ
+const GATES = [
+  { key:'e', name:'ENTROPY · e',      sub:'contraction inside the circle (decoherence)', color:'#1f8aa0', lb:false },
+  { key:'phi', name:'ORDER · φ',      sub:'growth / fold gate (the quantum dimension)',  color:'#C9A830', lb:true  },
+  { key:'delta', name:'IRREGULARITY · δ', sub:'period-doubling / flip gate (spectral gap)', color:'#c0392b', lb:false },
+  { key:'pi', name:'PHASE · π',       sub:'rotation on the circle (braiding)',           color:'#8a63d2', lb:true  },
+  { key:'gamma', name:'FLOOR · γ',    sub:'marginal point (+1); not a pole',             color:'#8a7d63', lb:false },
+];
+const pal = () => window.PhiTheme.palette();
+let DATA = [];
+
+function setup(id, hFallback) {
+  const canvas = document.getElementById(id);
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const w = Math.max(220, rect.width);
+  const h = Math.max(120, (canvas.style.height ? parseInt(canvas.style.height) : rect.height - 44) || hFallback);
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, w, h };
+}
+
+// radial compression so deep-gap eigenvalues (|λ|≫1) stay on screen in an annulus
+const rDisp = (m) => (m <= 1 ? m : 1 + 0.55 * Math.tanh(Math.log(m)));
+
+function drawCircle() {
+  const { ctx, w, h } = setup('circleCanvas', 420);
+  const p = pal();
+  ctx.fillStyle = p.canvas; ctx.fillRect(0, 0, w, h);
+  const cx = w / 2, cy = h / 2, R = Math.min(w, h) * 0.32;
+
+  // interior fill (e region)
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2 * Math.PI);
+  ctx.fillStyle = p.isDark ? 'rgba(31,138,160,0.07)' : 'rgba(31,138,160,0.06)'; ctx.fill();
+  // axes
+  ctx.strokeStyle = p.grid; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(8, cy); ctx.lineTo(w - 8, cy); ctx.moveTo(cx, 10); ctx.lineTo(cx, h - 10); ctx.stroke();
+  // the unit circle (π gate)
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2 * Math.PI);
+  ctx.strokeStyle = '#8a63d2'; ctx.lineWidth = 1.6; ctx.stroke();
+  // gate markers on the real axis: +1 (φ/γ) and −1 (δ)
+  for (const [val, col] of [[1, p.gold], [-1, '#c0392b']]) {
+    ctx.beginPath(); ctx.arc(cx + val * R, cy, 3.2, 0, 2 * Math.PI); ctx.fillStyle = col; ctx.fill();
+  }
+  // region labels
+  ctx.font = '11px Inter, sans-serif'; ctx.textAlign = 'center';
+  ctx.fillStyle = p.gold;    ctx.fillText('ORDER φ →', cx + R * 1.30, cy - 8);
+  ctx.fillStyle = '#c0392b'; ctx.fillText('← δ doubling', cx - R * 1.28, cy - 8);
+  ctx.fillStyle = '#8a63d2'; ctx.fillText('π rotation', cx, cy - R - 8);
+  ctx.fillStyle = '#1f8aa0'; ctx.fillText('e decay', cx, cy + 14);
+
+  // points
+  const symbol = { 0:'circle', 1:'diamond', 2:'square', 3:'triangle' };
+  for (const r of DATA) {
+    if (!document.getElementById('s' + r.system).checked) continue;
+    const ang = Math.atan2(r.im, r.re);
+    const rr = rDisp(r.modulus) * R;
+    const x = cx + rr * Math.cos(ang), y = cy - rr * Math.sin(ang);
+    ctx.fillStyle = GATES[r.gate].color;
+    ctx.globalAlpha = 0.85;
+    const s = symbol[r.system];
+    ctx.beginPath();
+    if (s === 'circle')      ctx.arc(x, y, 3.0, 0, 2 * Math.PI);
+    else if (s === 'diamond'){ ctx.moveTo(x, y-3.6); ctx.lineTo(x+3.6, y); ctx.lineTo(x, y+3.6); ctx.lineTo(x-3.6, y); ctx.closePath(); }
+    else if (s === 'square') ctx.rect(x-2.6, y-2.6, 5.2, 5.2);
+    else { ctx.moveTo(x, y-3.6); ctx.lineTo(x+3.4, y+3); ctx.lineTo(x-3.4, y+3); ctx.closePath(); }
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  // system shape key
+  ctx.textAlign = 'left'; ctx.fillStyle = p.textDim; ctx.font = '10.5px Inter, sans-serif';
+  const key = ['● fusion', '◆ tunnelling', '■ decoherence', '▲ braiding'];
+  key.forEach((t, i) => ctx.fillText(t, 10, h - 10 - (key.length - 1 - i) * 13));
+}
+
+function drawStrip() {
+  const { ctx, w, h } = setup('stripCanvas', 90);
+  const p = pal();
+  ctx.fillStyle = p.canvas; ctx.fillRect(0, 0, w, h);
+  const tun = DATA.filter((r) => r.system === 1).sort((a, b) => a.param - b.param);
+  if (!tun.length) return;
+  const dx = w / tun.length;
+  for (let i = 0; i < tun.length; i++) {
+    ctx.fillStyle = GATES[tun[i].gate].color;
+    ctx.fillRect(i * dx, 8, dx + 0.6, h - 26);
+  }
+  ctx.fillStyle = p.textDim; ctx.font = '11px Inter, sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('allowed bands = π (rotation) · gaps = φ (fold) or δ (flip) — energy →', w / 2, h - 6);
+}
+
+function drawLegend() {
+  const counts = [0, 0, 0, 0, 0];
+  for (const r of DATA) if (document.getElementById('s' + r.system).checked) counts[r.gate]++;
+  const el = document.getElementById('legend');
+  el.innerHTML = GATES.map((g, i) => `
+    <div class="legend-item" style="border-left-color:${g.color}">
+      <div class="legend-name" style="color:${g.color}">${g.name}
+        <span style="font-size:10px;color:var(--text-muted);font-weight:500">${g.lb ? '· load-bearing' : '· neutral'}</span></div>
+      <div class="legend-count">${counts[i]}</div>
+      <div class="legend-sub">${g.sub}</div>
+    </div>`).join('');
+}
+
+function recompute() {
+  const gen = +document.getElementById('gen').value;
+  const c = +document.getElementById('contrast').value;
+  const perr = +document.getElementById('perr').value;
+  DATA = PhiAtlas.run(gen, c / 2, -c / 2, 480, perr, 2);
+  redraw();
+}
+function redraw() { drawCircle(); drawStrip(); drawLegend(); }
+
+function bindSlider(id, fmt, onChange) {
+  const el = document.getElementById(id), out = document.getElementById(id + 'Val');
+  el.addEventListener('input', () => { if (out) out.textContent = fmt(+el.value); onChange(); });
+}
+
+ready().then(() => {
+  document.getElementById('status').textContent = 'Live · phi-quantum-sim-cpp (WASM)';
+  bindSlider('gen', (v) => v, recompute);
+  bindSlider('contrast', (v) => v.toFixed(1), recompute);
+  bindSlider('perr', (v) => v.toFixed(2), recompute);
+  for (const id of ['s0', 's1', 's2', 's3'])
+    document.getElementById(id).addEventListener('change', redraw);
+  window.addEventListener('resize', () => requestAnimationFrame(redraw));
+  if (window.PhiTheme && window.PhiTheme.onChange) window.PhiTheme.onChange(redraw);
+  recompute();
+}).catch((e) => {
+  document.getElementById('status').textContent = 'Failed to load WASM: ' + e;
+});
+</script>
+
+<script src="assets/demo-header.js?v=20260623"></script>
+</body>
+</html>
