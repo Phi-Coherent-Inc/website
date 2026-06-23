@@ -1089,7 +1089,7 @@ footer {
         <div class="card reveal reveal-delay-1">
           <span class="card-label">Pillar I</span>
           <h3>Compression</h3>
-          <p>A complete audio · image · video codec family. Lossless by default, deterministic across architectures. Built to carry one coherent signal across the AGI sensory pipeline and our core systems, not to chase any single benchmark.</p>
+          <p>A complete audio · image · video · general-purpose codec family. Lossless by default, deterministic across architectures. The general-purpose codec beats or matches zlib at its strongest setting on every file of the standard benchmark corpora. Built to carry one coherent signal across the AGI sensory pipeline and our core systems.</p>
         </div>
         <div class="card reveal reveal-delay-2">
           <span class="card-label">Pillar II</span>
@@ -1120,6 +1120,11 @@ footer {
       <table class="codec-table reveal" role="table" aria-label="Codec status table">
         <tbody>
           <tr>
+            <td class="codec-name">Base</td>
+            <td class="codec-desc">Lossless general-purpose codec. Beats zlib at its strongest setting (level 9) on every file of the standard Canterbury and Calgary benchmark corpora, often by a wide margin, with some binary formats compressing to a fraction of zlib's size. The one exception is incompressible random data, where no codec can do better. Bit-exact round-trip, deterministic across nodes, enforced as a regression gate.<a href="demos/base-codec.html" style="display:block; margin-top:10px; color:var(--accent,#c8a95a); font-weight:500; text-decoration:none;">Try it live: φ vs zlib&#8209;9, on your own data <span aria-hidden="true">&rarr;</span></a></td>
+            <td class="codec-status"><span class="badge badge-done">Complete</span></td>
+          </tr>
+          <tr>
             <td class="codec-name">Audio</td>
             <td class="codec-desc">Lossless: ~3–5% smaller than FLAC -8 across all tested material, bit-exact round-trip on every architecture. Encode speed still trails FLAC and is under active optimization. Lossy levels in development.</td>
             <td class="codec-status"><span class="badge badge-done">Complete</span></td>
@@ -1132,11 +1137,6 @@ footer {
           <tr>
             <td class="codec-name">Video</td>
             <td class="codec-desc">φCoherent GOP (21 frames), golden-angle spiral motion estimation, φInterpolated sub-pixel compensation. Round-trip deterministic.</td>
-            <td class="codec-status"><span class="badge badge-done">Complete</span></td>
-          </tr>
-          <tr>
-            <td class="codec-name">Base</td>
-            <td class="codec-desc">Lossless general-purpose codec. Beats zlib-6 across the protocol's payload classes, enforced as a regression gate. Deterministic across nodes.</td>
             <td class="codec-status"><span class="badge badge-done">Complete</span></td>
           </tr>
         </tbody>
