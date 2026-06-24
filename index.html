@@ -30,6 +30,9 @@
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#C9A830">
 
+<!-- Analytics (consent-gated, Google Consent Mode v2) -->
+<script src="/assets/analytics.js"></script>
+
 <!-- Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -985,10 +988,7 @@ footer {
 
 <a class="skip-link" href="#main">Skip to content</a>
 
-<div class="cookie-bar" id="cookieBar" role="region" aria-label="Cookie notice">
-  <p>This site does not use cookies or collect any personal data.</p>
-  <button id="cookieDismiss" aria-label="Dismiss cookie notice">Got it</button>
-</div>
+<!-- Consent banner is injected site-wide by /assets/analytics.js -->
 <div class="scroll-progress" id="scrollProgress" role="presentation"></div>
 
 <!-- ── HEADER ─────────────────────────────────── -->
@@ -1623,6 +1623,7 @@ footer {
     <nav class="footer-links" aria-label="Footer">
       <a href="mailto:jbadwal@phicoherent.com">Contact</a>
       <a href="https://www.reddit.com/r/phiCoherent/" target="_blank" rel="noopener noreferrer">Community</a>
+      <a href="/privacy.html">Privacy</a>
       <a href="#hero">Back to top</a>
     </nav>
   </div>
@@ -1631,14 +1632,6 @@ footer {
 <script>
 (function () {
   'use strict';
-
-  /* ── COOKIE NOTICE ── */
-  const cookieBar = document.getElementById('cookieBar');
-  if (localStorage.getItem('phi-cookie-ok')) cookieBar.classList.add('hidden');
-  document.getElementById('cookieDismiss').addEventListener('click', () => {
-    cookieBar.classList.add('hidden');
-    localStorage.setItem('phi-cookie-ok', '1');
-  });
 
   /* ── SCROLL PROGRESS ── */
   const progressBar = document.getElementById('scrollProgress');

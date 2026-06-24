@@ -17,6 +17,16 @@
 (function () {
   'use strict';
 
+  // Consent-gated analytics, shared with the rest of the site. Loaded once here
+  // so every demo is covered without a per-file edit; analytics.js itself no-ops
+  // inside embedded demos (?embed=1) and waits for consent before setting cookies.
+  if (!document.getElementById('phi-analytics-js')) {
+    var aj = document.createElement('script');
+    aj.id = 'phi-analytics-js';
+    aj.src = '/assets/analytics.js';
+    (document.head || document.documentElement).appendChild(aj);
+  }
+
   var DEMOS = [
     // ── Compression (Pillar I) ──
     { id: 'base-codec',           file: 'base-codec.html',           name: 'Base Codec: φ vs zlib' },
