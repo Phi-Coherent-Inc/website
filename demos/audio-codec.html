@@ -81,7 +81,7 @@
   .listen h3 { font: 600 12px Inter, sans-serif; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 10px; }
   .playrow { display: flex; flex-wrap: wrap; gap: 9px; align-items: center; }
   .wavewrap { margin-top: 14px; }
-  canvas#wave { width: 100%; height: 132px; display: block; border: 1px solid var(--gold-border); border-radius: 10px; background: var(--bg); }
+  canvas#wave { width: 100%; height: 170px; display: block; border: 1px solid var(--gold-border); border-radius: 10px; background: var(--bg); }
   .wavelegend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 8px; font: 400 12px Inter, sans-serif; color: var(--text-muted); }
   .wavelegend i { display: inline-block; width: 11px; height: 11px; border-radius: 2px; vertical-align: -1px; margin-right: 6px; }
   .swatch-orig { background: var(--gold); }
@@ -148,10 +148,10 @@
         <button class="chip" id="stopBtn">■ Stop</button>
       </div>
       <div class="wavewrap">
-        <canvas id="wave" width="1600" height="264" aria-label="Waveform of the original audio with the decoded round-trip overlaid and the per-sample difference"></canvas>
+        <canvas id="wave" aria-label="Top: the audio waveform (original and decoded are identical). Bottom: the per-sample difference, which is zero everywhere when the round-trip is lossless."></canvas>
         <div class="wavelegend">
-          <span><i class="swatch-orig"></i>Waveform (original = decoded, overlaid)</span>
-          <span><i class="swatch-resid"></i>Difference, original minus decoded</span>
+          <span><i class="swatch-orig"></i>Waveform — original and decoded are identical</span>
+          <span><i class="swatch-resid"></i>Per-sample difference — zero when lossless</span>
         </div>
       </div>
     </div>
@@ -310,68 +310,97 @@ function render(meta, orig, phiSize, diffs, same, dt) {
   }
 }
 
-// ── waveform: original peak envelope + decoded overlay + residual lane ──
+// ── waveform (top lane) + per-sample difference (bottom lane) ──
+// DPR-correct: the backing store is sized to the displayed CSS box × the device
+// pixel ratio, and everything is drawn in CSS pixels, so lines stay crisp and
+// text stays legible (the old code drew at a fixed 1600×264 buffer that the
+// browser then shrank, making the labels ~6px).
 function drawWave(orig, decoded, channels) {
-  const cv = $('wave'); const ctx = cv.getContext('2d');
-  const W = cv.width, H = cv.height;
-  const topH = Math.round(H * 0.66), resH = H - topH;
+  const cv = $('wave');
+  const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+  const rect = cv.getBoundingClientRect();
+  const W = Math.max(320, Math.round(rect.width));
+  const H = Math.round(rect.height) || 170;
+  cv.width = Math.round(W * dpr);
+  cv.height = Math.round(H * dpr);
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);   // draw in CSS pixels
   ctx.clearRect(0, 0, W, H);
+
   const css = getComputedStyle(document.documentElement);
-  const gold = css.getPropertyValue('--gold').trim() || '#C9A830';
-  const dim  = css.getPropertyValue('--gold-border').trim() || 'rgba(0,0,0,.15)';
+  const v = (k, d) => (css.getPropertyValue(k).trim() || d);
+  const gold = v('--gold', '#C9A830'), goldDim = v('--gold-dim', '#a98a30');
+  const dim = v('--gold-border', 'rgba(0,0,0,.15)'), muted = v('--text-muted', '#777');
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
 
-  // downmix to mono for display
+  const pad = 12, lblH = 17;
+  const bodyH = H - 2 * lblH;
+  const waveH = Math.round(bodyH * 0.6), diffH = bodyH - waveH;
+  const waveMid = lblH + waveH / 2;
+  const diffTop = lblH + waveH + lblH, diffMid = diffTop + diffH / 2;
+  const x0 = pad, cols = Math.max(1, Math.floor(W - pad * 2));
   const n = (orig.length / channels) | 0;
-  const mid = topH / 2;
-  const scale = (topH / 2 - 2) / 32768;
-  const cols = W;
-  ctx.strokeStyle = dim; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(0, mid); ctx.lineTo(W, mid); ctx.stroke();
 
-  // original peak envelope (gold)
-  ctx.strokeStyle = gold; ctx.lineWidth = 1;
-  ctx.beginPath();
+  // top lane: filled mirror-envelope waveform.  Take the peak across ALL
+  // channels (not an average — averaging cancels anti-correlated stereo and
+  // flattens the display), then auto-gain to the loudest peak so quiet clips
+  // are still clearly visible.
+  const rawMin = new Float32Array(cols), rawMax = new Float32Array(cols);
+  let peak = 1;
   for (let x = 0; x < cols; x++) {
     const i0 = Math.floor(x / cols * n), i1 = Math.max(i0 + 1, Math.floor((x + 1) / cols * n));
-    let mn = 32767, mx = -32768;
-    for (let i = i0; i < i1 && i < n; i++) {
-      let s = 0; for (let c = 0; c < channels; c++) s += orig[i * channels + c]; s = (s / channels) | 0;
-      if (s < mn) mn = s; if (s > mx) mx = s;
-    }
-    ctx.moveTo(x + 0.5, mid - mx * scale);
-    ctx.lineTo(x + 0.5, mid - mn * scale);
+    let mn = 0, mx = 0;
+    for (let i = i0; i < i1 && i < n; i++)
+      for (let c = 0; c < channels; c++) { const s = orig[i * channels + c]; if (s < mn) mn = s; if (s > mx) mx = s; }
+    rawMin[x] = mn; rawMax[x] = mx;
+    if (-mn > peak) peak = -mn; if (mx > peak) peak = mx;
   }
-  ctx.stroke();
+  const wScale = (waveH / 2 - 2) / peak;
+  const tops = new Float32Array(cols), bots = new Float32Array(cols);
+  for (let x = 0; x < cols; x++) { tops[x] = waveMid - rawMax[x] * wScale; bots[x] = waveMid - rawMin[x] * wScale; }
+  ctx.strokeStyle = dim; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(x0, waveMid + 0.5); ctx.lineTo(x0 + cols, waveMid + 0.5); ctx.stroke();
+  const g = ctx.createLinearGradient(0, lblH, 0, lblH + waveH);
+  g.addColorStop(0, gold); g.addColorStop(0.5, gold); g.addColorStop(1, goldDim);
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.moveTo(x0, tops[0]);
+  for (let x = 1; x < cols; x++) ctx.lineTo(x0 + x, tops[x]);
+  for (let x = cols - 1; x >= 0; x--) ctx.lineTo(x0 + x, bots[x]);
+  ctx.closePath(); ctx.fill();
 
-  // decoded overlay (thin dark line through the same envelope — coincides when lossless)
-  ctx.strokeStyle = 'rgba(20,20,20,.55)';
-  if ((css.getPropertyValue('data-theme') || '').trim() === 'dark') ctx.strokeStyle = 'rgba(230,230,230,.5)';
-  ctx.lineWidth = 1; ctx.beginPath();
-  for (let x = 0; x < cols; x++) {
-    const i = Math.min(n - 1, Math.floor((x + 0.5) / cols * n));
-    let s = 0; for (let c = 0; c < channels; c++) s += (decoded[i * channels + c] || 0); s = (s / channels) | 0;
-    const y = mid - s * scale;
-    if (x === 0) ctx.moveTo(x + 0.5, y); else ctx.lineTo(x + 0.5, y);
-  }
-  ctx.stroke();
-
-  // residual lane: |original - decoded| per column, magnified, against a zero line
-  const rMid = topH + resH / 2;
-  ctx.strokeStyle = dim; ctx.beginPath(); ctx.moveTo(0, rMid); ctx.lineTo(W, rMid); ctx.stroke();
-  let maxAbs = 0;
-  ctx.strokeStyle = '#b23b3b'; ctx.lineWidth = 1; ctx.beginPath();
-  const total = Math.min(orig.length, decoded.length);
+  // bottom lane: per-sample difference, magnified so even one LSB would spike
+  let maxAbs = 0; const total = Math.min(orig.length, decoded.length);
+  const dpk = new Float32Array(cols);
   for (let x = 0; x < cols; x++) {
     const i0 = Math.floor(x / cols * total), i1 = Math.max(i0 + 1, Math.floor((x + 1) / cols * total));
-    let peak = 0;
-    for (let i = i0; i < i1 && i < total; i++) { const d = Math.abs(orig[i] - decoded[i]); if (d > peak) peak = d; if (d > maxAbs) maxAbs = d; }
-    const y = rMid - Math.min(peak, 64) / 64 * (resH / 2 - 2);
-    ctx.moveTo(x + 0.5, rMid); ctx.lineTo(x + 0.5, y);
+    let pk = 0;
+    for (let i = i0; i < i1 && i < total; i++) { const d = Math.abs(orig[i] - decoded[i]); if (d > pk) pk = d; }
+    dpk[x] = pk; if (pk > maxAbs) maxAbs = pk;
   }
-  ctx.stroke();
-  ctx.fillStyle = css.getPropertyValue('--text-muted').trim() || '#777';
-  ctx.font = '12px Inter, sans-serif';
-  ctx.fillText(maxAbs === 0 ? 'difference: 0 across every sample' : ('max difference: ' + maxAbs), 8, topH + 16);
+  ctx.fillStyle = isDark ? 'rgba(255,255,255,.04)' : 'rgba(0,0,0,.03)';
+  ctx.fillRect(x0, diffTop, cols, diffH);
+  ctx.strokeStyle = dim; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(x0, diffMid + 0.5); ctx.lineTo(x0 + cols, diffMid + 0.5); ctx.stroke();
+  if (maxAbs > 0) {
+    const dScale = (diffH / 2 - 2) / maxAbs;
+    ctx.strokeStyle = '#b23b3b'; ctx.lineWidth = 1; ctx.beginPath();
+    for (let x = 0; x < cols; x++) { ctx.moveTo(x0 + x + 0.5, diffMid); ctx.lineTo(x0 + x + 0.5, diffMid - dpk[x] * dScale); }
+    ctx.stroke();
+  }
+
+  // labels (drawn in CSS px, so legible)
+  ctx.textBaseline = 'middle';
+  ctx.font = '600 11.5px Inter, system-ui, sans-serif';
+  ctx.fillStyle = muted;
+  ctx.fillText('Waveform — original and decoded coincide exactly', x0, lblH / 2 + 1);
+  const prefix = 'Difference (original − decoded):  ';
+  ctx.fillText(prefix, x0, diffTop - lblH / 2);
+  const pw = ctx.measureText(prefix).width;
+  const ok = maxAbs === 0;
+  ctx.fillStyle = ok ? (isDark ? '#93d79a' : '#2f7d32') : '#b23b3b';
+  ctx.fillText(ok ? ('0  ·  all ' + total.toLocaleString() + ' samples identical') : ('max ±' + maxAbs),
+               x0 + pw, diffTop - lblH / 2);
 }
 
 // ── playback ──
@@ -466,6 +495,15 @@ $('recBtn').addEventListener('click', toggleRec);
 $('playOrig').addEventListener('click', () => { if (current) playInt16(current.int16, current.channels, current.sr); });
 $('playPhi').addEventListener('click', () => { if (current && current.decoded) playInt16(current.decoded, current.channels, current.sr); });
 $('stopBtn').addEventListener('click', stopPlay);
+
+// Redraw the waveform crisply when the canvas box changes size.
+let _resizeT = null;
+window.addEventListener('resize', () => {
+  clearTimeout(_resizeT);
+  _resizeT = setTimeout(() => {
+    if (current && current.decoded) drawWave(current.int16, current.decoded, current.channels);
+  }, 150);
+});
 
 // ── boot ──
 ready().then(() => {
