@@ -173,9 +173,9 @@ let recState = null;
 
 // Built-in clips (FLAC-8 sizes measured offline with `flac --best`).
 const CLIPS = {
-  music:   { name: 'Music · blues (3 s, stereo)',          url: 'assets/audio/music.wav',   flac: 151330 },
-  speech:  { name: 'Speech · conference (3 s, stereo)',    url: 'assets/audio/speech.wav',  flac: 148176 },
-  ambient: { name: 'Ambient · farm soundscape (3 s, stereo)', url: 'assets/audio/ambient.wav', flac: 148622 },
+  music:   { name: 'Music · blues (1.5 s, stereo)',          url: 'assets/audio/music.wav',   flac: 71537 },
+  speech:  { name: 'Speech · conference (1.5 s, stereo)',    url: 'assets/audio/speech.wav',  flac: 81279 },
+  ambient: { name: 'Ambient · farm soundscape (1.5 s, stereo)', url: 'assets/audio/ambient.wav', flac: 75372 },
 };
 
 // ── WAV parsing → interleaved Int16 PCM (16-bit PCM WAV only) ──
@@ -209,28 +209,54 @@ function fmtBytes(n) {
 }
 function pct(part, whole) { return whole === 0 ? 0 : (100 * part / whole); }
 
-// ── the core: encode → decode → verify → render ──
-function process(meta) {
+// ── busy state: the codec runs in a worker, but we still gate the UI so a
+//    second clip can't start mid-encode, and we say plainly that work is running.
+let busy = false, busyTimer = null;
+function setBusy(on, msg) {
+  busy = on;
+  document.querySelectorAll('.chip[data-clip]').forEach(c => c.disabled = on);
+  $('recBtn').disabled = on;
+  $('fileInput').disabled = on;
+  if (busyTimer) { clearInterval(busyTimer); busyTimer = null; }
+  if (on && msg != null) {
+    // The worker does the encoding, so this timer keeps ticking on a free UI thread.
+    const t0 = performance.now();
+    const tick = () => { $('status').textContent = msg + ' · ' + ((performance.now() - t0) / 1000).toFixed(0) + ' s'; };
+    tick();
+    busyTimer = setInterval(tick, 250);
+  } else if (msg != null) {
+    $('status').textContent = msg;
+  }
+}
+
+// ── the core: encode → decode → verify → render (off the UI thread, in a worker) ──
+async function process(meta) {
   current = meta;
   const { name, sr, channels, int16 } = meta;
   const pcmBytes = int16.length * 2;
   $('inputLine').innerHTML = 'Input: <b>' + name + '</b> · ' + channels + ' ch · '
     + (sr/1000).toFixed(1) + ' kHz · ' + fmtBytes(pcmBytes);
-  if (!codecReady) return;
+  if (!codecReady || busy) return;
 
-  const t0 = performance.now();
-  const pea = PhiAudio.encode(int16, sr, channels, 1);
-  const dt = performance.now() - t0;
+  setBusy(true, 'Encoding ' + name + '… the codec trades speed for ratio, so this takes a few seconds (running in a background thread, the page stays responsive)');
+  try {
+    const t0 = performance.now();
+    const pea = await PhiAudio.encode(int16, sr, channels, 1);
+    const dt = performance.now() - t0;
+    const back = await PhiAudio.decode(pea);            // Int16Array
 
-  const back = PhiAudio.decode(pea);            // Int16Array
-  let diffs = 0;
-  const same = back.length === int16.length;
-  if (same) for (let i = 0; i < int16.length; i++) { if (back[i] !== int16[i]) diffs++; }
-  else diffs = Math.abs(back.length - int16.length);
-  meta.decoded = back;
+    let diffs = 0;
+    const same = back.length === int16.length;
+    if (same) for (let i = 0; i < int16.length; i++) { if (back[i] !== int16[i]) diffs++; }
+    else diffs = Math.abs(back.length - int16.length);
+    meta.decoded = back;
 
-  render(meta, pcmBytes, pea.length, diffs, same, dt);
-  drawWave(int16, back, channels);
+    render(meta, pcmBytes, pea.length, diffs, same, dt);
+    drawWave(int16, back, channels);
+    setBusy(false, 'Codec ready · pick another clip, drop in a WAV, or record from your microphone.');
+  } catch (err) {
+    setBusy(false, 'Encode failed: ' + (err && err.message ? err.message : err));
+  }
 }
 
 function render(meta, orig, phiSize, diffs, same, dt) {

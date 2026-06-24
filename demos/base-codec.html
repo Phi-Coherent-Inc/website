@@ -290,12 +290,31 @@ function fmtBytes(n) {
   return (n / 1024 / 1024).toFixed(2) + ' MB';
 }
 
-// ── run the comparison ──
-function run(sample) {
+// ── busy state: the codec runs in a worker; gate the UI so a second input
+//    can't start mid-compress, and say plainly that work is running. ──
+let busy = false, busyTimer = null;
+function setBusy(on, msg) {
+  busy = on;
+  document.querySelectorAll('.chip').forEach(c => c.disabled = on);
+  $('fileInput').disabled = on;
+  if (busyTimer) { clearInterval(busyTimer); busyTimer = null; }
+  if (on && msg != null) {
+    // The worker does the compressing, so this timer keeps ticking on a free UI thread.
+    const t0 = performance.now();
+    const tick = () => { $('status').textContent = msg + ' · ' + ((performance.now() - t0) / 1000).toFixed(0) + ' s'; };
+    tick();
+    busyTimer = setInterval(tick, 250);
+  } else if (msg != null) {
+    $('status').textContent = msg;
+  }
+}
+
+// ── run the comparison (φ codec runs off the UI thread, in a worker) ──
+async function run(sample) {
   current = sample;
   $('inputLine').innerHTML = 'Input: <b>' + sample.name + '</b> · ' + fmtBytes(sample.bytes.length)
     + ' (' + sample.bytes.length.toLocaleString() + ' bytes)';
-  if (!codecReady) return;
+  if (!codecReady || busy) return;
 
   const orig = sample.bytes.length;
 
@@ -303,18 +322,24 @@ function run(sample) {
   const z = pako.deflate(sample.bytes, { level: 9 });
   const zlibSize = z.length;
 
-  // φ codec, computed in WASM. Time it (honest, but not foregrounded).
-  const t0 = performance.now();
-  const phi = PhiCompress.compress(sample.bytes);
-  const dt = performance.now() - t0;
-  const phiSize = phi.length;
+  setBusy(true, 'Compressing… (runs in a background thread; the page stays responsive)');
+  try {
+    // φ codec, computed in WASM in the worker. Time it (honest, but not foregrounded).
+    const t0 = performance.now();
+    const phi = await PhiCompress.compress(sample.bytes);
+    const dt = performance.now() - t0;
+    const phiSize = phi.length;
 
-  // round-trip: decompress φ output and confirm it is bit-identical.
-  const back = PhiCompress.decompress(phi);
-  let identical = back.length === orig;
-  if (identical) for (let i = 0; i < orig; i++) { if (back[i] !== sample.bytes[i]) { identical = false; break; } }
+    // round-trip: decompress φ output and confirm it is bit-identical.
+    const back = await PhiCompress.decompress(phi);
+    let identical = back.length === orig;
+    if (identical) for (let i = 0; i < orig; i++) { if (back[i] !== sample.bytes[i]) { identical = false; break; } }
 
-  render(orig, zlibSize, phiSize, identical, dt);
+    render(orig, zlibSize, phiSize, identical, dt);
+    setBusy(false, 'Codec ready · pick a sample, generate text, or drop in a file.');
+  } catch (err) {
+    setBusy(false, 'Compression failed: ' + (err && err.message ? err.message : err));
+  }
 }
 
 function pct(part, whole) { return whole === 0 ? 0 : (100 * part / whole); }
