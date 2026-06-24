@@ -1,0 +1,40 @@
+# OS cruft
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.*.sw[a-z]
+*.sublime-workspace
+
+# Logs and temp
+*.log
+*.tmp
+*.bak
+*.orig
+
+# Local environment
+.env
+.env.local
+.env.*.local
+
+# Node tooling (if added later)
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.cache/
+
+# Build / scratch output (compiled WASM is committed deliberately)
+dist/
+build/
+.tmp/

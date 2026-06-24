@@ -1,0 +1,33 @@
+Phi-Coherent — phicoherent.com Website and Interactive Demos
+Copyright (C) 2026 Phi-Coherent Inc.
+
+This work is licensed under the GNU Affero General Public License,
+version 3.0 only (AGPL-3.0-only).  See the LICENSE file for the full text.
+
+For commercial licensing inquiries: legal@phi-coherent.io
+
+────────────────────────────────────────────────────────────────────────────
+AGPL-3.0 NETWORK USE NOTICE
+────────────────────────────────────────────────────────────────────────────
+
+If you run a modified version of this site and provide access to it over a
+network, you must make the complete corresponding source code available to
+those users under the same license (AGPL-3.0, §13).
+
+────────────────────────────────────────────────────────────────────────────
+DEMOS AND COMPILED ARTIFACTS
+────────────────────────────────────────────────────────────────────────────
+
+The interactive demos under demos/ run WebAssembly modules
+(demos/assets/wasm/*.wasm and their JavaScript loaders) that are compiled
+from the Phi-Coherent C++ packages (the phi-* and phi-quantum-* source trees),
+each of which is itself licensed under AGPL-3.0-only.  The corresponding
+source for those modules is the source of those packages.
+
+────────────────────────────────────────────────────────────────────────────
+THIRD-PARTY CONTENT
+────────────────────────────────────────────────────────────────────────────
+
+This site has no third-party runtime dependencies.  All HTML, CSS, and
+JavaScript are first-party works.  Audio clips under demos/assets/audio/ are
+used solely as input samples for the codec demonstrations.
