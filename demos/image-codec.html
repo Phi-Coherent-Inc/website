@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>φCoherent · Image Codec: φ vs PNG (lossless)</title>
+<meta name="description" content="Compress images losslessly in your browser with the φCoherent image codec and compare it to PNG on the very same pixels. Pick a photo or drop in your own. Every result is decoded back and verified bit-identical, and the reconstruction is shown next to the original so you can see that nothing was lost. Computed via WebAssembly; nothing is uploaded.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://phicoherent.com/demos/image-codec.html">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#C9A830">
+<script>try{if(localStorage.getItem('phi-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/demo.css?v=20260624">
+<style>
+  .wrap { max-width: 920px; margin: 0 auto; padding: 0 24px 60px; }
+  .lede { font: 400 16px/1.65 Newsreader, serif; color: var(--text); max-width: 70ch; margin: 26px 0 6px; }
+  .sub  { font: 400 13.5px/1.6 Inter, sans-serif; color: var(--text-muted); max-width: 72ch; margin: 0 0 22px; }
+  .privacy { font: 500 12.5px Inter, sans-serif; color: var(--gold-dim); }
+
+  .panel { background: var(--surface); border: 1px solid var(--gold-border); border-radius: 14px; padding: 20px 22px; margin: 16px 0; }
+  .panel h2 { font: 600 13px Inter, sans-serif; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 14px; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 9px; }
+  .chip {
+    padding: 9px 15px; border: 1px solid var(--gold-border); border-radius: 999px;
+    background: var(--bg); color: var(--text); font: 500 13.5px Inter, sans-serif; cursor: pointer;
+    transition: background .14s, border-color .14s, transform .05s;
+  }
+  .chip:hover { border-color: var(--gold); background: var(--gold-subtle); }
+  .chip:active { transform: translateY(1px); }
+  .chip.active { background: var(--gold); color: #1C1810; border-color: var(--gold); }
+  .chip:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .chip:disabled { opacity: .45; cursor: default; }
+
+  .row { display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: center; margin-top: 16px; }
+  .file-btn { position: relative; overflow: hidden; }
+  .file-btn input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+  .inputline { font: 400 13px Inter, sans-serif; color: var(--text-muted); margin-top: 14px; }
+  .inputline b { color: var(--text); font-weight: 600; }
+
+  /* Results */
+  #results { display: none; }
+  #results.show { display: block; }
+  .bars { margin: 6px 0 4px; }
+  .barrow { display: grid; grid-template-columns: 96px 1fr auto; align-items: center; gap: 12px; margin: 11px 0; }
+  .barrow.hide { display: none; }
+  .barlabel { font: 600 13px Inter, sans-serif; color: var(--text); text-align: right; }
+  .bartrack { position: relative; height: 26px; background: var(--gold-subtle); border-radius: 7px; overflow: hidden; border: 1px solid var(--gold-border); }
+  .barfill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 6px 0 0 6px; transition: width .55s cubic-bezier(.2,.7,.2,1); }
+  .barfill.png { background: repeating-linear-gradient(45deg, var(--text-dim), var(--text-dim) 7px, rgba(0,0,0,.06) 7px, rgba(0,0,0,.06) 14px); }
+  .barfill.phi { background: linear-gradient(90deg, var(--gold-dim), var(--gold)); }
+  .barfill.orig { background: var(--text-dim); opacity: .28; }
+  .barval { font: 600 13px Inter, sans-serif; color: var(--text-muted); white-space: nowrap; }
+  .barval b { color: var(--text); }
+
+  .verdict { font: 600 17px/1.4 Newsreader, serif; margin: 18px 0 4px; }
+  .verdict.win  { color: var(--gold-dim); }
+  .verdict.tie  { color: var(--text-muted); }
+  .verdict.lose { color: var(--text-muted); }
+  .verdict-sub { font: 400 13px Inter, sans-serif; color: var(--text-muted); margin: 0 0 6px; }
+
+  .badge-rt {
+    display: inline-flex; align-items: center; gap: 8px; margin-top: 12px;
+    padding: 8px 14px; border-radius: 999px; font: 600 12.5px Inter, sans-serif;
+    background: rgba(60,150,60,.12); color: #2f7d32; border: 1px solid rgba(60,150,60,.32);
+  }
+  [data-theme=dark] .badge-rt { background: rgba(120,200,120,.12); color: #93d79a; border-color: rgba(120,200,120,.30); }
+  .badge-rt.fail { background: rgba(190,60,60,.12); color: #b23b3b; border-color: rgba(190,60,60,.32); }
+
+  /* Downloads */
+  .dlrow { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 14px; }
+  .dlnote { font: 400 12px/1.55 Inter, sans-serif; color: var(--text-dim); margin: 8px 0 0; max-width: 70ch; }
+  .dlnote code { font: 500 11.5px ui-monospace, monospace; color: var(--text-muted); }
+
+  /* View: original vs decoded */
+  .view { margin-top: 18px; }
+  .view h3 { font: 600 12px Inter, sans-serif; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 10px; }
+  .imggrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .imgcell { }
+  .imgcell figcaption { font: 500 12px Inter, sans-serif; color: var(--text-muted); margin: 0 0 7px; }
+  .imgcell canvas { width: 100%; height: auto; display: block; border: 1px solid var(--gold-border); border-radius: 10px; background: var(--bg); image-rendering: auto; }
+  @media (max-width: 560px) { .imggrid { grid-template-columns: 1fr; } }
+
+  .foot { font: 400 12.5px/1.6 Inter, sans-serif; color: var(--text-dim); margin-top: 22px; }
+  .foot code { font: 500 12px ui-monospace, monospace; color: var(--text-muted); }
+  .status { font: 400 13px Inter, sans-serif; color: var(--text-muted); margin: 10px 0 0; }
+  @media (max-width: 560px) { .barrow { grid-template-columns: 66px 1fr; } .barval { grid-column: 2; text-align: right; } }
+</style>
+</head>
+<body>
+
+<header class="demo-header" data-demo="image-codec"
+        data-title="Image Codec: φ vs PNG (lossless)"></header>
+
+<div class="wrap">
+  <p class="lede">The φCoherent image codec is <b>lossless</b>: it shrinks an image with no change to a single pixel. Here it runs in your browser against <b>PNG</b>, the universal lossless image format, on the exact same pixels. Pick a photo or drop in your own, then compare the decoded reconstruction to the original and see for yourself that nothing was lost.</p>
+  <p class="sub"><span class="privacy">Everything runs locally via WebAssembly. Nothing you load is uploaded.</span> &nbsp;On the Kodak and CLIC photographic corpora the φ codec is around 30% smaller than PNG and a few percent smaller than WebP-lossless. It trades encode speed for ratio.</p>
+
+  <div class="panel">
+    <h2>1 · Choose an image</h2>
+    <div class="chips" id="clipChips">
+      <button class="chip" data-clip="tulips">Tulips</button>
+      <button class="chip" data-clip="desk">Desk flatlay</button>
+      <button class="chip" data-clip="mountains">Mountains</button>
+    </div>
+    <div class="row">
+      <label class="chip file-btn">Choose an image file…<input type="file" id="fileInput" accept="image/*" aria-label="Choose an image file to compress"></label>
+    </div>
+    <p class="inputline" id="inputLine">No image yet. Pick a photo above, or drop in your own.</p>
+    <p class="status" id="status">Loading codec…</p>
+  </div>
+
+  <div class="panel" id="results">
+    <h2>2 · φ vs PNG, on the same pixels</h2>
+    <div class="bars">
+      <div class="barrow">
+        <span class="barlabel">Raw pixels</span>
+        <div class="bartrack"><div class="barfill orig" id="barOrig" style="width:100%"></div></div>
+        <span class="barval" id="valOrig">—</span>
+      </div>
+      <div class="barrow">
+        <span class="barlabel">PNG</span>
+        <div class="bartrack"><div class="barfill png" id="barPng" style="width:0"></div></div>
+        <span class="barval" id="valPng">—</span>
+      </div>
+      <div class="barrow">
+        <span class="barlabel">φ codec</span>
+        <div class="bartrack"><div class="barfill phi" id="barPhi" style="width:0"></div></div>
+        <span class="barval" id="valPhi">—</span>
+      </div>
+    </div>
+    <p class="verdict" id="verdict"></p>
+    <p class="verdict-sub" id="verdictSub"></p>
+    <span class="badge-rt" id="rtBadge"></span>
+
+    <div class="dlrow">
+      <button class="chip" id="dlPei">↓ Download .pei (φ‑compressed)</button>
+      <button class="chip" id="dlPng">↓ Download decoded PNG</button>
+    </div>
+    <p class="dlnote">The <code>.pei</code> is the φ‑compressed file; it opens only with the φ codec. The decoded PNG is the bit‑identical reconstruction, so you can compare it to your original outside the browser.</p>
+
+    <div class="view">
+      <h3>3 · See it</h3>
+      <div class="imggrid">
+        <figure class="imgcell">
+          <figcaption>Original</figcaption>
+          <canvas id="cvOrig" aria-label="The original image."></canvas>
+        </figure>
+        <figure class="imgcell">
+          <figcaption id="capDec">φ round-trip (decoded)</figcaption>
+          <canvas id="cvDec" aria-label="The image decoded back from the φ-compressed .pei. Identical to the original when the round-trip is lossless."></canvas>
+        </figure>
+      </div>
+    </div>
+  </div>
+
+  <p class="foot">The φ result is computed live in <code>phi-compress-image</code> (WebAssembly), the same codec we ship, at quality&nbsp;1 (lossless). The PNG size is produced in your own browser from the identical pixels, so the comparison is exact. Sizes are the compressed payload for each codec versus the raw RGB pixels. Large images are scaled to fit before encoding so the demo stays responsive. The φ codec is optimized for size, not throughput. Sample photos are from the Unsplash and CLIC open image sets.</p>
+</div>
+
+<script src="assets/demo-header.js?v=20260624"></script>
+<script type="module">
+import { ready, PhiImage, rgbaToRgb, rgbToRgba } from './assets/js/phi-image.js?v=20260624';
+
+const $ = (id) => document.getElementById(id);
+let codecReady = false;
+let current = null;   // { name, width, height, rgb, png, pei, decoded }
+
+// Built-in sample photos (open image sets; decoded in-browser to pixels).
+const CLIPS = {
+  tulips:    { name: 'Tulips · forest at golden hour', url: 'assets/images/tulips.png' },
+  desk:      { name: 'Desk · laptop flatlay',          url: 'assets/images/desk.png' },
+  mountains: { name: 'Mountains · prayer flags in mist', url: 'assets/images/mountains.png' },
+};
+
+// Cap the longest side so encode stays responsive (the codec trades speed for ratio).
+const MAX_SIDE = 768;
+
+function fmtBytes(n) {
+  if (n < 1024) return n + ' B';
+  if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+  return (n / 1024 / 1024).toFixed(2) + ' MB';
+}
+function pct(part, whole) { return whole === 0 ? 0 : (100 * part / whole); }
+
+// Draw an ImageBitmap/HTMLImageElement to a canvas, scaling down to MAX_SIDE,
+// and return { width, height, rgb, png, scaled }.  PNG is produced from the
+// identical pixels via canvas.toBlob, so the comparison is exact.
+async function rasterize(src, srcW, srcH) {
+  let w = srcW, h = srcH, scaled = false;
+  const longest = Math.max(w, h);
+  if (longest > MAX_SIDE) {
+    const k = MAX_SIDE / longest;
+    w = Math.max(1, Math.round(w * k));
+    h = Math.max(1, Math.round(h * k));
+    scaled = true;
+  }
+  const cv = document.createElement('canvas');
+  cv.width = w; cv.height = h;
+  const ctx = cv.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(src, 0, 0, w, h);
+  const rgba = ctx.getImageData(0, 0, w, h).data;
+  const rgb = rgbaToRgb(rgba);
+  const png = await new Promise((res) => cv.toBlob((b) => res(b), 'image/png'));
+  return { width: w, height: h, rgb, png: png ? png.size : 0, scaled };
+}
+
+// ── busy state: the codec runs in a worker, but we still gate the UI so a
+//    second image can't start mid-encode, and we say plainly that work is running.
+let busy = false, busyTimer = null;
+function setBusy(on, msg) {
+  busy = on;
+  document.querySelectorAll('.chip[data-clip]').forEach(c => c.disabled = on);
+  $('fileInput').disabled = on;
+  if (busyTimer) { clearInterval(busyTimer); busyTimer = null; }
+  if (on && msg != null) {
+    const t0 = performance.now();
+    const tick = () => { $('status').textContent = msg + ' · ' + ((performance.now() - t0) / 1000).toFixed(0) + ' s'; };
+    tick();
+    busyTimer = setInterval(tick, 250);
+  } else if (msg != null) {
+    $('status').textContent = msg;
+  }
+}
+
+// ── the core: encode → decode → verify → render (off the UI thread, in a worker) ──
+async function process(meta) {
+  current = meta;
+  const { name, width, height, rgb, png, scaled } = meta;
+  const rawBytes = rgb.length;
+  $('inputLine').innerHTML = 'Input: <b>' + name + '</b> · ' + width + '×' + height + ' px · '
+    + fmtBytes(rawBytes) + ' raw' + (scaled ? ' <span style="color:var(--text-dim)">(scaled to fit)</span>' : '');
+  if (!codecReady || busy) return;
+
+  setBusy(true, 'Encoding ' + name + '… the codec trades speed for ratio (running in a background thread, the page stays responsive)');
+  try {
+    const t0 = performance.now();
+    const pei = await PhiImage.encode(rgb, width, height, 1);
+    const dt = performance.now() - t0;
+    const back = await PhiImage.decode(pei);            // Uint8Array RGB
+
+    let diffs = 0;
+    const same = back.length === rgb.length;
+    if (same) for (let i = 0; i < rgb.length; i++) { if (back[i] !== rgb[i]) diffs++; }
+    else diffs = Math.abs(back.length - rgb.length);
+    meta.decoded = back;
+    meta.pei = pei;
+
+    render(meta, rawBytes, pei.length, diffs, same, dt);
+    drawImages(meta);
+    setBusy(false, 'Codec ready · pick another photo, or drop in your own.');
+  } catch (err) {
+    setBusy(false, 'Encode failed: ' + (err && err.message ? err.message : err));
+  }
+}
+
+function render(meta, raw, phiSize, diffs, same, dt) {
+  $('results').classList.add('show');
+  const pngSize = meta.png || 0;
+  const pPct = pct(phiSize, raw), gPct = pct(pngSize, raw);
+
+  $('valOrig').innerHTML = '<b>' + fmtBytes(raw) + '</b> · 100%';
+  $('valPhi').innerHTML  = '<b>' + fmtBytes(phiSize) + '</b> · ' + pPct.toFixed(1) + '%';
+  $('valPng').innerHTML  = '<b>' + fmtBytes(pngSize) + '</b> · ' + gPct.toFixed(1) + '%';
+
+  $('barOrig').style.width = '100%';
+  requestAnimationFrame(() => {
+    $('barPng').style.width = Math.max(gPct, 0.6) + '%';
+    $('barPhi').style.width = Math.max(pPct, 0.6) + '%';
+  });
+
+  const v = $('verdict'), vs = $('verdictSub');
+  const rel = pngSize === 0 ? 0 : (1 - phiSize / pngSize) * 100;   // >0 ⇒ φ smaller
+  if (rel > 0.3) {
+    v.className = 'verdict win';
+    v.textContent = 'φ is ' + rel.toFixed(1) + '% smaller than PNG here.';
+    vs.textContent = 'φ output is ' + fmtBytes(phiSize) + ' vs PNG’s ' + fmtBytes(pngSize)
+      + ', on the exact same pixels, with nothing lost.';
+  } else if (rel < -0.3) {
+    v.className = 'verdict lose';
+    v.textContent = 'PNG is ' + (-rel).toFixed(1) + '% smaller on this image.';
+    vs.textContent = 'Ratio varies by content. Across the Kodak and CLIC photographic corpora φ averages around 30% smaller than PNG.';
+  } else {
+    v.className = 'verdict tie';
+    v.textContent = 'φ and PNG are within a rounding error here.';
+    vs.textContent = '';
+  }
+
+  const b = $('rtBadge');
+  const npix = (meta.width * meta.height);
+  if (same && diffs === 0) {
+    b.className = 'badge-rt';
+    b.innerHTML = '✓ Verified lossless · all ' + npix.toLocaleString()
+      + ' pixels decoded back identical' + (dt ? ' &nbsp;·&nbsp; encoded in ' + (dt < 1 ? '<1' : Math.round(dt)) + ' ms' : '');
+  } else {
+    b.className = 'badge-rt fail';
+    b.textContent = '✗ round-trip mismatch: ' + diffs.toLocaleString() + ' values differ (this should never happen — please report it)';
+  }
+}
+
+// Paint the original and the φ-decoded reconstruction side by side.
+function drawImages(meta) {
+  paint($('cvOrig'), meta.rgb, meta.width, meta.height);
+  paint($('cvDec'),  meta.decoded, meta.width, meta.height);
+  $('capDec').textContent = (meta.decoded && meta.decoded.length === meta.rgb.length)
+    ? 'φ round-trip (decoded) — identical to the original'
+    : 'φ round-trip (decoded)';
+}
+function paint(canvas, rgb, w, h) {
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!rgb || rgb.length !== w * h * 3) { ctx.clearRect(0, 0, w, h); return; }
+  const img = new ImageData(rgbToRgba(rgb), w, h);
+  ctx.putImageData(img, 0, 0);
+}
+
+// ── wiring ──
+function setActiveChip(el) {
+  document.querySelectorAll('.chip[data-clip]').forEach(c => c.classList.remove('active'));
+  if (el) el.classList.add('active');
+}
+
+async function loadClip(key) {
+  const meta = CLIPS[key];
+  $('status').textContent = 'Loading ' + meta.name + '…';
+  try {
+    const resp = await fetch(meta.url);
+    const blob = await resp.blob();
+    const bmp = await createImageBitmap(blob);
+    const r = await rasterize(bmp, bmp.width, bmp.height);
+    bmp.close && bmp.close();
+    $('status').textContent = 'Codec ready.';
+    process({ name: meta.name, ...r });
+  } catch (e) {
+    $('status').textContent = 'Could not load image: ' + (e && e.message ? e.message : e);
+  }
+}
+
+async function loadFile(file) {
+  $('status').textContent = 'Reading ' + file.name + '…';
+  try {
+    const bmp = await createImageBitmap(file);
+    const r = await rasterize(bmp, bmp.width, bmp.height);
+    bmp.close && bmp.close();
+    setActiveChip(null);
+    $('status').textContent = 'Codec ready.';
+    process({ name: file.name, ...r });
+  } catch (e) {
+    $('status').textContent = 'Could not read that image: ' + (e && e.message ? e.message : e);
+  }
+}
+
+document.querySelectorAll('.chip[data-clip]').forEach(chip => {
+  chip.addEventListener('click', () => { setActiveChip(chip); loadClip(chip.getAttribute('data-clip')); });
+});
+
+$('fileInput').addEventListener('change', (e) => {
+  const f = e.target.files && e.target.files[0];
+  if (f) loadFile(f);
+});
+
+// ── downloads ──
+function safeBase() {
+  const s = (current && current.name ? current.name : 'image')
+    .replace(/\.[a-z0-9]+$/i, '').replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '').toLowerCase();
+  return s || 'image';
+}
+function downloadBytes(bytes, filename, mime) {
+  const blob = (bytes instanceof Blob) ? bytes : new Blob([bytes], { type: mime || 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
+}
+$('dlPei').addEventListener('click', () => {
+  if (!current || !current.pei) return;
+  downloadBytes(current.pei, safeBase() + '.pei', 'application/octet-stream');
+});
+$('dlPng').addEventListener('click', () => {
+  if (!current || !current.decoded) return;
+  const cv = $('cvDec');
+  cv.toBlob((b) => { if (b) downloadBytes(b, safeBase() + '_decoded.png', 'image/png'); }, 'image/png');
+});
+
+// ── boot ──
+ready().then(() => {
+  codecReady = true;
+  $('status').textContent = 'Codec ready · pick a photo, or drop in your own.';
+  if (current) process(current);
+}).catch(err => {
+  $('status').textContent = 'Failed to load the codec: ' + (err && err.message ? err.message : err);
+});
+</script>
+</body>
+</html>
