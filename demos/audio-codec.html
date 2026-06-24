@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>φCoherent · Audio Codec: φ vs FLAC (lossless)</title>
+<meta name="description" content="Compress audio losslessly in your browser with the φCoherent audio codec and compare it to FLAC at its strongest setting. Pick a clip, drop in a WAV, or record from your microphone. Every result is decoded back and verified bit-identical, and you can play the original against the round-trip and hear that nothing was lost. Computed via WebAssembly; nothing is uploaded.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://phicoherent.com/demos/audio-codec.html">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#C9A830">
+<script>try{if(localStorage.getItem('phi-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/demo.css?v=20260623">
+<style>
+  .wrap { max-width: 920px; margin: 0 auto; padding: 0 24px 60px; }
+  .lede { font: 400 16px/1.65 Newsreader, serif; color: var(--text); max-width: 70ch; margin: 26px 0 6px; }
+  .sub  { font: 400 13.5px/1.6 Inter, sans-serif; color: var(--text-muted); max-width: 72ch; margin: 0 0 22px; }
+  .privacy { font: 500 12.5px Inter, sans-serif; color: var(--gold-dim); }
+
+  .panel { background: var(--surface); border: 1px solid var(--gold-border); border-radius: 14px; padding: 20px 22px; margin: 16px 0; }
+  .panel h2 { font: 600 13px Inter, sans-serif; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 14px; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 9px; }
+  .chip {
+    padding: 9px 15px; border: 1px solid var(--gold-border); border-radius: 999px;
+    background: var(--bg); color: var(--text); font: 500 13.5px Inter, sans-serif; cursor: pointer;
+    transition: background .14s, border-color .14s, transform .05s;
+  }
+  .chip:hover { border-color: var(--gold); background: var(--gold-subtle); }
+  .chip:active { transform: translateY(1px); }
+  .chip.active { background: var(--gold); color: #1C1810; border-color: var(--gold); }
+  .chip:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .chip:disabled { opacity: .45; cursor: default; }
+  .chip.rec.recording { background: #b23b3b; border-color: #b23b3b; color: #fff; }
+
+  .row { display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: center; margin-top: 16px; }
+  .file-btn { position: relative; overflow: hidden; }
+  .file-btn input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+  .inputline { font: 400 13px Inter, sans-serif; color: var(--text-muted); margin-top: 14px; }
+  .inputline b { color: var(--text); font-weight: 600; }
+
+  /* Results */
+  #results { display: none; }
+  #results.show { display: block; }
+  .bars { margin: 6px 0 4px; }
+  .barrow { display: grid; grid-template-columns: 96px 1fr auto; align-items: center; gap: 12px; margin: 11px 0; }
+  .barrow.hide { display: none; }
+  .barlabel { font: 600 13px Inter, sans-serif; color: var(--text); text-align: right; }
+  .bartrack { position: relative; height: 26px; background: var(--gold-subtle); border-radius: 7px; overflow: hidden; border: 1px solid var(--gold-border); }
+  .barfill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 6px 0 0 6px; transition: width .55s cubic-bezier(.2,.7,.2,1); }
+  .barfill.flac { background: repeating-linear-gradient(45deg, var(--text-dim), var(--text-dim) 7px, rgba(0,0,0,.06) 7px, rgba(0,0,0,.06) 14px); }
+  .barfill.phi  { background: linear-gradient(90deg, var(--gold-dim), var(--gold)); }
+  .barfill.orig { background: var(--text-dim); opacity: .28; }
+  .barval { font: 600 13px Inter, sans-serif; color: var(--text-muted); white-space: nowrap; }
+  .barval b { color: var(--text); }
+
+  .verdict { font: 600 17px/1.4 Newsreader, serif; margin: 18px 0 4px; }
+  .verdict.win  { color: var(--gold-dim); }
+  .verdict.tie  { color: var(--text-muted); }
+  .verdict.lose { color: var(--text-muted); }
+  .verdict-sub { font: 400 13px Inter, sans-serif; color: var(--text-muted); margin: 0 0 6px; }
+
+  .badge-rt {
+    display: inline-flex; align-items: center; gap: 8px; margin-top: 12px;
+    padding: 8px 14px; border-radius: 999px; font: 600 12.5px Inter, sans-serif;
+    background: rgba(60,150,60,.12); color: #2f7d32; border: 1px solid rgba(60,150,60,.32);
+  }
+  [data-theme=dark] .badge-rt { background: rgba(120,200,120,.12); color: #93d79a; border-color: rgba(120,200,120,.30); }
+  .badge-rt.fail { background: rgba(190,60,60,.12); color: #b23b3b; border-color: rgba(190,60,60,.32); }
+
+  /* Listen + waveform */
+  .listen { margin-top: 18px; }
+  .listen h3 { font: 600 12px Inter, sans-serif; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 10px; }
+  .playrow { display: flex; flex-wrap: wrap; gap: 9px; align-items: center; }
+  .wavewrap { margin-top: 14px; }
+  canvas#wave { width: 100%; height: 132px; display: block; border: 1px solid var(--gold-border); border-radius: 10px; background: var(--bg); }
+  .wavelegend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 8px; font: 400 12px Inter, sans-serif; color: var(--text-muted); }
+  .wavelegend i { display: inline-block; width: 11px; height: 11px; border-radius: 2px; vertical-align: -1px; margin-right: 6px; }
+  .swatch-orig { background: var(--gold); }
+  .swatch-resid { background: #b23b3b; }
+
+  .foot { font: 400 12.5px/1.6 Inter, sans-serif; color: var(--text-dim); margin-top: 22px; }
+  .foot code { font: 500 12px ui-monospace, monospace; color: var(--text-muted); }
+  .status { font: 400 13px Inter, sans-serif; color: var(--text-muted); margin: 10px 0 0; }
+  @media (max-width: 560px) { .barrow { grid-template-columns: 66px 1fr; } .barval { grid-column: 2; text-align: right; } }
+</style>
+</head>
+<body>
+
+<header class="demo-header" data-demo="audio-codec"
+        data-title="Audio Codec: φ vs FLAC (lossless)"></header>
+
+<div class="wrap">
+  <p class="lede">The φCoherent audio codec is <b>lossless</b>: it shrinks audio with no change to a single sample. Here it runs in your browser against <b>FLAC at its strongest setting (-8)</b>, the standard for lossless audio. Pick a clip, drop in a WAV, or record yourself, then play the original against the decoded round-trip and hear for yourself that nothing was lost.</p>
+  <p class="sub"><span class="privacy">Everything runs locally via WebAssembly. Nothing you load or record is uploaded.</span> &nbsp;On our benchmark corpus the φ codec is 4 to 6% smaller than FLAC&#8209;8 across mono, stereo, and multichannel. It trades encode speed for ratio.</p>
+
+  <div class="panel">
+    <h2>1 · Choose audio</h2>
+    <div class="chips" id="clipChips">
+      <button class="chip" data-clip="music">Music clip</button>
+      <button class="chip" data-clip="speech">Speech clip</button>
+      <button class="chip" data-clip="ambient">Ambient clip</button>
+    </div>
+    <div class="row">
+      <label class="chip file-btn">Choose a WAV file…<input type="file" id="fileInput" accept="audio/wav,.wav" aria-label="Choose a WAV file to compress"></label>
+      <button class="chip rec" id="recBtn">● Record from mic</button>
+    </div>
+    <p class="inputline" id="inputLine">No audio yet. Pick a clip above, drop in a WAV, or record from your microphone.</p>
+    <p class="status" id="status">Loading codec…</p>
+  </div>
+
+  <div class="panel" id="results">
+    <h2>2 · φ vs FLAC&#8209;8, on the same audio</h2>
+    <div class="bars">
+      <div class="barrow">
+        <span class="barlabel">Original PCM</span>
+        <div class="bartrack"><div class="barfill orig" id="barOrig" style="width:100%"></div></div>
+        <span class="barval" id="valOrig">—</span>
+      </div>
+      <div class="barrow" id="rowFlac">
+        <span class="barlabel">FLAC&#8209;8</span>
+        <div class="bartrack"><div class="barfill flac" id="barFlac" style="width:0"></div></div>
+        <span class="barval" id="valFlac">—</span>
+      </div>
+      <div class="barrow">
+        <span class="barlabel">φ codec</span>
+        <div class="bartrack"><div class="barfill phi" id="barPhi" style="width:0"></div></div>
+        <span class="barval" id="valPhi">—</span>
+      </div>
+    </div>
+    <p class="verdict" id="verdict"></p>
+    <p class="verdict-sub" id="verdictSub"></p>
+    <span class="badge-rt" id="rtBadge"></span>
+
+    <div class="listen">
+      <h3>3 · Hear it &amp; see it</h3>
+      <div class="playrow">
+        <button class="chip" id="playOrig">▶ Play original</button>
+        <button class="chip" id="playPhi">▶ Play φ round-trip</button>
+        <button class="chip" id="stopBtn">■ Stop</button>
+      </div>
+      <div class="wavewrap">
+        <canvas id="wave" width="1600" height="264" aria-label="Waveform of the original audio with the decoded round-trip overlaid and the per-sample difference"></canvas>
+        <div class="wavelegend">
+          <span><i class="swatch-orig"></i>Waveform (original = decoded, overlaid)</span>
+          <span><i class="swatch-resid"></i>Difference, original minus decoded</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="foot">The φ result is computed live in <code>phi-compress-audio</code> (WebAssembly), the same codec we ship, at quality&nbsp;1 (lossless). FLAC&#8209;8 sizes for the built-in clips are measured offline with the reference <code>flac --best</code> encoder and shown for comparison; for your own WAV or microphone audio, only the φ ratio against the raw PCM is shown. Sizes are the audio payload (PCM data vs each codec's compressed stream). The φ codec is optimized for size, not throughput.</p>
+</div>
+
+<script src="assets/demo-header.js?v=20260623"></script>
+<script type="module">
+import { ready, PhiAudio, int16ToFloat } from './assets/js/phi-audio.js?v=20260623';
+
+const $ = (id) => document.getElementById(id);
+let codecReady = false;
+let current = null;   // { name, sr, channels, int16, flac, decoded }
+let audioCtx = null;
+let playNode = null;
+let recState = null;
+
+// Built-in clips (FLAC-8 sizes measured offline with `flac --best`).
+const CLIPS = {
+  music:   { name: 'Music · blues (3 s, stereo)',          url: 'assets/audio/music.wav',   flac: 151330 },
+  speech:  { name: 'Speech · conference (3 s, stereo)',    url: 'assets/audio/speech.wav',  flac: 148176 },
+  ambient: { name: 'Ambient · farm soundscape (3 s, stereo)', url: 'assets/audio/ambient.wav', flac: 148622 },
+};
+
+// ── WAV parsing → interleaved Int16 PCM (16-bit PCM WAV only) ──
+function parseWav(arrBuf) {
+  const b = new Uint8Array(arrBuf);
+  const dv = new DataView(arrBuf);
+  if (b.length < 44 || String.fromCharCode(b[0],b[1],b[2],b[3]) !== 'RIFF'
+      || String.fromCharCode(b[8],b[9],b[10],b[11]) !== 'WAVE')
+    throw new Error('Not a WAV file.');
+  let off = 12, sr = 0, ch = 0, bits = 0, dataOff = 0, dataLen = 0;
+  while (off + 8 <= b.length) {
+    const id = String.fromCharCode(b[off],b[off+1],b[off+2],b[off+3]);
+    const sz = dv.getUint32(off+4, true);
+    if (id === 'fmt ') { ch = dv.getUint16(off+10, true); sr = dv.getUint32(off+12, true); bits = dv.getUint16(off+22, true); }
+    else if (id === 'data') { dataOff = off + 8; dataLen = sz; }
+    off += 8 + sz + (sz & 1);
+  }
+  if (bits !== 16) throw new Error('Need a 16-bit PCM WAV (this file is ' + bits + '-bit).');
+  if (dataOff + dataLen > b.length) dataLen = b.length - dataOff;
+  const n = (dataLen / 2) | 0;
+  // copy into an aligned Int16Array
+  const int16 = new Int16Array(n);
+  for (let i = 0; i < n; i++) int16[i] = dv.getInt16(dataOff + i * 2, true);
+  return { sr, channels: ch || 1, int16 };
+}
+
+function fmtBytes(n) {
+  if (n < 1024) return n + ' B';
+  if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+  return (n / 1024 / 1024).toFixed(2) + ' MB';
+}
+function pct(part, whole) { return whole === 0 ? 0 : (100 * part / whole); }
+
+// ── the core: encode → decode → verify → render ──
+function process(meta) {
+  current = meta;
+  const { name, sr, channels, int16 } = meta;
+  const pcmBytes = int16.length * 2;
+  $('inputLine').innerHTML = 'Input: <b>' + name + '</b> · ' + channels + ' ch · '
+    + (sr/1000).toFixed(1) + ' kHz · ' + fmtBytes(pcmBytes);
+  if (!codecReady) return;
+
+  const t0 = performance.now();
+  const pea = PhiAudio.encode(int16, sr, channels, 1);
+  const dt = performance.now() - t0;
+
+  const back = PhiAudio.decode(pea);            // Int16Array
+  let diffs = 0;
+  const same = back.length === int16.length;
+  if (same) for (let i = 0; i < int16.length; i++) { if (back[i] !== int16[i]) diffs++; }
+  else diffs = Math.abs(back.length - int16.length);
+  meta.decoded = back;
+
+  render(meta, pcmBytes, pea.length, diffs, same, dt);
+  drawWave(int16, back, channels);
+}
+
+function render(meta, orig, phiSize, diffs, same, dt) {
+  $('results').classList.add('show');
+  const hasFlac = meta.flac != null;
+  const flacSize = meta.flac || 0;
+  const pPct = pct(phiSize, orig), fPct = pct(flacSize, orig);
+
+  $('valOrig').innerHTML = '<b>' + fmtBytes(orig) + '</b> · 100%';
+  $('valPhi').innerHTML  = '<b>' + fmtBytes(phiSize) + '</b> · ' + pPct.toFixed(1) + '%';
+  $('rowFlac').classList.toggle('hide', !hasFlac);
+  if (hasFlac) $('valFlac').innerHTML = '<b>' + fmtBytes(flacSize) + '</b> · ' + fPct.toFixed(1) + '%';
+
+  $('barOrig').style.width = '100%';
+  requestAnimationFrame(() => {
+    $('barFlac').style.width = Math.max(fPct, 0.6) + '%';
+    $('barPhi').style.width  = Math.max(pPct, 0.6) + '%';
+  });
+
+  const v = $('verdict'), vs = $('verdictSub');
+  if (hasFlac) {
+    const rel = flacSize === 0 ? 0 : (1 - phiSize / flacSize) * 100;   // >0 ⇒ φ smaller
+    if (rel > 0.3) {
+      v.className = 'verdict win';
+      v.textContent = 'φ is ' + rel.toFixed(1) + '% smaller than FLAC‑8 here.';
+      vs.textContent = 'φ output is ' + fmtBytes(phiSize) + ' vs FLAC‑8’s ' + fmtBytes(flacSize)
+        + ', on the exact same audio, with nothing lost.';
+    } else if (rel < -0.3) {
+      v.className = 'verdict lose';
+      v.textContent = 'FLAC‑8 is ' + (-rel).toFixed(1) + '% smaller on this clip.';
+      vs.textContent = 'Ratio varies by material. Across the full benchmark corpus φ averages 4 to 6% smaller than FLAC‑8.';
+    } else {
+      v.className = 'verdict tie';
+      v.textContent = 'φ and FLAC‑8 are within a rounding error here.';
+      vs.textContent = '';
+    }
+  } else {
+    v.className = 'verdict win';
+    v.textContent = 'φ compressed your audio to ' + pPct.toFixed(1) + '% of the raw PCM, losslessly.';
+    vs.textContent = 'FLAC is not available in the browser, so there is no FLAC bar for your own audio. The built-in clips show the head-to-head against FLAC‑8.';
+  }
+
+  const b = $('rtBadge');
+  if (same && diffs === 0) {
+    b.className = 'badge-rt';
+    b.innerHTML = '✓ Verified lossless · all ' + meta.int16.length.toLocaleString()
+      + ' samples decoded back identical' + (dt ? ' &nbsp;·&nbsp; encoded in ' + (dt < 1 ? '<1' : Math.round(dt)) + ' ms' : '');
+  } else {
+    b.className = 'badge-rt fail';
+    b.textContent = '✗ round-trip mismatch: ' + diffs.toLocaleString() + ' samples differ (this should never happen — please report it)';
+  }
+}
+
+// ── waveform: original peak envelope + decoded overlay + residual lane ──
+function drawWave(orig, decoded, channels) {
+  const cv = $('wave'); const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const topH = Math.round(H * 0.66), resH = H - topH;
+  ctx.clearRect(0, 0, W, H);
+  const css = getComputedStyle(document.documentElement);
+  const gold = css.getPropertyValue('--gold').trim() || '#C9A830';
+  const dim  = css.getPropertyValue('--gold-border').trim() || 'rgba(0,0,0,.15)';
+
+  // downmix to mono for display
+  const n = (orig.length / channels) | 0;
+  const mid = topH / 2;
+  const scale = (topH / 2 - 2) / 32768;
+  const cols = W;
+  ctx.strokeStyle = dim; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, mid); ctx.lineTo(W, mid); ctx.stroke();
+
+  // original peak envelope (gold)
+  ctx.strokeStyle = gold; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let x = 0; x < cols; x++) {
+    const i0 = Math.floor(x / cols * n), i1 = Math.max(i0 + 1, Math.floor((x + 1) / cols * n));
+    let mn = 32767, mx = -32768;
+    for (let i = i0; i < i1 && i < n; i++) {
+      let s = 0; for (let c = 0; c < channels; c++) s += orig[i * channels + c]; s = (s / channels) | 0;
+      if (s < mn) mn = s; if (s > mx) mx = s;
+    }
+    ctx.moveTo(x + 0.5, mid - mx * scale);
+    ctx.lineTo(x + 0.5, mid - mn * scale);
+  }
+  ctx.stroke();
+
+  // decoded overlay (thin dark line through the same envelope — coincides when lossless)
+  ctx.strokeStyle = 'rgba(20,20,20,.55)';
+  if ((css.getPropertyValue('data-theme') || '').trim() === 'dark') ctx.strokeStyle = 'rgba(230,230,230,.5)';
+  ctx.lineWidth = 1; ctx.beginPath();
+  for (let x = 0; x < cols; x++) {
+    const i = Math.min(n - 1, Math.floor((x + 0.5) / cols * n));
+    let s = 0; for (let c = 0; c < channels; c++) s += (decoded[i * channels + c] || 0); s = (s / channels) | 0;
+    const y = mid - s * scale;
+    if (x === 0) ctx.moveTo(x + 0.5, y); else ctx.lineTo(x + 0.5, y);
+  }
+  ctx.stroke();
+
+  // residual lane: |original - decoded| per column, magnified, against a zero line
+  const rMid = topH + resH / 2;
+  ctx.strokeStyle = dim; ctx.beginPath(); ctx.moveTo(0, rMid); ctx.lineTo(W, rMid); ctx.stroke();
+  let maxAbs = 0;
+  ctx.strokeStyle = '#b23b3b'; ctx.lineWidth = 1; ctx.beginPath();
+  const total = Math.min(orig.length, decoded.length);
+  for (let x = 0; x < cols; x++) {
+    const i0 = Math.floor(x / cols * total), i1 = Math.max(i0 + 1, Math.floor((x + 1) / cols * total));
+    let peak = 0;
+    for (let i = i0; i < i1 && i < total; i++) { const d = Math.abs(orig[i] - decoded[i]); if (d > peak) peak = d; if (d > maxAbs) maxAbs = d; }
+    const y = rMid - Math.min(peak, 64) / 64 * (resH / 2 - 2);
+    ctx.moveTo(x + 0.5, rMid); ctx.lineTo(x + 0.5, y);
+  }
+  ctx.stroke();
+  ctx.fillStyle = css.getPropertyValue('--text-muted').trim() || '#777';
+  ctx.font = '12px Inter, sans-serif';
+  ctx.fillText(maxAbs === 0 ? 'difference: 0 across every sample' : ('max difference: ' + maxAbs), 8, topH + 16);
+}
+
+// ── playback ──
+function getCtx() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
+function stopPlay() { if (playNode) { try { playNode.stop(); } catch (e) {} playNode = null; } }
+function playInt16(int16, channels, sr) {
+  stopPlay();
+  const ctx = getCtx();
+  const chans = int16ToFloat(int16, channels);
+  const n = chans[0].length;
+  const buf = ctx.createBuffer(channels, n, sr);
+  for (let c = 0; c < channels; c++) buf.copyToChannel(chans[c], c);
+  const node = ctx.createBufferSource();
+  node.buffer = buf; node.connect(ctx.destination); node.start();
+  playNode = node;
+}
+
+// ── microphone capture (Float32 → Int16 mono, max 8 s) ──
+async function toggleRec() {
+  if (recState) { stopRec(); return; }
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+  catch (e) { $('status').textContent = 'Microphone access denied or unavailable.'; return; }
+  const ctx = getCtx();
+  const src = ctx.createMediaStreamSource(stream);
+  const proc = ctx.createScriptProcessor(4096, 1, 1);
+  const sink = ctx.createGain(); sink.gain.value = 0;   // silent sink (no echo)
+  const chunks = [];
+  proc.onaudioprocess = (e) => chunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+  src.connect(proc); proc.connect(sink); sink.connect(ctx.destination);
+  recState = { stream, src, proc, sink, chunks, sr: ctx.sampleRate, t: setTimeout(stopRec, 8000) };
+  $('recBtn').classList.add('recording'); $('recBtn').textContent = '■ Stop recording';
+  $('status').textContent = 'Recording… (up to 8 seconds)';
+}
+function stopRec() {
+  if (!recState) return;
+  clearTimeout(recState.t);
+  const { stream, src, proc, sink, chunks, sr } = recState;
+  proc.onaudioprocess = null;
+  try { src.disconnect(); proc.disconnect(); sink.disconnect(); } catch (e) {}
+  stream.getTracks().forEach(t => t.stop());
+  recState = null;
+  $('recBtn').classList.remove('recording'); $('recBtn').textContent = '● Record from mic';
+  let total = 0; chunks.forEach(c => total += c.length);
+  if (total < sr * 0.2) { $('status').textContent = 'Recording too short — try again.'; return; }
+  const int16 = new Int16Array(total);
+  let o = 0;
+  for (const c of chunks) for (let i = 0; i < c.length; i++) { let s = c[i]; s = s < -1 ? -1 : s > 1 ? 1 : s; int16[o++] = s < 0 ? (s * 32768) | 0 : (s * 32767) | 0; }
+  setActiveChip(null);
+  $('status').textContent = 'Codec ready.';
+  process({ name: 'Your recording', sr, channels: 1, int16, flac: null });
+}
+
+// ── wiring ──
+function setActiveChip(el) {
+  document.querySelectorAll('.chip[data-clip]').forEach(c => c.classList.remove('active'));
+  if (el) el.classList.add('active');
+}
+
+async function loadClip(key) {
+  const meta = CLIPS[key];
+  $('status').textContent = 'Loading ' + meta.name + '…';
+  try {
+    const resp = await fetch(meta.url);
+    const buf = await resp.arrayBuffer();
+    const { sr, channels, int16 } = parseWav(buf);
+    $('status').textContent = 'Codec ready.';
+    process({ name: meta.name, sr, channels, int16, flac: meta.flac });
+  } catch (e) {
+    $('status').textContent = 'Could not load clip: ' + (e && e.message ? e.message : e);
+  }
+}
+
+document.querySelectorAll('.chip[data-clip]').forEach(chip => {
+  chip.addEventListener('click', () => { setActiveChip(chip); loadClip(chip.getAttribute('data-clip')); });
+});
+
+$('fileInput').addEventListener('change', (e) => {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try { const { sr, channels, int16 } = parseWav(reader.result);
+      setActiveChip(null); $('status').textContent = 'Codec ready.';
+      process({ name: f.name, sr, channels, int16, flac: null });
+    } catch (err) { $('status').textContent = String(err.message || err); }
+  };
+  reader.readAsArrayBuffer(f);
+});
+
+$('recBtn').addEventListener('click', toggleRec);
+$('playOrig').addEventListener('click', () => { if (current) playInt16(current.int16, current.channels, current.sr); });
+$('playPhi').addEventListener('click', () => { if (current && current.decoded) playInt16(current.decoded, current.channels, current.sr); });
+$('stopBtn').addEventListener('click', stopPlay);
+
+// ── boot ──
+ready().then(() => {
+  codecReady = true;
+  $('status').textContent = 'Codec ready · pick a clip, drop in a WAV, or record from your microphone.';
+  if (current) process(current);
+}).catch(err => {
+  $('status').textContent = 'Failed to load the codec: ' + (err && err.message ? err.message : err);
+});
+</script>
+</body>
+</html>

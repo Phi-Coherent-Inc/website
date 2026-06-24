@@ -20,6 +20,7 @@
   var DEMOS = [
     // ── Compression (Pillar I) ──
     { id: 'base-codec',           file: 'base-codec.html',           name: 'Base Codec: φ vs zlib' },
+    { id: 'audio-codec',          file: 'audio-codec.html',          name: 'Audio Codec: φ vs FLAC (lossless)' },
     // ── Qudit Architecture (impact-ordered) ──
     { id: 'qudit-register',       file: 'qudit-register.html',       name: 'First-Class Qudit Register' },
     { id: 'dual-mode-core',       file: 'dual-mode-core.html',       name: 'Dual-Mode Core' },
