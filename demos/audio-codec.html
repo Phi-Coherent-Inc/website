@@ -76,6 +76,11 @@
   [data-theme=dark] .badge-rt { background: rgba(120,200,120,.12); color: #93d79a; border-color: rgba(120,200,120,.30); }
   .badge-rt.fail { background: rgba(190,60,60,.12); color: #b23b3b; border-color: rgba(190,60,60,.32); }
 
+  /* Downloads */
+  .dlrow { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 14px; }
+  .dlnote { font: 400 12px/1.55 Inter, sans-serif; color: var(--text-dim); margin: 8px 0 0; max-width: 70ch; }
+  .dlnote code { font: 500 11.5px ui-monospace, monospace; color: var(--text-muted); }
+
   /* Listen + waveform */
   .listen { margin-top: 18px; }
   .listen h3 { font: 600 12px Inter, sans-serif; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 10px; }
@@ -139,6 +144,12 @@
     <p class="verdict" id="verdict"></p>
     <p class="verdict-sub" id="verdictSub"></p>
     <span class="badge-rt" id="rtBadge"></span>
+
+    <div class="dlrow">
+      <button class="chip" id="dlPea">↓ Download .pea (φ‑compressed)</button>
+      <button class="chip" id="dlWav">↓ Download decoded WAV</button>
+    </div>
+    <p class="dlnote">The <code>.pea</code> is the φ‑compressed file; it opens only with the φ codec. The decoded WAV is the bit‑identical reconstruction, so you can compare it to your original outside the browser.</p>
 
     <div class="listen">
       <h3>3 · Hear it &amp; see it</h3>
@@ -250,6 +261,7 @@ async function process(meta) {
     if (same) for (let i = 0; i < int16.length; i++) { if (back[i] !== int16[i]) diffs++; }
     else diffs = Math.abs(back.length - int16.length);
     meta.decoded = back;
+    meta.pea = pea;
 
     render(meta, pcmBytes, pea.length, diffs, same, dt);
     drawWave(int16, back, channels);
@@ -495,6 +507,44 @@ $('recBtn').addEventListener('click', toggleRec);
 $('playOrig').addEventListener('click', () => { if (current) playInt16(current.int16, current.channels, current.sr); });
 $('playPhi').addEventListener('click', () => { if (current && current.decoded) playInt16(current.decoded, current.channels, current.sr); });
 $('stopBtn').addEventListener('click', stopPlay);
+
+// ── downloads ──
+function safeBase() {
+  const s = (current && current.name ? current.name : 'audio')
+    .replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '').toLowerCase();
+  return s || 'audio';
+}
+function downloadBytes(bytes, filename, mime) {
+  const blob = new Blob([bytes], { type: mime || 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
+}
+// Build a canonical 16-bit PCM WAV from interleaved Int16 samples.
+function buildWav(int16, sr, channels) {
+  const dataLen = int16.length * 2;
+  const buf = new ArrayBuffer(44 + dataLen);
+  const dv = new DataView(buf);
+  const wr = (o, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); };
+  wr(0, 'RIFF'); dv.setUint32(4, 36 + dataLen, true); wr(8, 'WAVE');
+  wr(12, 'fmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true);
+  dv.setUint16(22, channels, true); dv.setUint32(24, sr, true);
+  dv.setUint32(28, sr * channels * 2, true); dv.setUint16(32, channels * 2, true); dv.setUint16(34, 16, true);
+  wr(36, 'data'); dv.setUint32(40, dataLen, true);
+  new Int16Array(buf, 44).set(int16);
+  return new Uint8Array(buf);
+}
+$('dlPea').addEventListener('click', () => {
+  if (!current || !current.pea) return;
+  downloadBytes(current.pea, safeBase() + '.pea', 'application/octet-stream');
+});
+$('dlWav').addEventListener('click', () => {
+  if (!current || !current.decoded) return;
+  downloadBytes(buildWav(current.decoded, current.sr, current.channels),
+                safeBase() + '_decoded.wav', 'audio/wav');
+});
 
 // Redraw the waveform crisply when the canvas box changes size.
 let _resizeT = null;
