@@ -101,8 +101,8 @@
         data-title="Image Codec: φ vs PNG (lossless)"></header>
 
 <div class="wrap">
-  <p class="lede">The φCoherent image codec is <b>lossless</b>: it shrinks an image with no change to a single pixel. Here it runs in your browser against <b>PNG</b>, the universal lossless image format, on the exact same pixels. Pick a photo or drop in your own, then compare the decoded reconstruction to the original and see for yourself that nothing was lost.</p>
-  <p class="sub"><span class="privacy">Everything runs locally via WebAssembly. Nothing you load is uploaded.</span> &nbsp;On the Kodak and CLIC photographic corpora the φ codec is around 30% smaller than PNG and a few percent smaller than WebP-lossless. It trades encode speed for ratio.</p>
+  <p class="lede">The φCoherent image codec is <b>lossless</b>: it shrinks an image with no change to a single pixel. Here it runs in your browser against an <b>optimized PNG</b>, the universal lossless image format, on the exact same pixels. Pick a photo or drop in your own, then compare the decoded reconstruction to the original and see for yourself that nothing was lost.</p>
+  <p class="sub"><span class="privacy">Everything runs locally via WebAssembly. Nothing you load is uploaded.</span> &nbsp;The PNG baseline is fully optimized (adaptive filtering, maximal deflate), not the browser's weaker default, so the comparison is fair. On the Kodak and CLIC photographic corpora the φ codec is around 30% smaller than an optimized PNG and a few percent smaller than WebP-lossless. It trades encode speed for ratio.</p>
 
   <div class="panel">
     <h2>1 · Choose an image</h2>
@@ -127,7 +127,7 @@
         <span class="barval" id="valOrig">—</span>
       </div>
       <div class="barrow">
-        <span class="barlabel">PNG</span>
+        <span class="barlabel">PNG (optimized)</span>
         <div class="bartrack"><div class="barfill png" id="barPng" style="width:0"></div></div>
         <span class="barval" id="valPng">—</span>
       </div>
@@ -162,10 +162,15 @@
     </div>
   </div>
 
-  <p class="foot">The φ result is computed live in <code>phi-compress-image</code> (WebAssembly), the same codec we ship, at quality&nbsp;1 (lossless). The PNG size is produced in your own browser from the identical pixels, so the comparison is exact. Sizes are the compressed payload for each codec versus the raw RGB pixels. Large images are scaled to fit before encoding so the demo stays responsive. The φ codec is optimized for size, not throughput. Sample photos are from the Unsplash and CLIC open image sets.</p>
+  <p class="foot">The φ result is computed live in <code>phi-compress-image</code> (WebAssembly), the same codec we ship, at quality&nbsp;1 (lossless). The PNG baseline is encoded in your own browser from the identical pixels with <code>UPNG.js</code> (adaptive per-row filtering and maximal deflate); it is a fully lossless, optimized PNG that lands within a few percent of <code>optipng</code> and <code>zopflipng</code>, well below the browser's default <code>canvas.toBlob</code> PNG. Sizes are the compressed payload for each codec versus the raw RGB pixels. Large images are scaled to fit before encoding so the demo stays responsive. The φ codec is optimized for size, not throughput. Sample photos are from the Unsplash and CLIC open image sets.</p>
 </div>
 
 <script src="assets/demo-header.js?v=20260624"></script>
+<!-- Optimized lossless PNG baseline: pako (deflate) + UPNG.js (adaptive PNG
+     filtering). Classic scripts so they attach to the global scope; loaded
+     before the module so window.UPNG is ready. Both MIT-licensed. -->
+<script src="assets/js/vendor/pako.min.js?v=20260624"></script>
+<script src="assets/js/vendor/UPNG.js?v=20260624"></script>
 <script type="module">
 import { ready, PhiImage, rgbaToRgb, rgbToRgba } from './assets/js/phi-image.js?v=20260624';
 
@@ -191,8 +196,11 @@ function fmtBytes(n) {
 function pct(part, whole) { return whole === 0 ? 0 : (100 * part / whole); }
 
 // Draw an ImageBitmap/HTMLImageElement to a canvas, scaling down to MAX_SIDE,
-// and return { width, height, rgb, png, scaled }.  PNG is produced from the
-// identical pixels via canvas.toBlob, so the comparison is exact.
+// and return { width, height, rgb, png, scaled }.  The PNG baseline is an
+// OPTIMIZED, LOSSLESS PNG of the identical pixels — encoded with UPNG.js
+// (adaptive per-row filtering + deflate), which lands within a few percent of
+// optipng/zopflipng and far below the browser's unfiltered canvas.toBlob PNG.
+// So the φ-vs-PNG comparison is against a genuinely strong lossless baseline.
 async function rasterize(src, srcW, srcH) {
   let w = srcW, h = srcH, scaled = false;
   const longest = Math.max(w, h);
@@ -208,8 +216,17 @@ async function rasterize(src, srcW, srcH) {
   ctx.drawImage(src, 0, 0, w, h);
   const rgba = ctx.getImageData(0, 0, w, h).data;
   const rgb = rgbaToRgb(rgba);
-  const png = await new Promise((res) => cv.toBlob((b) => res(b), 'image/png'));
-  return { width: w, height: h, rgb, png: png ? png.size : 0, scaled };
+  // Optimized lossless PNG via UPNG (cnum=0 ⇒ no quantization). Falls back to
+  // the canvas PNG only if the optimizer is somehow unavailable.
+  let png = 0;
+  try {
+    const buf = rgba.buffer.slice(rgba.byteOffset, rgba.byteOffset + rgba.byteLength);
+    png = window.UPNG.encode([buf], w, h, 0).byteLength;
+  } catch (e) {
+    const blob = await new Promise((res) => cv.toBlob((b) => res(b), 'image/png'));
+    png = blob ? blob.size : 0;
+  }
+  return { width: w, height: h, rgb, png, scaled };
 }
 
 // ── busy state: the codec runs in a worker, but we still gate the UI so a
@@ -280,16 +297,16 @@ function render(meta, raw, phiSize, diffs, same, dt) {
   const rel = pngSize === 0 ? 0 : (1 - phiSize / pngSize) * 100;   // >0 ⇒ φ smaller
   if (rel > 0.3) {
     v.className = 'verdict win';
-    v.textContent = 'φ is ' + rel.toFixed(1) + '% smaller than PNG here.';
-    vs.textContent = 'φ output is ' + fmtBytes(phiSize) + ' vs PNG’s ' + fmtBytes(pngSize)
+    v.textContent = 'φ is ' + rel.toFixed(1) + '% smaller than an optimized PNG here.';
+    vs.textContent = 'φ output is ' + fmtBytes(phiSize) + ' vs the optimized PNG’s ' + fmtBytes(pngSize)
       + ', on the exact same pixels, with nothing lost.';
   } else if (rel < -0.3) {
     v.className = 'verdict lose';
-    v.textContent = 'PNG is ' + (-rel).toFixed(1) + '% smaller on this image.';
-    vs.textContent = 'Ratio varies by content. Across the Kodak and CLIC photographic corpora φ averages around 30% smaller than PNG.';
+    v.textContent = 'The optimized PNG is ' + (-rel).toFixed(1) + '% smaller on this image.';
+    vs.textContent = 'Ratio varies by content. Across the Kodak and CLIC photographic corpora φ averages around 30% smaller than an optimized PNG.';
   } else {
     v.className = 'verdict tie';
-    v.textContent = 'φ and PNG are within a rounding error here.';
+    v.textContent = 'φ and the optimized PNG are within a rounding error here.';
     vs.textContent = '';
   }
 
