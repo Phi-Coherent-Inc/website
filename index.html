@@ -1244,9 +1244,9 @@ footer {
           <div class="stat-body">Our Clifford/stabilizer simulator reproduces Stim (the standard QEC simulator) on all 16 reference checks: Bell and GHZ stabilizers, CNOT propagation, mid-circuit measurement and reset, and repetition-code syndrome extraction. The surface-code union-find decoder corrects every weight-1 error and drives the logical error rate down with code distance (code-capacity threshold ~10%).</div>
         </div>
         <div class="stat-card reveal reveal-delay-2">
-          <div class="stat-num">0.0006 mHa</div>
-          <div class="stat-title">VQE accuracy on H₂ and LiH</div>
-          <div class="stat-body">Noiseless variational simulation reaches molecular hydrogen to about 0.0006 milliHartree and lithium hydride to about 0.0005 milliHartree against the exact reference, over 2500× inside the chemical-accuracy threshold, both with a minimal hardware-efficient circuit.</div>
+          <div class="stat-num">&lt;0.001 mHa</div>
+          <div class="stat-title">VQE reaches chemical accuracy on H₂</div>
+          <div class="stat-body">Noiseless variational simulation reaches molecular hydrogen to under 0.001 milliHartree against its full STO-3G FCI energy, more than 1000× inside the chemical-accuracy threshold (1.6 mHa), with a minimal two-angle circuit. The lithium hydride panel uses a two-orbital active-space model, which sits about 20 mHa above the full molecule by construction, so it demonstrates convergence to the active-space ground state rather than full-molecule chemical accuracy.</div>
         </div>
         <div class="stat-card reveal reveal-delay-3">
           <div class="stat-num">6</div>
@@ -1420,7 +1420,7 @@ footer {
         <a class="card demo-card reveal reveal-delay-3" href="demos/vqe-landscape.html">
           <span class="card-label">VQE · golden-section search</span>
           <h3>Energy Landscape</h3>
-          <p>A real variational energy surface for H₂ and LiH, and the honest place the golden ratio is load-bearing here: golden-section line search is minimax-optimal for a unimodal slice (Kiefer 1953), so it reaches chemical accuracy on 100% of random restarts while random-momentum search lags at a fixed budget. The shot-budget split is decorative; the search is where φ earns its place. Plus the four exact golden pairs of the E8 critical-Ising mass spectrum.</p>
+          <p>A real variational energy surface for H₂ and LiH, and the honest place the golden ratio is load-bearing here: golden-section line search is minimax-optimal for a unimodal slice (Kiefer 1953). On H₂, whose landscape is unimodal, it reaches chemical accuracy on every random restart at a sufficient budget while random-momentum search lags around 60%. On the LiH active-space landscape, which is not unimodal, that advantage does not hold and momentum is competitive: φ earns its place exactly where its theorem applies, and not by decree. The shot-budget split is decorative. Plus the four exact golden pairs of the E8 critical-Ising mass spectrum.</p>
           <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
         </a>
         <a class="card demo-card reveal reveal-delay-3" href="demos/tunneling.html">
