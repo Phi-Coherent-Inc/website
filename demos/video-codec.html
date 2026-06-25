@@ -97,7 +97,13 @@
     border: 1px solid var(--gold-border); border-radius: 10px; background: #000;
   }
   .player .pbrow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .pbcap { font: 500 12px Inter, sans-serif; color: var(--text-muted); }
+  .pbcap { font: 500 12px Inter, sans-serif; color: var(--text-muted); margin-top: 2px; }
+  .viewtoggle { display: inline-flex; border: 1px solid var(--gold-border); border-radius: 999px; overflow: hidden; }
+  .vbtn { padding: 7px 13px; border: 0; background: var(--bg); color: var(--text-muted); font: 500 12.5px Inter, sans-serif; cursor: pointer; transition: background .14s, color .14s; }
+  .vbtn + .vbtn { border-left: 1px solid var(--gold-border); }
+  .vbtn:hover:not(.active) { background: var(--gold-subtle); }
+  .vbtn.active { background: var(--gold); color: #1C1810; }
+  .vbtn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
   .foot { font: 400 12.5px/1.6 Inter, sans-serif; color: var(--text-dim); margin-top: 22px; }
   .foot code { font: 500 12px ui-monospace, monospace; color: var(--text-muted); }
@@ -153,9 +159,8 @@
 
     <div class="dlrow">
       <button class="chip" id="dlPev">↓ Download .pev (φ‑compressed)</button>
-      <button class="chip" id="dlApng">↓ Download decoded clip (APNG)</button>
     </div>
-    <p class="dlnote">The <code>.pev</code> is the φ‑compressed clip; it opens only with the φ codec. The decoded clip is offered as a lossless animated PNG (APNG) so you can step through the bit‑identical frames outside the browser.</p>
+    <p class="dlnote">The <code>.pev</code> is the φ‑compressed clip: the codec's actual output, the size shown above. It is not a file a video player opens; it decodes only with the φ codec. The losslessness is verified in‑browser by the round‑trip check above and the <b>Difference</b> view.</p>
 
     <div class="view">
       <h3>3 · Watch it</h3>
@@ -164,8 +169,13 @@
         <canvas id="cvPlay" aria-label="The clip decoded back from the φ-compressed .pev, played in a loop. Identical to the original when the round-trip is lossless."></canvas>
         <div class="pbrow">
           <button class="chip" id="btnPlay">⏸ Pause</button>
-          <span class="pbcap" id="pbCap">φ round-trip — decoded frames, identical to the original</span>
+          <span class="viewtoggle" id="viewToggle" role="group" aria-label="Choose what the player shows">
+            <button class="vbtn active" data-view="phi">φ decoded</button>
+            <button class="vbtn" data-view="orig">Original</button>
+            <button class="vbtn" data-view="diff">Difference</button>
+          </span>
         </div>
+        <span class="pbcap" id="pbCap">φ round-trip: frames decoded from the .pev, identical to the original.</span>
       </div>
     </div>
   </div>
@@ -205,24 +215,49 @@ function fmtBytes(n) {
 }
 function pct(part, whole) { return whole === 0 ? 0 : (100 * part / whole); }
 
-// ── playback of the decoded frames on a loop ──
-let pb = { raf: 0, frame: 0, last: 0, playing: false };
+// ── playback on a loop, with a φ-decoded / original / difference view ─────────
+// The "Watch it" canvas plays the frames the codec DECODED from the .pev (not the
+// source <video>). Lossless means it looks identical to the original, so the
+// "Difference" view exists to prove it: it renders |decoded − original| amplified
+// (white = a perfect match), making clear the reconstruction is real, not a
+// passthrough of the upload.
+let pb = { raf: 0, frame: 0, last: 0, playing: false, redraw: null };
+let viewMode = 'phi';
+const DIFF_AMP = 24;
+
 function stopPlayback() { if (pb.raf) cancelAnimationFrame(pb.raf); pb.raf = 0; pb.playing = false; }
+
+// Build the ImageData for frame f under the current view mode.
+function frameImageData(meta, f) {
+  const px = meta.W * meta.H, off = f * px * 3;
+  const orig = meta.rgb;
+  const dec = (meta.decoded && meta.decoded.length === meta.N * px * 3) ? meta.decoded : meta.rgb;
+  if (viewMode === 'diff') {
+    const out = new Uint8ClampedArray(px * 4);
+    for (let i = 0, o = 0; i < px; i++) {
+      const j = off + i * 3;
+      out[o++] = 255 - Math.min(255, Math.abs(dec[j] - orig[j]) * DIFF_AMP);
+      out[o++] = 255 - Math.min(255, Math.abs(dec[j + 1] - orig[j + 1]) * DIFF_AMP);
+      out[o++] = 255 - Math.min(255, Math.abs(dec[j + 2] - orig[j + 2]) * DIFF_AMP);
+      out[o++] = 255;
+    }
+    return new ImageData(out, meta.W, meta.H);
+  }
+  const src = viewMode === 'orig' ? orig : dec;
+  return new ImageData(rgbToRgba(src, off, px), meta.W, meta.H);
+}
+
 function startPlayback(meta) {
   stopPlayback();
   const lv = $('vidLive');                    // canvas drives playback; the live <video> is extraction/preview only
   lv.style.display = 'none'; lv.controls = false; try { lv.pause(); } catch (e) {}
   const cv = $('cvPlay'); cv.style.display = 'block'; cv.width = meta.W; cv.height = meta.H;
   const ctx = cv.getContext('2d');
-  const frames = meta.decoded && meta.decoded.length === meta.N * meta.W * meta.H * 3 ? meta.decoded : meta.rgb;
-  const fpx = meta.W * meta.H * 3;
   const interval = 1000 / Math.max(1, meta.fps);
   pb.frame = 0; pb.last = performance.now(); pb.playing = true;
   $('btnPlay').textContent = '⏸ Pause';
-  const draw = () => {
-    const img = new ImageData(rgbToRgba(frames, pb.frame * fpx, meta.W * meta.H), meta.W, meta.H);
-    ctx.putImageData(img, 0, 0);
-  };
+  const draw = () => { ctx.putImageData(frameImageData(meta, pb.frame), 0, 0); };
+  pb.redraw = draw;
   draw();
   const tick = (t) => {
     if (!pb.playing) return;
@@ -235,6 +270,22 @@ $('btnPlay').addEventListener('click', () => {
   if (!current) return;
   if (pb.playing) { stopPlayback(); $('btnPlay').textContent = '▶ Play'; }
   else startPlayback(current);
+});
+
+function setView(mode) {
+  viewMode = mode;
+  document.querySelectorAll('.vbtn').forEach(b => b.classList.toggle('active', b.getAttribute('data-view') === mode));
+  const hasDec = current && current.decoded;
+  $('pbCap').textContent = mode === 'orig'
+    ? 'Original frames, before compression.'
+    : mode === 'diff'
+      ? (hasDec ? 'Difference: φ-decoded minus original, amplified ' + DIFF_AMP + '×. Solid white means every pixel matches.'
+                : 'Difference appears once the clip has been encoded and decoded.')
+      : 'φ round-trip: frames decoded from the .pev, identical to the original.';
+  if (pb.redraw) pb.redraw();
+}
+document.querySelectorAll('.vbtn').forEach(btn => {
+  btn.addEventListener('click', () => setView(btn.getAttribute('data-view')));
 });
 
 // ── busy state ──
@@ -270,6 +321,7 @@ function motionPngBytes(rgbAll, W, H, N) {
 async function process(meta) {
   current = meta;
   $('results').classList.remove('preview-only');         // a real result is coming
+  setView('phi');                                        // new clip starts on the φ-decoded view
   const { name, W, H, N, fps, rgb } = meta;
   const rawBytes = rgb.length;
   $('inputLine').innerHTML = 'Input: <b>' + name + '</b> · ' + W + '×' + H + ' · ' + N + ' frames · '
@@ -470,23 +522,17 @@ async function loadFile(file) {
     $('status').textContent = 'Codec ready.';
     process({ name: file.name, W: w, H: h, N: realN, fps, rgb: used }); // no ffv1 ⇒ per-frame PNG baseline
   } catch (e) {
+    cleanup();
+    vid.style.display = 'none'; cv.style.display = 'block';
+    $('results').classList.remove('show');               // nothing to show; keep the page clean
     if (e && e.code === 'BLANK') {
-      // The video decodes and PLAYS, but this browser won't let the page read its
-      // frames into a canvas (a known Firefox-on-Android limitation: hardware-
-      // decoded frames live in a surface canvas can't read back). Keep the clip
-      // playing as a preview instead of going black, and say so plainly.
-      stopVid();                                         // keep the object URL alive so it keeps playing
-      $('results').classList.add('show', 'preview-only');
-      cv.style.display = 'none'; vid.style.display = 'block';
-      vid.loop = true; vid.muted = true; vid.controls = true;
-      vid.play().catch(() => {});
-      $('pbCap').textContent = 'Your video (preview) · compression needs a different browser';
+      // The video plays, but this browser won't let the page read its frames into a
+      // canvas (a known Firefox-on-Android limitation: hardware-decoded frames live
+      // in a surface canvas can't read back). State it plainly; no preview.
       $('status').textContent = 'This browser will not let the page read video frames for compression '
-        + '(a known limitation of Firefox on Android). Your clip plays above. To compress your own video, '
-        + 'use one of the sample clips here, or open this page in Chrome. The sample clips work everywhere.';
+        + '(a known limitation of Firefox on Android). Try one of the sample clips here, which work everywhere, '
+        + 'or open this page in Chrome to compress your own video.';
     } else {
-      cleanup();
-      vid.style.display = 'none'; cv.style.display = 'block';
       $('status').textContent = 'Could not read that video: ' + (e && e.message ? e.message : e)
         + '. Try a short MP4 or WebM, or use a sample clip.';
     }
@@ -522,15 +568,6 @@ function downloadBytes(bytes, filename, mime) {
 $('dlPev').addEventListener('click', () => {
   if (!current || !current.pev) return;
   downloadBytes(current.pev, safeBase() + '.pev', 'application/octet-stream');
-});
-$('dlApng').addEventListener('click', () => {
-  if (!current || !current.decoded || !window.UPNG) return;
-  const { W, H, N, decoded, fps } = current;
-  const bufs = [];
-  for (let f = 0; f < N; f++) bufs.push(rgbToRgba(decoded, f * W * H * 3, W * H).buffer);
-  const delay = Math.round(1000 / Math.max(1, fps));
-  const apng = window.UPNG.encode(bufs, W, H, 0, new Array(N).fill(delay));
-  downloadBytes(new Uint8Array(apng), safeBase() + '_decoded.png', 'image/png');
 });
 
 // ── boot ──
