@@ -1136,7 +1136,7 @@ footer {
           </tr>
           <tr>
             <td class="codec-name">Video</td>
-            <td class="codec-desc">φCoherent GOP (21 frames), golden-angle spiral motion estimation, φInterpolated sub-pixel compensation. Round-trip deterministic.</td>
+            <td class="codec-desc">Lossless: smaller than FFV1, the standard archival lossless video codec, on every clip of the standard test corpus, from a few percent on hard camera pans to over 40% on low-motion footage. A strong per-frame context coder, motion prediction between frames, and no motion data spent on frames that end up coded intra. Bit-exact round-trip, deterministic across nodes. Lossy levels in development.<a href="demos/video-codec.html" style="display:block; margin-top:10px; color:var(--accent,#c8a95a); font-weight:500; text-decoration:none;">Try it live: φ vs FFV1, watch the lossless round-trip <span aria-hidden="true">&rarr;</span></a></td>
             <td class="codec-status"><span class="badge badge-done">Complete</span></td>
           </tr>
         </tbody>

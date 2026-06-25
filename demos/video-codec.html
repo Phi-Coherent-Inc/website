@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>φCoherent · Video Codec: φ vs FFV1 (lossless)</title>
+<meta name="description" content="Compress short video clips losslessly in your browser with the φCoherent video codec and compare it to FFV1, the standard archival lossless video codec, on the very same frames. Pick a clip or drop in your own. Every result is decoded back and verified bit-identical, and the reconstruction plays back so you can see that nothing was lost. Computed via WebAssembly; nothing is uploaded.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://phicoherent.com/demos/video-codec.html">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#C9A830">
+<script>try{if(localStorage.getItem('phi-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/demo.css?v=20260624">
+<style>
+  .wrap { max-width: 920px; margin: 0 auto; padding: 0 24px 60px; }
+  .lede { font: 400 16px/1.65 Newsreader, serif; color: var(--text); max-width: 70ch; margin: 26px 0 6px; }
+  .sub  { font: 400 13.5px/1.6 Inter, sans-serif; color: var(--text-muted); max-width: 72ch; margin: 0 0 22px; }
+  .privacy { font: 500 12.5px Inter, sans-serif; color: var(--gold-dim); }
+
+  .panel { background: var(--surface); border: 1px solid var(--gold-border); border-radius: 14px; padding: 20px 22px; margin: 16px 0; }
+  .panel h2 { font: 600 13px Inter, sans-serif; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 14px; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 9px; }
+  .chip {
+    padding: 9px 15px; border: 1px solid var(--gold-border); border-radius: 999px;
+    background: var(--bg); color: var(--text); font: 500 13.5px Inter, sans-serif; cursor: pointer;
+    transition: background .14s, border-color .14s, transform .05s;
+  }
+  .chip:hover { border-color: var(--gold); background: var(--gold-subtle); }
+  .chip:active { transform: translateY(1px); }
+  .chip.active { background: var(--gold); color: #1C1810; border-color: var(--gold); }
+  .chip:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .chip:disabled { opacity: .45; cursor: default; }
+
+  .row { display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: center; margin-top: 16px; }
+  .file-btn { position: relative; overflow: hidden; }
+  .file-btn input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+  .inputline { font: 400 13px Inter, sans-serif; color: var(--text-muted); margin-top: 14px; }
+  .inputline b { color: var(--text); font-weight: 600; }
+
+  /* Results */
+  #results { display: none; }
+  #results.show { display: block; }
+  .bars { margin: 6px 0 4px; }
+  .barrow { display: grid; grid-template-columns: 120px 1fr auto; align-items: center; gap: 12px; margin: 11px 0; }
+  .barrow.hide { display: none; }
+  .barlabel { font: 600 13px Inter, sans-serif; color: var(--text); text-align: right; }
+  .bartrack { position: relative; height: 26px; background: var(--gold-subtle); border-radius: 7px; overflow: hidden; border: 1px solid var(--gold-border); }
+  .barfill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 6px 0 0 6px; transition: width .55s cubic-bezier(.2,.7,.2,1); }
+  .barfill.ffv1 { background: repeating-linear-gradient(45deg, var(--text-dim), var(--text-dim) 7px, rgba(0,0,0,.06) 7px, rgba(0,0,0,.06) 14px); }
+  .barfill.phi { background: linear-gradient(90deg, var(--gold-dim), var(--gold)); }
+  .barfill.orig { background: var(--text-dim); opacity: .28; }
+  .barval { font: 600 13px Inter, sans-serif; color: var(--text-muted); white-space: nowrap; }
+  .barval b { color: var(--text); }
+
+  .verdict { font: 600 17px/1.4 Newsreader, serif; margin: 18px 0 4px; }
+  .verdict.win  { color: var(--gold-dim); }
+  .verdict.tie  { color: var(--text-muted); }
+  .verdict.lose { color: var(--text-muted); }
+  .verdict-sub { font: 400 13px Inter, sans-serif; color: var(--text-muted); margin: 0 0 6px; }
+
+  .badge-rt {
+    display: inline-flex; align-items: center; gap: 8px; margin-top: 12px;
+    padding: 8px 14px; border-radius: 999px; font: 600 12.5px Inter, sans-serif;
+    background: rgba(60,150,60,.12); color: #2f7d32; border: 1px solid rgba(60,150,60,.32);
+  }
+  [data-theme=dark] .badge-rt { background: rgba(120,200,120,.12); color: #93d79a; border-color: rgba(120,200,120,.30); }
+  .badge-rt.fail { background: rgba(190,60,60,.12); color: #b23b3b; border-color: rgba(190,60,60,.32); }
+
+  /* Downloads */
+  .dlrow { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 14px; }
+  .dlnote { font: 400 12px/1.55 Inter, sans-serif; color: var(--text-dim); margin: 8px 0 0; max-width: 70ch; }
+  .dlnote code { font: 500 11.5px ui-monospace, monospace; color: var(--text-muted); }
+
+  /* Playback */
+  .view { margin-top: 18px; }
+  .view h3 { font: 600 12px Inter, sans-serif; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 10px; }
+  .player { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+  .player canvas {
+    width: 100%; max-width: 480px; height: auto; display: block; image-rendering: auto;
+    border: 1px solid var(--gold-border); border-radius: 10px; background: #000;
+  }
+  .player .pbrow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .pbcap { font: 500 12px Inter, sans-serif; color: var(--text-muted); }
+
+  .foot { font: 400 12.5px/1.6 Inter, sans-serif; color: var(--text-dim); margin-top: 22px; }
+  .foot code { font: 500 12px ui-monospace, monospace; color: var(--text-muted); }
+  .status { font: 400 13px Inter, sans-serif; color: var(--text-muted); margin: 10px 0 0; }
+  @media (max-width: 560px) { .barrow { grid-template-columns: 84px 1fr; } .barval { grid-column: 2; text-align: right; } }
+</style>
+</head>
+<body>
+
+<header class="demo-header" data-demo="video-codec"
+        data-title="Video Codec: φ vs FFV1 (lossless)"></header>
+
+<div class="wrap">
+  <p class="lede">The φCoherent video codec is <b>lossless</b>: it shrinks a clip with no change to a single pixel of a single frame. Here it runs in your browser against <b>FFV1</b>, the standard archival lossless video codec (the preservation default in FFmpeg), on the exact same frames. Pick a clip or drop in your own, then watch the decoded reconstruction and see for yourself that nothing was lost.</p>
+  <p class="sub"><span class="privacy">Everything runs locally via WebAssembly. Nothing you load is uploaded.</span> &nbsp;FFV1 sizes for the built-in clips are measured offline with the reference FFmpeg encoder on the identical frames, so the race is fair. The codec wins by coding each frame with a strong context model, predicting motion between frames, and dropping the motion data on frames where it would go unused. It trades encode speed for ratio.</p>
+
+  <div class="panel">
+    <h2>1 · Choose a clip</h2>
+    <div class="chips" id="clipChips">
+      <button class="chip" data-clip="akiyo">Akiyo · low motion</button>
+      <button class="chip" data-clip="foreman">Foreman · head &amp; pan</button>
+      <button class="chip" data-clip="bus">Bus · fast pan</button>
+    </div>
+    <div class="row">
+      <label class="chip file-btn">Choose a video file…<input type="file" id="fileInput" accept="video/*" aria-label="Choose a video file to compress"></label>
+    </div>
+    <p class="inputline" id="inputLine">No clip yet. Pick a sample above, or drop in your own short video.</p>
+    <p class="status" id="status">Loading codec…</p>
+  </div>
+
+  <div class="panel" id="results">
+    <h2>2 · φ vs FFV1, on the same frames</h2>
+    <div class="bars">
+      <div class="barrow">
+        <span class="barlabel">Raw frames</span>
+        <div class="bartrack"><div class="barfill orig" id="barOrig" style="width:100%"></div></div>
+        <span class="barval" id="valOrig">—</span>
+      </div>
+      <div class="barrow" id="rowComp">
+        <span class="barlabel" id="compLabel">FFV1 (lossless)</span>
+        <div class="bartrack"><div class="barfill ffv1" id="barComp" style="width:0"></div></div>
+        <span class="barval" id="valComp">—</span>
+      </div>
+      <div class="barrow">
+        <span class="barlabel">φ codec</span>
+        <div class="bartrack"><div class="barfill phi" id="barPhi" style="width:0"></div></div>
+        <span class="barval" id="valPhi">—</span>
+      </div>
+    </div>
+    <p class="verdict" id="verdict"></p>
+    <p class="verdict-sub" id="verdictSub"></p>
+    <span class="badge-rt" id="rtBadge"></span>
+
+    <div class="dlrow">
+      <button class="chip" id="dlPev">↓ Download .pev (φ‑compressed)</button>
+      <button class="chip" id="dlApng">↓ Download decoded clip (APNG)</button>
+    </div>
+    <p class="dlnote">The <code>.pev</code> is the φ‑compressed clip; it opens only with the φ codec. The decoded clip is offered as a lossless animated PNG (APNG) so you can step through the bit‑identical frames outside the browser.</p>
+
+    <div class="view">
+      <h3>3 · Watch it</h3>
+      <div class="player">
+        <canvas id="cvPlay" aria-label="The clip decoded back from the φ-compressed .pev, played in a loop. Identical to the original when the round-trip is lossless."></canvas>
+        <div class="pbrow">
+          <button class="chip" id="btnPlay">⏸ Pause</button>
+          <span class="pbcap" id="pbCap">φ round-trip — decoded frames, identical to the original</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="foot">The φ result is computed live in <code>phi-compress-video</code> (WebAssembly), the same codec we ship, at quality&nbsp;1 (lossless). FFV1 sizes for the built-in clips are measured offline with the reference FFmpeg encoder (<code>ffv1 -level 3 -g 1</code>, 4:4:4) on the identical frames; for your own video, where FFV1 cannot run in the browser, the baseline shown is a per-frame optimized PNG of the same frames. Sizes are the compressed payload versus the raw RGB frames. Clips are decoded to frames and scaled to a small size so the demo stays responsive; the built-in samples are short excerpts of the Xiph.org open test sequences. The φ codec is optimized for size, not throughput.</p>
+</div>
+
+<script src="assets/demo-header.js?v=20260624"></script>
+<!-- Per-frame optimized lossless PNG baseline (for user-uploaded clips, where
+     FFV1 cannot run in the browser) and the decoded-clip APNG download. Classic
+     scripts so they attach to window before the module loads. Both MIT. -->
+<script src="assets/js/vendor/pako.min.js?v=20260624"></script>
+<script src="assets/js/vendor/UPNG.js?v=20260624"></script>
+<script type="module">
+import { ready, PhiVideo, rgbaToRgb, rgbToRgba } from './assets/js/phi-video.js?v=20260624';
+
+const $ = (id) => document.getElementById(id);
+let codecReady = false;
+let current = null;   // { name, W, H, N, fps, rgb, pev, decoded, ffv1 }
+
+// Built-in sample clips: short Xiph.org test sequences, shipped as lossless
+// filmstrip PNGs (one frame stacked under the next) so the browser decodes the
+// exact frames. `ffv1` is the reference FFmpeg lossless size on those frames.
+const CLIPS = {
+  akiyo:   { name: 'Akiyo · low motion',   url: 'assets/videos/akiyo.png',   W: 176, H: 144, N: 20, fps: 12, ffv1: 585229 },
+  foreman: { name: 'Foreman · head & pan', url: 'assets/videos/foreman.png', W: 176, H: 144, N: 20, fps: 12, ffv1: 662390 },
+  bus:     { name: 'Bus · fast pan',       url: 'assets/videos/bus.png',     W: 176, H: 144, N: 20, fps: 12, ffv1: 749413 },
+};
+
+const MAX_SIDE = 320;     // cap an uploaded video's longest side (encode trades speed for ratio)
+const MAX_UPLOAD_FRAMES = 24;
+
+function fmtBytes(n) {
+  if (n < 1024) return n + ' B';
+  if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+  return (n / 1024 / 1024).toFixed(2) + ' MB';
+}
+function pct(part, whole) { return whole === 0 ? 0 : (100 * part / whole); }
+
+// ── playback of the decoded frames on a loop ──
+let pb = { raf: 0, frame: 0, last: 0, playing: false };
+function stopPlayback() { if (pb.raf) cancelAnimationFrame(pb.raf); pb.raf = 0; pb.playing = false; }
+function startPlayback(meta) {
+  stopPlayback();
+  const cv = $('cvPlay'); cv.width = meta.W; cv.height = meta.H;
+  const ctx = cv.getContext('2d');
+  const frames = meta.decoded && meta.decoded.length === meta.N * meta.W * meta.H * 3 ? meta.decoded : meta.rgb;
+  const fpx = meta.W * meta.H * 3;
+  const interval = 1000 / Math.max(1, meta.fps);
+  pb.frame = 0; pb.last = performance.now(); pb.playing = true;
+  $('btnPlay').textContent = '⏸ Pause';
+  const draw = () => {
+    const img = new ImageData(rgbToRgba(frames, pb.frame * fpx, meta.W * meta.H), meta.W, meta.H);
+    ctx.putImageData(img, 0, 0);
+  };
+  draw();
+  const tick = (t) => {
+    if (!pb.playing) return;
+    if (t - pb.last >= interval) { pb.frame = (pb.frame + 1) % meta.N; pb.last = t; draw(); }
+    pb.raf = requestAnimationFrame(tick);
+  };
+  pb.raf = requestAnimationFrame(tick);
+}
+$('btnPlay').addEventListener('click', () => {
+  if (!current) return;
+  if (pb.playing) { stopPlayback(); $('btnPlay').textContent = '▶ Play'; }
+  else startPlayback(current);
+});
+
+// ── busy state ──
+let busy = false, busyTimer = null;
+function setBusy(on, msg) {
+  busy = on;
+  document.querySelectorAll('.chip[data-clip]').forEach(c => c.disabled = on);
+  $('fileInput').disabled = on;
+  if (busyTimer) { clearInterval(busyTimer); busyTimer = null; }
+  if (on && msg != null) {
+    const t0 = performance.now();
+    const tick = () => { $('status').textContent = msg + ' · ' + ((performance.now() - t0) / 1000).toFixed(0) + ' s'; };
+    tick();
+    busyTimer = setInterval(tick, 250);
+  } else if (msg != null) {
+    $('status').textContent = msg;
+  }
+}
+
+// Per-frame optimized PNG total (the lossless baseline for uploaded clips).
+function motionPngBytes(rgbAll, W, H, N) {
+  if (!window.UPNG) return 0;
+  let total = 0;
+  for (let f = 0; f < N; f++) {
+    const rgba = rgbToRgba(rgbAll, f * W * H * 3, W * H);
+    try { total += window.UPNG.encode([rgba.buffer], W, H, 0).byteLength; }
+    catch (e) { return 0; }
+  }
+  return total;
+}
+
+// ── core: encode → decode → verify → render → play (off the UI thread) ──
+async function process(meta) {
+  current = meta;
+  const { name, W, H, N, fps, rgb } = meta;
+  const rawBytes = rgb.length;
+  $('inputLine').innerHTML = 'Input: <b>' + name + '</b> · ' + W + '×' + H + ' · ' + N + ' frames · '
+    + fmtBytes(rawBytes) + ' raw';
+  startPlayback(meta);                 // play the source immediately; swap to decoded after
+  if (!codecReady || busy) return;
+
+  setBusy(true, 'Encoding ' + name + '… coding ' + N + ' frames losslessly (running in a background thread, the page stays responsive)');
+  try {
+    const t0 = performance.now();
+    const pev = await PhiVideo.encode(rgb, W, H, N, fps, 1);
+    const dt = performance.now() - t0;
+    const back = await PhiVideo.decode(pev);
+
+    let diffs = 0;
+    const same = back.length === rgb.length;
+    if (same) { for (let i = 0; i < rgb.length; i++) if (back[i] !== rgb[i]) diffs++; }
+    else diffs = Math.abs(back.length - rgb.length);
+    meta.decoded = back;
+    meta.pev = pev;
+
+    // Baseline: pre-measured FFV1 for built-ins; live per-frame PNG for uploads.
+    let compSize = meta.ffv1 || 0, compLabel = 'FFV1 (lossless)', compIsFfv1 = true;
+    if (!compSize) { compSize = motionPngBytes(rgb, W, H, N); compLabel = 'Per-frame PNG'; compIsFfv1 = false; }
+
+    render(meta, rawBytes, pev.length, compSize, compLabel, compIsFfv1, diffs, same, dt);
+    startPlayback(meta);               // now loop the decoded frames
+    setBusy(false, 'Codec ready · pick another clip, or drop in your own.');
+  } catch (err) {
+    setBusy(false, 'Encode failed: ' + (err && err.message ? err.message : err));
+  }
+}
+
+function render(meta, raw, phiSize, compSize, compLabel, compIsFfv1, diffs, same, dt) {
+  $('results').classList.add('show');
+  const pPct = pct(phiSize, raw), cPct = pct(compSize, raw);
+
+  $('compLabel').textContent = compLabel;
+  $('rowComp').classList.toggle('hide', !(compSize > 0));
+  $('valOrig').innerHTML = '<b>' + fmtBytes(raw) + '</b> · 100%';
+  $('valPhi').innerHTML  = '<b>' + fmtBytes(phiSize) + '</b> · ' + pPct.toFixed(1) + '%';
+  $('valComp').innerHTML = compSize > 0 ? '<b>' + fmtBytes(compSize) + '</b> · ' + cPct.toFixed(1) + '%' : '—';
+
+  $('barOrig').style.width = '100%';
+  requestAnimationFrame(() => {
+    $('barComp').style.width = Math.max(cPct, 0.6) + '%';
+    $('barPhi').style.width = Math.max(pPct, 0.6) + '%';
+  });
+
+  const v = $('verdict'), vs = $('verdictSub');
+  const what = compIsFfv1 ? 'FFV1' : 'a per-frame PNG';
+  const rel = compSize === 0 ? 0 : (1 - phiSize / compSize) * 100;   // >0 ⇒ φ smaller
+  if (rel > 0.3) {
+    v.className = 'verdict win';
+    v.textContent = 'φ is ' + rel.toFixed(1) + '% smaller than ' + what + ' here.';
+    vs.textContent = 'φ output is ' + fmtBytes(phiSize) + ' vs ' + what + '’s ' + fmtBytes(compSize)
+      + ', on the exact same frames, with nothing lost.';
+  } else if (rel < -0.3) {
+    v.className = 'verdict lose';
+    v.textContent = what.charAt(0).toUpperCase() + what.slice(1) + ' is ' + (-rel).toFixed(1) + '% smaller on this clip.';
+    vs.textContent = 'Ratio varies by content and motion. On the standard test corpus φ beats FFV1 on every clip, from a few percent on hard camera pans to far more on low-motion footage.';
+  } else {
+    v.className = 'verdict tie';
+    v.textContent = 'φ and ' + what + ' are within a rounding error here.';
+    vs.textContent = '';
+  }
+
+  const b = $('rtBadge');
+  const nval = meta.N * meta.W * meta.H;
+  if (same && diffs === 0) {
+    b.className = 'badge-rt';
+    b.innerHTML = '✓ Verified lossless · all ' + meta.N + ' frames (' + nval.toLocaleString()
+      + ' pixels) decoded back identical' + (dt ? ' &nbsp;·&nbsp; encoded in ' + (dt < 1 ? '<1' : Math.round(dt)) + ' ms' : '');
+  } else {
+    b.className = 'badge-rt fail';
+    b.textContent = '✗ round-trip mismatch: ' + diffs.toLocaleString() + ' values differ (this should never happen — please report it)';
+  }
+}
+
+// ── load a built-in filmstrip PNG → exact concatenated RGB frames ──
+async function loadClip(key) {
+  const meta = CLIPS[key];
+  $('status').textContent = 'Loading ' + meta.name + '…';
+  try {
+    const resp = await fetch(meta.url);
+    const blob = await resp.blob();
+    let bmp;
+    try { bmp = await createImageBitmap(blob, { colorSpaceConversion: 'none' }); }
+    catch (e) { bmp = await createImageBitmap(blob); }
+    const { W, H, N, fps, ffv1 } = meta;
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = N * H;
+    const ctx = cv.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(bmp, 0, 0);
+    bmp.close && bmp.close();
+    const rgba = ctx.getImageData(0, 0, W, N * H).data;   // whole strip = frames stacked
+    const rgb = rgbaToRgb(rgba);                          // == every frame's RGB concatenated
+    $('status').textContent = 'Codec ready.';
+    process({ name: meta.name, W, H, N, fps, rgb, ffv1 });
+  } catch (e) {
+    $('status').textContent = 'Could not load clip: ' + (e && e.message ? e.message : e);
+  }
+}
+
+// ── load a user video file → frames via <video> seeking (best effort) ──
+async function loadFile(file) {
+  $('status').textContent = 'Reading ' + file.name + '…';
+  const url = URL.createObjectURL(file);
+  const vid = document.createElement('video');
+  vid.muted = true; vid.playsInline = true; vid.preload = 'auto'; vid.src = url;
+  try {
+    await new Promise((res, rej) => {
+      vid.onloadedmetadata = () => res();
+      vid.onerror = () => rej(new Error('this video format could not be decoded by the browser'));
+    });
+    const dur = isFinite(vid.duration) && vid.duration > 0 ? vid.duration : 0;
+    let w = vid.videoWidth, h = vid.videoHeight;
+    if (!w || !h) throw new Error('could not read the video dimensions');
+    const longest = Math.max(w, h);
+    if (longest > MAX_SIDE) { const k = MAX_SIDE / longest; w = Math.max(2, Math.round(w * k)); h = Math.max(2, Math.round(h * k)); }
+    w &= ~1; h &= ~1;                                     // even dims
+    const N = Math.max(2, Math.min(MAX_UPLOAD_FRAMES, dur ? Math.round(Math.min(dur, 8) * 8) : 12));
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+    const ctx = cv.getContext('2d', { willReadFrequently: true });
+    const rgb = new Uint8Array(N * w * h * 3);
+    const seekTo = (t) => new Promise((res) => { vid.onseeked = () => res(); vid.currentTime = t; });
+    const span = dur ? Math.min(dur, 8) : 0;
+    for (let f = 0; f < N; f++) {
+      if (span) await seekTo(span * (f / N));
+      else if (f > 0) { await vid.play().catch(() => {}); await new Promise(r => setTimeout(r, 70)); vid.pause(); }
+      ctx.drawImage(vid, 0, 0, w, h);
+      const fr = rgbaToRgb(ctx.getImageData(0, 0, w, h).data);
+      rgb.set(fr, f * w * h * 3);
+      $('status').textContent = 'Extracting frames… ' + (f + 1) + '/' + N;
+    }
+    URL.revokeObjectURL(url);
+    setActiveChip(null);
+    const fps = dur ? Math.max(4, Math.min(24, Math.round(N / Math.min(dur, 8)))) : 10;
+    $('status').textContent = 'Codec ready.';
+    process({ name: file.name, W: w, H: h, N, fps, rgb });   // no ffv1 ⇒ per-frame PNG baseline
+  } catch (e) {
+    URL.revokeObjectURL(url);
+    $('status').textContent = 'Could not read that video: ' + (e && e.message ? e.message : e)
+      + '. Try a short MP4 or WebM, or use a sample clip.';
+  }
+}
+
+function setActiveChip(el) {
+  document.querySelectorAll('.chip[data-clip]').forEach(c => c.classList.remove('active'));
+  if (el) el.classList.add('active');
+}
+document.querySelectorAll('.chip[data-clip]').forEach(chip => {
+  chip.addEventListener('click', () => { setActiveChip(chip); loadClip(chip.getAttribute('data-clip')); });
+});
+$('fileInput').addEventListener('change', (e) => {
+  const f = e.target.files && e.target.files[0];
+  if (f) loadFile(f);
+});
+
+// ── downloads ──
+function safeBase() {
+  const s = (current && current.name ? current.name : 'clip')
+    .replace(/\.[a-z0-9]+$/i, '').replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '').toLowerCase();
+  return s || 'clip';
+}
+function downloadBytes(bytes, filename, mime) {
+  const blob = (bytes instanceof Blob) ? bytes : new Blob([bytes], { type: mime || 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
+}
+$('dlPev').addEventListener('click', () => {
+  if (!current || !current.pev) return;
+  downloadBytes(current.pev, safeBase() + '.pev', 'application/octet-stream');
+});
+$('dlApng').addEventListener('click', () => {
+  if (!current || !current.decoded || !window.UPNG) return;
+  const { W, H, N, decoded, fps } = current;
+  const bufs = [];
+  for (let f = 0; f < N; f++) bufs.push(rgbToRgba(decoded, f * W * H * 3, W * H).buffer);
+  const delay = Math.round(1000 / Math.max(1, fps));
+  const apng = window.UPNG.encode(bufs, W, H, 0, new Array(N).fill(delay));
+  downloadBytes(new Uint8Array(apng), safeBase() + '_decoded.png', 'image/png');
+});
+
+// ── boot ──
+ready().then(() => {
+  codecReady = true;
+  $('status').textContent = 'Codec ready · pick a clip, or drop in your own.';
+  if (current) process(current);
+}).catch(err => {
+  $('status').textContent = 'Failed to load the codec: ' + (err && err.message ? err.message : err);
+});
+</script>
+</body>
+</html>

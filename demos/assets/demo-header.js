@@ -32,6 +32,7 @@
     { id: 'base-codec',           file: 'base-codec.html',           name: 'Base Codec: φ vs zlib' },
     { id: 'audio-codec',          file: 'audio-codec.html',          name: 'Audio Codec: φ vs FLAC (lossless)' },
     { id: 'image-codec',          file: 'image-codec.html',          name: 'Image Codec: φ vs PNG (lossless)' },
+    { id: 'video-codec',          file: 'video-codec.html',          name: 'Video Codec: φ vs FFV1 (lossless)' },
     // ── Qudit Architecture (impact-ordered) ──
     { id: 'qudit-register',       file: 'qudit-register.html',       name: 'First-Class Qudit Register' },
     { id: 'dual-mode-core',       file: 'dual-mode-core.html',       name: 'Dual-Mode Core' },
