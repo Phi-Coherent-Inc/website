@@ -84,7 +84,7 @@
   .view { margin-top: 18px; }
   .view h3 { font: 600 12px Inter, sans-serif; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 10px; }
   .player { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
-  .player canvas {
+  .player canvas, .player video {
     width: 100%; max-width: 480px; height: auto; display: block; image-rendering: auto;
     border: 1px solid var(--gold-border); border-radius: 10px; background: #000;
   }
@@ -152,6 +152,7 @@
     <div class="view">
       <h3>3 · Watch it</h3>
       <div class="player">
+        <video id="vidLive" playsinline muted loop style="display:none" aria-label="Your uploaded video, playing while its frames are read for compression."></video>
         <canvas id="cvPlay" aria-label="The clip decoded back from the φ-compressed .pev, played in a loop. Identical to the original when the round-trip is lossless."></canvas>
         <div class="pbrow">
           <button class="chip" id="btnPlay">⏸ Pause</button>
@@ -201,7 +202,8 @@ let pb = { raf: 0, frame: 0, last: 0, playing: false };
 function stopPlayback() { if (pb.raf) cancelAnimationFrame(pb.raf); pb.raf = 0; pb.playing = false; }
 function startPlayback(meta) {
   stopPlayback();
-  const cv = $('cvPlay'); cv.width = meta.W; cv.height = meta.H;
+  $('vidLive').style.display = 'none';        // canvas drives playback; the live <video> is extraction-only
+  const cv = $('cvPlay'); cv.style.display = 'block'; cv.width = meta.W; cv.height = meta.H;
   const ctx = cv.getContext('2d');
   const frames = meta.decoded && meta.decoded.length === meta.N * meta.W * meta.H * 3 ? meta.decoded : meta.rgb;
   const fpx = meta.W * meta.H * 3;
@@ -362,27 +364,34 @@ async function loadClip(key) {
 }
 
 // ── load a user video file → frames ──────────────────────────────────────────
-// Detached, never-played <video> elements hand drawIm() BLACK frames in several
-// browsers (no frame is decoded until the element is in the document and the
-// media has actually been presented). So: attach the element hidden, PLAY it
-// muted, and capture real presented frames with requestVideoFrameCallback — the
-// one API that fires only when a decoded frame is on screen. A seek-based path
-// is kept as a fallback (forcing the seek even at t≈0 and waiting for a paint).
+// drawImage() reads BLACK from a <video> that is not actually being rendered
+// (offscreen / opacity:0 / never played). So we extract from the on-page
+// <video id="vidLive"> element while it plays visibly (it doubles as the live
+// preview, and native playback can never be black). Frames are captured with
+// requestVideoFrameCallback — which fires only when a decoded frame is on
+// screen — and a seek-based path is kept as a fallback.
 async function loadFile(file) {
+  setActiveChip(null);
   $('status').textContent = 'Reading ' + file.name + '…';
-  const url = URL.createObjectURL(file);
-  const vid = document.createElement('video');
-  vid.muted = true; vid.defaultMuted = true; vid.playsInline = true; vid.preload = 'auto';
-  vid.crossOrigin = 'anonymous';
-  vid.style.cssText = 'position:fixed;left:-9999px;top:0;width:2px;height:2px;opacity:0;pointer-events:none';
-  document.body.appendChild(vid);
-  vid.src = url;
+  $('results').classList.add('show');                    // reveal the player so the <video> renders
+  const vid = $('vidLive');
+  const cv = $('cvPlay');
+  stopPlayback();
+  cv.style.display = 'none';                              // show the live <video> during extraction
+  vid.style.display = 'block';
+  $('pbCap').textContent = 'Reading your video…';
+  $('btnPlay').textContent = '▶ Play';
 
-  const cleanup = () => { try { vid.pause(); } catch (e) {} vid.removeAttribute('src'); vid.load && vid.load(); vid.remove(); URL.revokeObjectURL(url); };
+  const url = URL.createObjectURL(file);
+  vid.muted = true; vid.defaultMuted = true; vid.playsInline = true; vid.preload = 'auto';
+  vid.removeAttribute('src'); vid.srcObject = null; vid.src = url; vid.load();
+
+  const cleanup = () => { try { vid.pause(); } catch (e) {} vid.onended = null; URL.revokeObjectURL(url); };
 
   try {
     await new Promise((res, rej) => {
-      vid.onloadeddata = () => res();                    // HAVE_CURRENT_DATA: a frame exists
+      const ok = () => { vid.removeEventListener('loadeddata', ok); res(); };
+      vid.addEventListener('loadeddata', ok);            // HAVE_CURRENT_DATA: a frame exists
       vid.onerror = () => rej(new Error('this video format could not be decoded by the browser'));
       setTimeout(() => rej(new Error('the video took too long to load')), 20000);
     });
@@ -395,63 +404,60 @@ async function loadFile(file) {
     w &= ~1; h &= ~1;                                     // even dims
     const N = Math.max(2, Math.min(MAX_UPLOAD_FRAMES, dur ? Math.max(8, Math.round(Math.min(dur, 8) * 6)) : 16));
 
-    const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
-    const ctx = cv.getContext('2d', { willReadFrequently: true });
+    const off = document.createElement('canvas'); off.width = w; off.height = h;
+    const ctx = off.getContext('2d', { willReadFrequently: true });
     const rgb = new Uint8Array(N * w * h * 3);
-    let captured = 0;
+    let captured = 0, nonBlack = 0;
     const grab = () => {
       ctx.drawImage(vid, 0, 0, w, h);
-      rgb.set(rgbaToRgb(ctx.getImageData(0, 0, w, h).data), captured * w * h * 3);
+      const fr = rgbaToRgb(ctx.getImageData(0, 0, w, h).data);
+      for (let i = 0; i < fr.length; i += 997) { if (fr[i] > 6) { nonBlack++; break; } }  // cheap "is it black" probe
+      rgb.set(fr, captured * w * h * 3);
       captured++;
-      $('status').textContent = 'Extracting frames… ' + captured + '/' + N;
+      $('status').textContent = 'Reading frames… ' + captured + '/' + N;
     };
 
     const span = dur ? Math.min(dur, 8) : 0;             // sample across the first ≤8 s
     if (typeof vid.requestVideoFrameCallback === 'function') {
-      // Play muted and capture evenly-spaced presented frames.
       await new Promise((resolve, reject) => {
         let nextT = 0, done = false;
         const finish = () => { if (!done) { done = true; clearTimeout(guard); try { vid.pause(); } catch (e) {} resolve(); } };
-        const guard = setTimeout(finish, 15000);         // never hang: keep whatever we captured
-        const onFrame = (now, meta) => {
+        const guard = setTimeout(finish, 20000);         // never hang: keep whatever we captured
+        const onFrame = (now, m) => {
           if (done) return;
-          const t = meta && typeof meta.mediaTime === 'number' ? meta.mediaTime : vid.currentTime;
-          if (captured < N && (!span || t >= nextT - 1e-3)) {
-            grab();
-            nextT = span ? span * (captured / N) : 0;
-          }
+          const t = m && typeof m.mediaTime === 'number' ? m.mediaTime : vid.currentTime;
+          if (captured < N && (!span || t >= nextT - 1e-3)) { grab(); nextT = span ? span * (captured / N) : 0; }
           if (captured >= N) { finish(); return; }
           vid.requestVideoFrameCallback(onFrame);
         };
         vid.requestVideoFrameCallback(onFrame);
-        vid.onended = finish;                            // short clip ended early → keep what we have
-        try { vid.playbackRate = 2; } catch (e) {}       // halve the real-time extraction wait
-        vid.play().catch((e) => { if (captured === 0) reject(new Error('autoplay was blocked: ' + (e && e.message ? e.message : e))); else finish(); });
+        vid.onended = finish;                            // clip ended early → keep what we have
+        try { vid.playbackRate = 2; } catch (e) {}
+        vid.play().catch((e) => { if (captured === 0) reject(new Error('the browser blocked playback: ' + (e && e.message ? e.message : e))); else finish(); });
       });
     } else {
-      // Fallback: seek frame by frame, forcing a real seek and waiting for paint.
       const seekGrab = (t) => new Promise((res) => {
-        const onSeeked = () => {
-          vid.removeEventListener('seeked', onSeeked);
-          requestAnimationFrame(() => requestAnimationFrame(() => { grab(); res(); }));
-        };
+        const onSeeked = () => { vid.removeEventListener('seeked', onSeeked); requestAnimationFrame(() => requestAnimationFrame(() => { grab(); res(); })); };
         vid.addEventListener('seeked', onSeeked);
-        const target = (Math.abs(vid.currentTime - t) < 1e-3) ? t + 0.001 : t;
+        const target = (Math.abs(vid.currentTime - t) < 1e-3) ? t + 0.05 : t;
         vid.currentTime = Math.min(target, dur ? Math.max(0, dur - 0.01) : target);
       });
+      await vid.play().catch(() => {});                  // prime the decoder
       for (let f = 0; f < N; f++) await seekGrab(span ? span * (f / N) : 0);
     }
 
     if (captured === 0) throw new Error('no frames could be read from this video');
-    const realN = captured;                              // clip may have ended early
-    const used = realN === N ? rgb : rgb.subarray(0, realN * w * h * 3);
-    setActiveChip(null);
+    if (nonBlack === 0) throw new Error('the frames read back blank — this browser may block reading this video; try a different short MP4 or WebM');
+    const realN = captured;
+    const used = realN * w * h * 3 === rgb.length ? rgb : rgb.subarray(0, realN * w * h * 3);
     const fps = span ? Math.max(4, Math.min(24, Math.round(realN / span))) : 10;
-    $('status').textContent = 'Codec ready.';
     cleanup();
+    $('pbCap').textContent = 'φ round-trip — decoded frames, identical to the original';
+    $('status').textContent = 'Codec ready.';
     process({ name: file.name, W: w, H: h, N: realN, fps, rgb: used }); // no ffv1 ⇒ per-frame PNG baseline
   } catch (e) {
     cleanup();
+    vid.style.display = 'none'; cv.style.display = 'block';
     $('status').textContent = 'Could not read that video: ' + (e && e.message ? e.message : e)
       + '. Try a short MP4 or WebM, or use a sample clip.';
   }
