@@ -361,44 +361,97 @@ async function loadClip(key) {
   }
 }
 
-// ── load a user video file → frames via <video> seeking (best effort) ──
+// ── load a user video file → frames ──────────────────────────────────────────
+// Detached, never-played <video> elements hand drawIm() BLACK frames in several
+// browsers (no frame is decoded until the element is in the document and the
+// media has actually been presented). So: attach the element hidden, PLAY it
+// muted, and capture real presented frames with requestVideoFrameCallback — the
+// one API that fires only when a decoded frame is on screen. A seek-based path
+// is kept as a fallback (forcing the seek even at t≈0 and waiting for a paint).
 async function loadFile(file) {
   $('status').textContent = 'Reading ' + file.name + '…';
   const url = URL.createObjectURL(file);
   const vid = document.createElement('video');
-  vid.muted = true; vid.playsInline = true; vid.preload = 'auto'; vid.src = url;
+  vid.muted = true; vid.defaultMuted = true; vid.playsInline = true; vid.preload = 'auto';
+  vid.crossOrigin = 'anonymous';
+  vid.style.cssText = 'position:fixed;left:-9999px;top:0;width:2px;height:2px;opacity:0;pointer-events:none';
+  document.body.appendChild(vid);
+  vid.src = url;
+
+  const cleanup = () => { try { vid.pause(); } catch (e) {} vid.removeAttribute('src'); vid.load && vid.load(); vid.remove(); URL.revokeObjectURL(url); };
+
   try {
     await new Promise((res, rej) => {
-      vid.onloadedmetadata = () => res();
+      vid.onloadeddata = () => res();                    // HAVE_CURRENT_DATA: a frame exists
       vid.onerror = () => rej(new Error('this video format could not be decoded by the browser'));
+      setTimeout(() => rej(new Error('the video took too long to load')), 20000);
     });
+
     const dur = isFinite(vid.duration) && vid.duration > 0 ? vid.duration : 0;
     let w = vid.videoWidth, h = vid.videoHeight;
     if (!w || !h) throw new Error('could not read the video dimensions');
     const longest = Math.max(w, h);
     if (longest > MAX_SIDE) { const k = MAX_SIDE / longest; w = Math.max(2, Math.round(w * k)); h = Math.max(2, Math.round(h * k)); }
     w &= ~1; h &= ~1;                                     // even dims
-    const N = Math.max(2, Math.min(MAX_UPLOAD_FRAMES, dur ? Math.round(Math.min(dur, 8) * 8) : 12));
+    const N = Math.max(2, Math.min(MAX_UPLOAD_FRAMES, dur ? Math.max(8, Math.round(Math.min(dur, 8) * 6)) : 16));
+
     const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
     const ctx = cv.getContext('2d', { willReadFrequently: true });
     const rgb = new Uint8Array(N * w * h * 3);
-    const seekTo = (t) => new Promise((res) => { vid.onseeked = () => res(); vid.currentTime = t; });
-    const span = dur ? Math.min(dur, 8) : 0;
-    for (let f = 0; f < N; f++) {
-      if (span) await seekTo(span * (f / N));
-      else if (f > 0) { await vid.play().catch(() => {}); await new Promise(r => setTimeout(r, 70)); vid.pause(); }
+    let captured = 0;
+    const grab = () => {
       ctx.drawImage(vid, 0, 0, w, h);
-      const fr = rgbaToRgb(ctx.getImageData(0, 0, w, h).data);
-      rgb.set(fr, f * w * h * 3);
-      $('status').textContent = 'Extracting frames… ' + (f + 1) + '/' + N;
+      rgb.set(rgbaToRgb(ctx.getImageData(0, 0, w, h).data), captured * w * h * 3);
+      captured++;
+      $('status').textContent = 'Extracting frames… ' + captured + '/' + N;
+    };
+
+    const span = dur ? Math.min(dur, 8) : 0;             // sample across the first ≤8 s
+    if (typeof vid.requestVideoFrameCallback === 'function') {
+      // Play muted and capture evenly-spaced presented frames.
+      await new Promise((resolve, reject) => {
+        let nextT = 0, done = false;
+        const finish = () => { if (!done) { done = true; clearTimeout(guard); try { vid.pause(); } catch (e) {} resolve(); } };
+        const guard = setTimeout(finish, 15000);         // never hang: keep whatever we captured
+        const onFrame = (now, meta) => {
+          if (done) return;
+          const t = meta && typeof meta.mediaTime === 'number' ? meta.mediaTime : vid.currentTime;
+          if (captured < N && (!span || t >= nextT - 1e-3)) {
+            grab();
+            nextT = span ? span * (captured / N) : 0;
+          }
+          if (captured >= N) { finish(); return; }
+          vid.requestVideoFrameCallback(onFrame);
+        };
+        vid.requestVideoFrameCallback(onFrame);
+        vid.onended = finish;                            // short clip ended early → keep what we have
+        try { vid.playbackRate = 2; } catch (e) {}       // halve the real-time extraction wait
+        vid.play().catch((e) => { if (captured === 0) reject(new Error('autoplay was blocked: ' + (e && e.message ? e.message : e))); else finish(); });
+      });
+    } else {
+      // Fallback: seek frame by frame, forcing a real seek and waiting for paint.
+      const seekGrab = (t) => new Promise((res) => {
+        const onSeeked = () => {
+          vid.removeEventListener('seeked', onSeeked);
+          requestAnimationFrame(() => requestAnimationFrame(() => { grab(); res(); }));
+        };
+        vid.addEventListener('seeked', onSeeked);
+        const target = (Math.abs(vid.currentTime - t) < 1e-3) ? t + 0.001 : t;
+        vid.currentTime = Math.min(target, dur ? Math.max(0, dur - 0.01) : target);
+      });
+      for (let f = 0; f < N; f++) await seekGrab(span ? span * (f / N) : 0);
     }
-    URL.revokeObjectURL(url);
+
+    if (captured === 0) throw new Error('no frames could be read from this video');
+    const realN = captured;                              // clip may have ended early
+    const used = realN === N ? rgb : rgb.subarray(0, realN * w * h * 3);
     setActiveChip(null);
-    const fps = dur ? Math.max(4, Math.min(24, Math.round(N / Math.min(dur, 8)))) : 10;
+    const fps = span ? Math.max(4, Math.min(24, Math.round(realN / span))) : 10;
     $('status').textContent = 'Codec ready.';
-    process({ name: file.name, W: w, H: h, N, fps, rgb });   // no ffv1 ⇒ per-frame PNG baseline
+    cleanup();
+    process({ name: file.name, W: w, H: h, N: realN, fps, rgb: used }); // no ffv1 ⇒ per-frame PNG baseline
   } catch (e) {
-    URL.revokeObjectURL(url);
+    cleanup();
     $('status').textContent = 'Could not read that video: ' + (e && e.message ? e.message : e)
       + '. Try a short MP4 or WebM, or use a sample clip.';
   }
