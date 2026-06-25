@@ -49,6 +49,14 @@
   /* Results */
   #results { display: none; }
   #results.show { display: block; }
+  /* preview-only: a clip plays but couldn't be read for compression (e.g. Firefox/Android) */
+  #results.preview-only > h2,
+  #results.preview-only .bars,
+  #results.preview-only #verdict,
+  #results.preview-only #verdictSub,
+  #results.preview-only #rtBadge,
+  #results.preview-only .dlrow,
+  #results.preview-only .dlnote { display: none; }
   .bars { margin: 6px 0 4px; }
   .barrow { display: grid; grid-template-columns: 120px 1fr auto; align-items: center; gap: 12px; margin: 11px 0; }
   .barrow.hide { display: none; }
@@ -202,7 +210,8 @@ let pb = { raf: 0, frame: 0, last: 0, playing: false };
 function stopPlayback() { if (pb.raf) cancelAnimationFrame(pb.raf); pb.raf = 0; pb.playing = false; }
 function startPlayback(meta) {
   stopPlayback();
-  $('vidLive').style.display = 'none';        // canvas drives playback; the live <video> is extraction-only
+  const lv = $('vidLive');                    // canvas drives playback; the live <video> is extraction/preview only
+  lv.style.display = 'none'; lv.controls = false; try { lv.pause(); } catch (e) {}
   const cv = $('cvPlay'); cv.style.display = 'block'; cv.width = meta.W; cv.height = meta.H;
   const ctx = cv.getContext('2d');
   const frames = meta.decoded && meta.decoded.length === meta.N * meta.W * meta.H * 3 ? meta.decoded : meta.rgb;
@@ -260,6 +269,7 @@ function motionPngBytes(rgbAll, W, H, N) {
 // ── core: encode → decode → verify → render → play (off the UI thread) ──
 async function process(meta) {
   current = meta;
+  $('results').classList.remove('preview-only');         // a real result is coming
   const { name, W, H, N, fps, rgb } = meta;
   const rawBytes = rgb.length;
   $('inputLine').innerHTML = 'Input: <b>' + name + '</b> · ' + W + '×' + H + ' · ' + N + ' frames · '
@@ -370,8 +380,10 @@ async function loadClip(key) {
 // preview, and native playback can never be black). Frames are captured with
 // requestVideoFrameCallback — which fires only when a decoded frame is on
 // screen — and a seek-based path is kept as a fallback.
+let _lastUploadUrl = null;
 async function loadFile(file) {
   setActiveChip(null);
+  if (_lastUploadUrl) { try { URL.revokeObjectURL(_lastUploadUrl); } catch (e) {} _lastUploadUrl = null; }
   $('status').textContent = 'Reading ' + file.name + '…';
   $('results').classList.add('show');                    // reveal the player so the <video> renders
   const vid = $('vidLive');
@@ -383,10 +395,12 @@ async function loadFile(file) {
   $('btnPlay').textContent = '▶ Play';
 
   const url = URL.createObjectURL(file);
+  _lastUploadUrl = url;                                  // revoked on the next upload (BLANK path keeps it playing)
   vid.muted = true; vid.defaultMuted = true; vid.playsInline = true; vid.preload = 'auto';
   vid.removeAttribute('src'); vid.srcObject = null; vid.src = url; vid.load();
 
-  const cleanup = () => { try { vid.pause(); } catch (e) {} vid.onended = null; URL.revokeObjectURL(url); };
+  const stopVid = () => { try { vid.pause(); } catch (e) {} vid.onended = null; };
+  const cleanup = () => { stopVid(); URL.revokeObjectURL(url); };
 
   try {
     await new Promise((res, rej) => {
@@ -447,7 +461,7 @@ async function loadFile(file) {
     }
 
     if (captured === 0) throw new Error('no frames could be read from this video');
-    if (nonBlack === 0) throw new Error('the frames read back blank — this browser may block reading this video; try a different short MP4 or WebM');
+    if (nonBlack === 0) { const er = new Error('blank'); er.code = 'BLANK'; throw er; }
     const realN = captured;
     const used = realN * w * h * 3 === rgb.length ? rgb : rgb.subarray(0, realN * w * h * 3);
     const fps = span ? Math.max(4, Math.min(24, Math.round(realN / span))) : 10;
@@ -456,10 +470,26 @@ async function loadFile(file) {
     $('status').textContent = 'Codec ready.';
     process({ name: file.name, W: w, H: h, N: realN, fps, rgb: used }); // no ffv1 ⇒ per-frame PNG baseline
   } catch (e) {
-    cleanup();
-    vid.style.display = 'none'; cv.style.display = 'block';
-    $('status').textContent = 'Could not read that video: ' + (e && e.message ? e.message : e)
-      + '. Try a short MP4 or WebM, or use a sample clip.';
+    if (e && e.code === 'BLANK') {
+      // The video decodes and PLAYS, but this browser won't let the page read its
+      // frames into a canvas (a known Firefox-on-Android limitation: hardware-
+      // decoded frames live in a surface canvas can't read back). Keep the clip
+      // playing as a preview instead of going black, and say so plainly.
+      stopVid();                                         // keep the object URL alive so it keeps playing
+      $('results').classList.add('show', 'preview-only');
+      cv.style.display = 'none'; vid.style.display = 'block';
+      vid.loop = true; vid.muted = true; vid.controls = true;
+      vid.play().catch(() => {});
+      $('pbCap').textContent = 'Your video (preview) · compression needs a different browser';
+      $('status').textContent = 'This browser will not let the page read video frames for compression '
+        + '(a known limitation of Firefox on Android). Your clip plays above. To compress your own video, '
+        + 'use one of the sample clips here, or open this page in Chrome. The sample clips work everywhere.';
+    } else {
+      cleanup();
+      vid.style.display = 'none'; cv.style.display = 'block';
+      $('status').textContent = 'Could not read that video: ' + (e && e.message ? e.message : e)
+        + '. Try a short MP4 or WebM, or use a sample clip.';
+    }
   }
 }
 
