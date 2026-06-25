@@ -97,13 +97,7 @@
     border: 1px solid var(--gold-border); border-radius: 10px; background: #000;
   }
   .player .pbrow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .pbcap { font: 500 12px Inter, sans-serif; color: var(--text-muted); margin-top: 2px; }
-  .viewtoggle { display: inline-flex; border: 1px solid var(--gold-border); border-radius: 999px; overflow: hidden; }
-  .vbtn { padding: 7px 13px; border: 0; background: var(--bg); color: var(--text-muted); font: 500 12.5px Inter, sans-serif; cursor: pointer; transition: background .14s, color .14s; }
-  .vbtn + .vbtn { border-left: 1px solid var(--gold-border); }
-  .vbtn:hover:not(.active) { background: var(--gold-subtle); }
-  .vbtn.active { background: var(--gold); color: #1C1810; }
-  .vbtn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .pbcap { font: 500 12px Inter, sans-serif; color: var(--text-muted); }
 
   .foot { font: 400 12.5px/1.6 Inter, sans-serif; color: var(--text-dim); margin-top: 22px; }
   .foot code { font: 500 12px ui-monospace, monospace; color: var(--text-muted); }
@@ -169,13 +163,8 @@
         <canvas id="cvPlay" aria-label="The clip decoded back from the φ-compressed .pev, played in a loop. Identical to the original when the round-trip is lossless."></canvas>
         <div class="pbrow">
           <button class="chip" id="btnPlay">⏸ Pause</button>
-          <span class="viewtoggle" id="viewToggle" role="group" aria-label="Choose what the player shows">
-            <button class="vbtn active" data-view="phi">φ decoded</button>
-            <button class="vbtn" data-view="orig">Original</button>
-            <button class="vbtn" data-view="diff">Difference</button>
-          </span>
+          <span class="pbcap" id="pbCap">φ round-trip: frames decoded from the .pev, verified identical to the original (see the check above).</span>
         </div>
-        <span class="pbcap" id="pbCap">φ round-trip: frames decoded from the .pev, identical to the original.</span>
       </div>
     </div>
   </div>
@@ -200,13 +189,13 @@ let current = null;   // { name, W, H, N, fps, rgb, pev, decoded, ffv1 }
 // filmstrip PNGs (one frame stacked under the next) so the browser decodes the
 // exact frames. `ffv1` is the reference FFmpeg lossless size on those frames.
 const CLIPS = {
-  akiyo:   { name: 'Akiyo · low motion',   url: 'assets/videos/akiyo.png',   W: 176, H: 144, N: 20, fps: 12, ffv1: 585229 },
-  foreman: { name: 'Foreman · head & pan', url: 'assets/videos/foreman.png', W: 176, H: 144, N: 20, fps: 12, ffv1: 662390 },
-  bus:     { name: 'Bus · fast pan',       url: 'assets/videos/bus.png',     W: 176, H: 144, N: 20, fps: 12, ffv1: 749413 },
+  akiyo:   { name: 'Akiyo · low motion',   url: 'assets/videos/akiyo.png',   W: 176, H: 144, N: 30, fps: 24, ffv1: 877742 },
+  foreman: { name: 'Foreman · head & pan', url: 'assets/videos/foreman.png', W: 176, H: 144, N: 30, fps: 24, ffv1: 998283 },
+  bus:     { name: 'Bus · fast pan',       url: 'assets/videos/bus.png',     W: 176, H: 144, N: 30, fps: 24, ffv1: 1121104 },
 };
 
 const MAX_SIDE = 320;     // cap an uploaded video's longest side (encode trades speed for ratio)
-const MAX_UPLOAD_FRAMES = 24;
+const MAX_UPLOAD_FRAMES = 30;
 
 function fmtBytes(n) {
   if (n < 1024) return n + ' B';
@@ -217,47 +206,24 @@ function pct(part, whole) { return whole === 0 ? 0 : (100 * part / whole); }
 
 // ── playback on a loop, with a φ-decoded / original / difference view ─────────
 // The "Watch it" canvas plays the frames the codec DECODED from the .pev (not the
-// source <video>). Lossless means it looks identical to the original, so the
-// "Difference" view exists to prove it: it renders |decoded − original| amplified
-// (white = a perfect match), making clear the reconstruction is real, not a
-// passthrough of the upload.
-let pb = { raf: 0, frame: 0, last: 0, playing: false, redraw: null };
-let viewMode = 'phi';
-const DIFF_AMP = 24;
-
+// source <video>). Lossless means it is pixel-identical to the original; the
+// round-trip badge above is the proof.
+let pb = { raf: 0, frame: 0, last: 0, playing: false };
 function stopPlayback() { if (pb.raf) cancelAnimationFrame(pb.raf); pb.raf = 0; pb.playing = false; }
-
-// Build the ImageData for frame f under the current view mode.
-function frameImageData(meta, f) {
-  const px = meta.W * meta.H, off = f * px * 3;
-  const orig = meta.rgb;
-  const dec = (meta.decoded && meta.decoded.length === meta.N * px * 3) ? meta.decoded : meta.rgb;
-  if (viewMode === 'diff') {
-    const out = new Uint8ClampedArray(px * 4);
-    for (let i = 0, o = 0; i < px; i++) {
-      const j = off + i * 3;
-      out[o++] = 255 - Math.min(255, Math.abs(dec[j] - orig[j]) * DIFF_AMP);
-      out[o++] = 255 - Math.min(255, Math.abs(dec[j + 1] - orig[j + 1]) * DIFF_AMP);
-      out[o++] = 255 - Math.min(255, Math.abs(dec[j + 2] - orig[j + 2]) * DIFF_AMP);
-      out[o++] = 255;
-    }
-    return new ImageData(out, meta.W, meta.H);
-  }
-  const src = viewMode === 'orig' ? orig : dec;
-  return new ImageData(rgbToRgba(src, off, px), meta.W, meta.H);
-}
-
 function startPlayback(meta) {
   stopPlayback();
   const lv = $('vidLive');                    // canvas drives playback; the live <video> is extraction/preview only
   lv.style.display = 'none'; lv.controls = false; try { lv.pause(); } catch (e) {}
   const cv = $('cvPlay'); cv.style.display = 'block'; cv.width = meta.W; cv.height = meta.H;
   const ctx = cv.getContext('2d');
+  const frames = (meta.decoded && meta.decoded.length === meta.N * meta.W * meta.H * 3) ? meta.decoded : meta.rgb;
+  const fpx = meta.W * meta.H * 3;
   const interval = 1000 / Math.max(1, meta.fps);
   pb.frame = 0; pb.last = performance.now(); pb.playing = true;
   $('btnPlay').textContent = '⏸ Pause';
-  const draw = () => { ctx.putImageData(frameImageData(meta, pb.frame), 0, 0); };
-  pb.redraw = draw;
+  const draw = () => {
+    ctx.putImageData(new ImageData(rgbToRgba(frames, pb.frame * fpx, meta.W * meta.H), meta.W, meta.H), 0, 0);
+  };
   draw();
   const tick = (t) => {
     if (!pb.playing) return;
@@ -270,22 +236,6 @@ $('btnPlay').addEventListener('click', () => {
   if (!current) return;
   if (pb.playing) { stopPlayback(); $('btnPlay').textContent = '▶ Play'; }
   else startPlayback(current);
-});
-
-function setView(mode) {
-  viewMode = mode;
-  document.querySelectorAll('.vbtn').forEach(b => b.classList.toggle('active', b.getAttribute('data-view') === mode));
-  const hasDec = current && current.decoded;
-  $('pbCap').textContent = mode === 'orig'
-    ? 'Original frames, before compression.'
-    : mode === 'diff'
-      ? (hasDec ? 'Difference: φ-decoded minus original, amplified ' + DIFF_AMP + '×. Solid white means every pixel matches.'
-                : 'Difference appears once the clip has been encoded and decoded.')
-      : 'φ round-trip: frames decoded from the .pev, identical to the original.';
-  if (pb.redraw) pb.redraw();
-}
-document.querySelectorAll('.vbtn').forEach(btn => {
-  btn.addEventListener('click', () => setView(btn.getAttribute('data-view')));
 });
 
 // ── busy state ──
@@ -321,7 +271,6 @@ function motionPngBytes(rgbAll, W, H, N) {
 async function process(meta) {
   current = meta;
   $('results').classList.remove('preview-only');         // a real result is coming
-  setView('phi');                                        // new clip starts on the φ-decoded view
   const { name, W, H, N, fps, rgb } = meta;
   const rawBytes = rgb.length;
   $('inputLine').innerHTML = 'Input: <b>' + name + '</b> · ' + W + '×' + H + ' · ' + N + ' frames · '
@@ -468,55 +417,60 @@ async function loadFile(file) {
     const longest = Math.max(w, h);
     if (longest > MAX_SIDE) { const k = MAX_SIDE / longest; w = Math.max(2, Math.round(w * k)); h = Math.max(2, Math.round(h * k)); }
     w &= ~1; h &= ~1;                                     // even dims
-    const N = Math.max(2, Math.min(MAX_UPLOAD_FRAMES, dur ? Math.max(8, Math.round(Math.min(dur, 8) * 6)) : 16));
+    const N = MAX_UPLOAD_FRAMES;
 
     const off = document.createElement('canvas'); off.width = w; off.height = h;
     const ctx = off.getContext('2d', { willReadFrequently: true });
     const rgb = new Uint8Array(N * w * h * 3);
-    let captured = 0, nonBlack = 0;
-    const grab = () => {
+    let captured = 0, nonBlack = 0, firstMt = null, lastMt = null;
+    const grab = (mt) => {
       ctx.drawImage(vid, 0, 0, w, h);
       const fr = rgbaToRgb(ctx.getImageData(0, 0, w, h).data);
       for (let i = 0; i < fr.length; i += 997) { if (fr[i] > 6) { nonBlack++; break; } }  // cheap "is it black" probe
       rgb.set(fr, captured * w * h * 3);
+      if (typeof mt === 'number') { if (firstMt === null) firstMt = mt; lastMt = mt; }
       captured++;
       $('status').textContent = 'Reading frames… ' + captured + '/' + N;
     };
 
-    const span = dur ? Math.min(dur, 8) : 0;             // sample across the first ≤8 s
+    // Capture CONSECUTIVE frames (smooth playback), not samples spread across the
+    // clip. At 1× the compositor presents every frame; requestVideoFrameCallback
+    // hands us each one with its mediaTime, so we recover the true frame rate.
     if (typeof vid.requestVideoFrameCallback === 'function') {
       await new Promise((resolve, reject) => {
-        let nextT = 0, done = false;
+        let done = false;
         const finish = () => { if (!done) { done = true; clearTimeout(guard); try { vid.pause(); } catch (e) {} resolve(); } };
-        const guard = setTimeout(finish, 20000);         // never hang: keep whatever we captured
+        const guard = setTimeout(finish, 25000);         // never hang: keep whatever we captured
         const onFrame = (now, m) => {
           if (done) return;
-          const t = m && typeof m.mediaTime === 'number' ? m.mediaTime : vid.currentTime;
-          if (captured < N && (!span || t >= nextT - 1e-3)) { grab(); nextT = span ? span * (captured / N) : 0; }
+          if (captured < N) grab(m && typeof m.mediaTime === 'number' ? m.mediaTime : undefined);
           if (captured >= N) { finish(); return; }
           vid.requestVideoFrameCallback(onFrame);
         };
         vid.requestVideoFrameCallback(onFrame);
         vid.onended = finish;                            // clip ended early → keep what we have
-        try { vid.playbackRate = 2; } catch (e) {}
+        try { vid.playbackRate = 1; } catch (e) {}       // 1× so every frame is presented
         vid.play().catch((e) => { if (captured === 0) reject(new Error('the browser blocked playback: ' + (e && e.message ? e.message : e))); else finish(); });
       });
     } else {
+      const step = 1 / 15;                                // no rVFC: step ~15 fps consecutively
       const seekGrab = (t) => new Promise((res) => {
-        const onSeeked = () => { vid.removeEventListener('seeked', onSeeked); requestAnimationFrame(() => requestAnimationFrame(() => { grab(); res(); })); };
+        const onSeeked = () => { vid.removeEventListener('seeked', onSeeked); requestAnimationFrame(() => requestAnimationFrame(() => { grab(t); res(); })); };
         vid.addEventListener('seeked', onSeeked);
-        const target = (Math.abs(vid.currentTime - t) < 1e-3) ? t + 0.05 : t;
+        const target = (Math.abs(vid.currentTime - t) < 1e-3) ? t + 0.001 : t;
         vid.currentTime = Math.min(target, dur ? Math.max(0, dur - 0.01) : target);
       });
-      await vid.play().catch(() => {});                  // prime the decoder
-      for (let f = 0; f < N; f++) await seekGrab(span ? span * (f / N) : 0);
+      await vid.play().catch(() => {}); try { vid.pause(); } catch (e) {}
+      for (let f = 0; f < N; f++) { const t = f * step; if (dur && t > dur - 0.02) break; await seekGrab(t); }
     }
 
     if (captured === 0) throw new Error('no frames could be read from this video');
     if (nonBlack === 0) { const er = new Error('blank'); er.code = 'BLANK'; throw er; }
     const realN = captured;
     const used = realN * w * h * 3 === rgb.length ? rgb : rgb.subarray(0, realN * w * h * 3);
-    const fps = span ? Math.max(4, Math.min(24, Math.round(realN / span))) : 10;
+    let fps = 24;                                          // real frame rate from presentation timestamps
+    if (firstMt !== null && lastMt > firstMt && realN > 1) fps = (realN - 1) / (lastMt - firstMt);
+    fps = Math.max(6, Math.min(60, Math.round(fps)));
     cleanup();
     $('pbCap').textContent = 'φ round-trip — decoded frames, identical to the original';
     $('status').textContent = 'Codec ready.';
