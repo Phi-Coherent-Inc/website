@@ -298,8 +298,8 @@
           <b style="color:var(--gold)">OFF: dormant, sitting unignited.</b> The mercury is cool and still;
           no plasma, no resonance. The coffer is only being touched by the <b>standard atmospheric DC
           circuit</b> and the <b>ground/telluric system</b>, the µW–mW ambient that keeps it primed. It
-          stays dormant until a lightning strike ignites the mercury arc. The magnet field is fixed at
-          <b>1.3 T</b> (on-site NdFeB).
+          stays dormant until a lightning strike ignites the mercury arc. The field is a <b>permanent
+          lodestone magnet</b> (≈ 0.16 T, no coil, no power).
         </div>
       </div>
       <div class="control-group">
@@ -321,10 +321,11 @@
         Mercury fill: <b id="cofFixFill">…</b> → bell <b id="cofFixBell">…</b>
       </div>
       <div class="ledger" style="color:var(--text-muted);margin-top:8px">
-        <b style="color:var(--gold)">The sealed coffer as an MHD alternator.</b> Magnets sit
-        <b>outside</b> the granite (field passes through non-magnetic stone); electrodes sit
-        <b>inside</b> on the long walls (current needs contact). Drag to orbit, scroll to zoom
-        into the cut-away. Computed live in phi-pyramid-cpp (WASM).
+        <b style="color:var(--gold)">The sealed coffer, gated by a lodestone field.</b> A lodestone
+        cage of tapered spokes sits on the two <b>long walls</b>, joined over the top — a permanent
+        magnet whose field crosses the <b>width</b> of the pool. Arc electrodes run through the lid.
+        The slosh cutting that field gates the chopper. Drag to orbit, scroll to zoom into the
+        cut-away. Computed live in phi-pyramid-cpp (WASM).
       </div>
     </div>
   </div>
@@ -387,16 +388,14 @@
             <span><b>Sealed granite coffer</b>: the Petrie interior (1.98 × 0.68 × 0.87 m), lid on. The mercury is never open to the air.</span></div>
           <div class="cof-row"><span class="cof-sw" style="background:#bfd3dd"></span>
             <span><b>Liquid mercury</b>: the conductive working fluid, ~75% fill. Surges along the long axis at 50 Hz (a blur, here slowed).</span></div>
-          <div class="cof-row"><span class="cof-sw" style="background:#c0432f"></span>
-            <span><b>NdFeB magnet, N</b> (under the floor, <b>outside</b>). Field passes up through the non-magnetic granite.</span></div>
-          <div class="cof-row"><span class="cof-sw" style="background:#3f63b0"></span>
-            <span><b>NdFeB magnet, S</b> (over the lid, <b>outside</b>). N→S gives a <b>vertical B</b> through the pool.</span></div>
-          <div class="cof-row"><span class="cof-sw" style="background:#4a4a52"></span>
-            <span><b>Iron / magnetite yoke</b>: the C-frame returning the flux top↔bottom so B stays concentrated.</span></div>
+          <div class="cof-row"><span class="cof-sw" style="background:#33312e"></span>
+            <span><b>Lodestone cage</b>: two combs of tapered spokes on the <b>long walls</b> (translucent here). A mined permanent magnet, no coil and no power — the field crosses the <b>width</b> of the pool.</span></div>
+          <div class="cof-row"><span class="cof-sw" style="background:#45423d"></span>
+            <span><b>Lodestone crown</b>: joins the two combs over the top. The cool magnet body, kept clear of the 517 °C cell so it stays below the Curie point.</span></div>
           <div class="cof-row"><span class="cof-sw" style="background:#e7d9a8"></span>
-            <span><b>Electrum electrodes</b>: <b>inside</b>, on the long walls, wetted by the mercury; the terminals of the mercury-arc <b>gate</b>, carrying the gated telluric current the arc switches (no feedthroughs, the coffer stays sealed).</span></div>
+            <span><b>Arc electrodes</b>: through the <b>lid</b>; the terminals of the mercury-arc <b>gate</b> that switches the gated telluric current (no side feedthroughs, the coffer stays sealed).</span></div>
           <div class="cof-row"><span class="cof-sw" style="background:#cf6f5f"></span>
-            <span><b>B-field lines</b>: vertical, steady (a permanent magnet). The slosh moving through B makes only a few-mV <b>timing signal</b> that switches the gate, the control input, not the output.</span></div>
+            <span><b>B-field lines</b>: across the <b>width</b>, steady (a permanent lodestone magnet, ≈ 0.16 T). The slosh moving through B makes only a few-mV <b>timing signal</b> that switches the gate, the control input, not the output.</span></div>
           <div class="cof-row"><span class="cof-sw" style="background:#37b0c9"></span>
             <span><b>Gated telluric current</b>: the regional telluric DC routed through the arc; the gate <b>chops</b> it on and off at 50 Hz → AC. This chopped supply is the output, not the slosh's own motion.</span></div>
           <div class="cof-row"><span class="cof-sw" style="background:#37b0c9"></span>
@@ -416,7 +415,7 @@
         </div>
         <div class="ledger" style="margin-top:12px;color:var(--text-muted)">
           <b style="color:var(--gold)">The slosh is the switch, not the source.</b> The 50 Hz
-          <b style="color:#C9A830">slosh</b> moving through the vertical <b style="color:#c0432f">B</b> makes
+          <b style="color:#C9A830">slosh</b> moving through the across-the-width <b style="color:#c0432f">B</b> makes
           only a few-mV <b>timing signal</b> that switches the mercury-arc gate; the gate <b>chops</b> the
           regional <b style="color:#37b0c9">telluric DC</b>, and that gated supply is the broadcast power.
           Mercury holds ≈ <b id="cofMass">…</b>; at B = <b id="cofBhead">…</b> the slosh's own v×B EMF is
@@ -1146,12 +1145,11 @@ function buildScene() {
   let obSceneT = 0;          // obelisk scene wall-clock accumulator
 
   // ════════════════════════════════════════════════════════════════════════════
-  //  COFFER MHD CORE: a zoomable cut-away of the SEALED mercury coffer as a
-  //  magnetohydrodynamic alternator, true to the Petrie interior proportions.
-  //  Magnets sit OUTSIDE the granite (the field passes through non-magnetic stone);
-  //  electrodes sit INSIDE on the long side walls (a current needs metal contact).
-  //  Vertical B (top/bottom magnets) × horizontal slosh ⇒ transverse EMF to the
-  //  side-wall electrodes. Driven by CofferMHD (no JS physics).
+  //  COFFER MHD CORE: a zoomable cut-away of the SEALED mercury coffer, gated by a
+  //  permanent LODESTONE cage, true to the Petrie interior proportions.
+  //  Lodestone spokes sit on the two LONG walls, joined by a crown over the top ⇒ a
+  //  permanent field ACROSS THE WIDTH (no coil). The slosh cutting that field makes the
+  //  mV timing signal that gates the chopper. Driven by CofferMHD (no JS physics).
   // ════════════════════════════════════════════════════════════════════════════
   const cofGroup = new THREE.Group(); cofGroup.visible = false; scene.add(cofGroup);
   const CFS = 0.9;                                                  // display scale
@@ -1174,43 +1172,40 @@ function buildScene() {
   const cfHg = new THREE.Mesh(new THREE.BoxGeometry(cfIL * 0.99, cfFillH, cfIW * 0.99), cfHgMat);
   cfHg.position.y = cfHgTopY - cfFillH / 2; cofGroup.add(cfHg);
 
-  // NdFeB magnets: OUTSIDE, N (red) under the floor, S (blue) over the lid ⇒ vertical B
-  const cfMagT = 0.14, cfMagGap = 0.05;
-  const cfMagN = new THREE.Mesh(new THREE.BoxGeometry(cfIL, cfMagT, cfIW), new THREE.MeshBasicMaterial({ color: C('#c0432f') }));
-  cfMagN.position.y = -cfEH / 2 - cfMagGap - cfMagT / 2; cofGroup.add(cfMagN);
-  const cfMagS = new THREE.Mesh(new THREE.BoxGeometry(cfIL, cfMagT, cfIW), new THREE.MeshBasicMaterial({ color: C('#3f63b0') }));
-  cfMagS.position.y =  cfEH / 2 + cfMagGap + cfMagT / 2; cofGroup.add(cfMagS);
-
-  // iron / magnetite YOKE: C-frame at both ends, returning the flux top↔bottom
-  const cfYokeMat = new THREE.MeshBasicMaterial({ color: C('#4a4a52') });
-  const cfYokeH = (cfMagS.position.y - cfMagN.position.y) + cfMagT;
-  for (const sx of [-1, 1]) {
-    const bar = new THREE.Mesh(new THREE.BoxGeometry(0.1, cfYokeH, cfIW), cfYokeMat);
-    bar.position.set(sx * (cfEL / 2 + 0.08), 0, 0); cofGroup.add(bar);
-    for (const my of [cfMagN.position.y - cfMagT / 2 - 0.03, cfMagS.position.y + cfMagT / 2 + 0.03]) {
-      const ret = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.06, cfIW), cfYokeMat);
-      ret.position.set(sx * (cfEL / 2), my, 0); cofGroup.add(ret);
+  // ── LODESTONE CAGE: two combs of tapered spokes on the LONG walls (z=±), joined over the top.
+  //    A PERMANENT magnet of mined lodestone (the period-plausible field, no coil, no power). B
+  //    crosses the WIDTH; the spokes are translucent so the pool reads through them. ──
+  const cfLodeMat = new THREE.MeshBasicMaterial({ color: C('#33312e'), transparent: true, opacity: 0.42, side: THREE.DoubleSide });
+  const cfNSpoke = 5, cfZwall = cfEW / 2 + 0.045;
+  for (const sz of [-1, 1]) {                                  // a comb on each long wall
+    for (let i = 0; i < cfNSpoke; i++) {
+      const sx = (i - (cfNSpoke - 1) / 2) * (cfIL / cfNSpoke);
+      const sp = new THREE.Mesh(new THREE.BoxGeometry(cfIL / (cfNSpoke * 1.7), cfEH * 0.98, 0.06), cfLodeMat);
+      sp.position.set(sx, 0, sz * cfZwall); cofGroup.add(sp);
     }
   }
+  // the CROWN: the two combs joined OVER THE TOP — the cool magnet body, kept off the 517 °C cell
+  const cfCrown = new THREE.Mesh(new THREE.BoxGeometry(cfIL * 0.96, 0.07, cfEW + 0.18),
+    new THREE.MeshBasicMaterial({ color: C('#45423d'), transparent: true, opacity: 0.5 }));
+  cfCrown.position.y = cfEH / 2 + 0.07; cofGroup.add(cfCrown);
 
-  // B field lines: vertical (N bottom → S top) through the mercury, with arrowheads up
+  // B field lines: ACROSS THE WIDTH (z), long wall → long wall, through the mercury
   const cfFieldMat = new THREE.LineBasicMaterial({ color: C('#cf6f5f'), transparent: true, opacity: 0.5 });
-  for (let ix = -1; ix <= 1; ix++) for (let iz = -1; iz <= 1; iz++) {
-    const fx = ix * cfIL * 0.3, fz = iz * cfIW * 0.3;
-    const y0 = cfMagN.position.y + cfMagT / 2, y1 = cfMagS.position.y - cfMagT / 2;
+  for (let ix = -1; ix <= 1; ix++) for (let iy = -1; iy <= 1; iy++) {
+    const fx = ix * cfIL * 0.3, fy = iy * cfIH * 0.28;
     cofGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(
-      [new THREE.Vector3(fx, y0, fz), new THREE.Vector3(fx, y1, fz)]), cfFieldMat.clone()));
-    const head = new THREE.Mesh(new THREE.ConeGeometry(0.028, 0.08, 8),
+      [new THREE.Vector3(fx, fy, -cfIW / 2), new THREE.Vector3(fx, fy, cfIW / 2)]), cfFieldMat.clone()));
+    const head = new THREE.Mesh(new THREE.ConeGeometry(0.024, 0.07, 8),
       new THREE.MeshBasicMaterial({ color: C('#cf6f5f'), transparent: true, opacity: 0.7 }));
-    head.position.set(fx, y1 - 0.04, fz); cofGroup.add(head);
+    head.position.set(fx, fy, cfIW / 2 - 0.035); head.rotation.x = Math.PI / 2; cofGroup.add(head);
   }
 
-  // ELECTRODES: INSIDE, on the two long side walls (z=±), wetted over the fill depth
+  // ARC / sense electrodes: through the LID (the sealed coffer's top electrodes that run the gate arc)
   const cfElecMat = [];
-  for (const sz of [-1, 1]) {
+  for (const sx of [-1, 1]) {
     const m = new THREE.MeshBasicMaterial({ color: C('#e7d9a8'), transparent: true, opacity: 0.95 });
-    const e = new THREE.Mesh(new THREE.BoxGeometry(cfIL * 0.9, cfFillH * 0.96, 0.015), m);
-    e.position.set(0, cfHgTopY - cfFillH / 2, sz * (cfIW / 2 - 0.012)); cofGroup.add(e); cfElecMat.push(m);
+    const e = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, cfWT * 2.4, 12), m);
+    e.position.set(sx * cfIL * 0.26, cfEH / 2 - cfWT * 0.6, 0); cofGroup.add(e); cfElecMat.push(m);
   }
   // WIRELESS output: NO wires, NO load box: the sealed coffer couples its 50 Hz AC out
   // through the RESONANT FIELD (Tesla-style wireless link). Cyan wavefronts expand outward.
@@ -1226,9 +1221,9 @@ function buildScene() {
   // axis triad: slosh (x, gold) / B (y, red) / current (z, cyan)
   const cfTriad = new THREE.Group();
   cfTriad.position.set(-cfEL / 2 - 0.2, -cfEH / 2 - 0.2, -cfEW / 2 - 0.1); cofGroup.add(cfTriad);
-  cfTriad.add(new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(), 0.42, 0xC9A830));
-  cfTriad.add(new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(), 0.42, 0xc0432f));
-  cfTriad.add(new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(), 0.42, 0x37b0c9));
+  cfTriad.add(new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(), 0.42, 0xC9A830));  // slosh x (gold)
+  cfTriad.add(new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(), 0.42, 0xc0432f));  // B z (red, across width)
+  cfTriad.add(new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(), 0.42, 0x37b0c9));  // current y (cyan)
 
   // ── RUNNING-STATE visuals: the telluric clock, the resonance (bell), the plasma ──
   // Telluric "clock" wavefronts: rise from the aquifer/ground (below) up through the floor:
@@ -1275,8 +1270,8 @@ function buildScene() {
   // (Room shown ~half true scale relative to the coffer so the internals stay legible.)
   const ckHalfL = cfEL * 0.5 + 0.70;                          // room half-length (x)
   const ckHalfW = cfEW * 0.5 + 0.50;                          // room half-depth  (z)
-  const ckFloorY = cfMagN.position.y - cfMagT / 2 - 0.10;     // floor below the magnet stack
-  const ckCeilY  = cfMagS.position.y + cfMagT / 2 + 0.40;     // flat granite ceiling above
+  const ckFloorY = -cfEH / 2 - 0.12;                          // floor below the coffer
+  const ckCeilY  =  cfEH / 2 + 0.50;                          // flat granite ceiling above (clears the crown)
   const ckH = ckCeilY - ckFloorY, ckCY = (ckCeilY + ckFloorY) / 2;
   const ckGroup = new THREE.Group(); cofGroup.add(ckGroup);
 
@@ -2138,7 +2133,7 @@ async function obEnsureAndStart() {
 // ── COFFER MHD CORE: the sealed mercury coffer as an MHD alternator. Static
 // operating point from CofferMHD (no JS physics); the 3D animates slosh + AC.
 function cofR() { return parseFloat(document.getElementById('cofR').value); }   // R_source, mΩ
-function cofConfigure() { if (!cofDemo) return; cofFrame = cofDemo.configure(1.3, cofR()); cofPanels(cofFrame); }
+function cofConfigure() { if (!cofDemo) return; cofFrame = cofDemo.configure(0.12, cofR()); cofPanels(cofFrame); }
 function cofPanels(f) {
   cofSustains = cofOn && (cofR() <= f.damThresholdMOhm);   // self-heats iff R ≤ ~42 mΩ
   setCofReadouts(f); setCofStages(f); cofApplyStateUI(f);
