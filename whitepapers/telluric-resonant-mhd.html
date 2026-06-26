@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>φCoherent · The Great Pyramid as a Telluric Transducer — Whitepaper</title>
+<meta name="description" content="Whitepaper: a first-principles physical and mathematical model of the Great Pyramid as a Schumann-tuned telluric MHD transducer. Read online or download the markdown source.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://phicoherent.com/whitepapers/telluric-resonant-mhd.html">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#C9A830">
+<script>try{if(localStorage.getItem('phi-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:           #F3EDE2;
+  --surface:      #EBE4D6;
+  --card:         #E4DBCA;
+  --card-hover:   #DACFC0;
+  --gold:         #C9A830;
+  --gold-dim:     #A07818;
+  --gold-subtle:  rgba(180,138,20,0.10);
+  --gold-border:  rgba(160,118,18,0.28);
+  --text:         #1C1810;
+  --text-muted:   #5C5240;
+  --text-dim:     #A0907A;
+  --row-border:   rgba(160,118,18,0.18);
+}
+html[data-theme="dark"] {
+  --bg:           #131210;
+  --surface:      #1c1b17;
+  --card:         #232118;
+  --card-hover:   #2a2720;
+  --gold:         #C9A830;
+  --gold-dim:     #C0A445;
+  --gold-subtle:  rgba(201,168,48,0.10);
+  --gold-border:  rgba(201,168,48,0.22);
+  --text:         #EDE8DC;
+  --text-muted:   #97907e;
+  --text-dim:     #524d3f;
+  --row-border:   rgba(201,168,48,0.16);
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Sticky top bar ── */
+.bar {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 22px;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--gold-border);
+}
+.bar .home {
+  font-size: 13px; font-weight: 500; letter-spacing: .02em;
+  color: var(--text-muted); text-decoration: none; white-space: nowrap;
+  transition: color .2s;
+}
+.bar .home:hover { color: var(--gold-dim); }
+.bar .spacer { flex: 1; }
+.bar .crumb {
+  font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--text-dim); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.dl {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 16px; border-radius: 7px;
+  border: 1px solid var(--gold-border); background: var(--gold-subtle);
+  color: var(--gold-dim); text-decoration: none;
+  font-size: 12px; font-weight: 600; letter-spacing: .04em;
+  white-space: nowrap; transition: background .2s, border-color .2s, transform .15s;
+}
+.dl:hover { background: var(--card-hover); border-color: var(--gold); transform: translateY(-1px); }
+.dl svg { width: 14px; height: 14px; }
+
+/* ── Reading column ── */
+.doc {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 52px 26px 120px;
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 18px;
+  line-height: 1.72;
+  color: var(--text);
+}
+.doc .loading, .doc .error {
+  font-family: 'Inter', sans-serif; font-size: 14px;
+  color: var(--text-muted); text-align: center; padding: 80px 0;
+}
+.doc .error { color: #c0432f; }
+
+.doc h1 {
+  font-weight: 400; font-size: 38px; line-height: 1.18;
+  margin: 0 0 6px; letter-spacing: -0.01em;
+}
+.doc h2 {
+  font-weight: 400; font-size: 27px; line-height: 1.25;
+  margin: 52px 0 14px; padding-bottom: 9px;
+  border-bottom: 1px solid var(--gold-border);
+}
+.doc h3 { font-weight: 600; font-size: 21px; margin: 36px 0 10px; }
+.doc h4 { font-weight: 600; font-size: 17px; margin: 28px 0 8px;
+  font-family: 'Inter', sans-serif; letter-spacing: .01em; color: var(--text-muted); }
+.doc p { margin: 0 0 18px; }
+.doc a { color: var(--gold-dim); text-decoration: underline; text-underline-offset: 2px; }
+.doc strong { font-weight: 600; }
+.doc em { font-style: italic; color: var(--text-muted); }
+.doc ul, .doc ol { margin: 0 0 18px; padding-left: 26px; }
+.doc li { margin: 4px 0; }
+.doc hr { border: none; border-top: 1px solid var(--gold-border); margin: 40px 0; }
+
+.doc blockquote {
+  margin: 0 0 20px; padding: 12px 20px;
+  border-left: 3px solid var(--gold); background: var(--gold-subtle);
+  border-radius: 0 6px 6px 0; color: var(--text-muted);
+  font-size: 16px;
+}
+.doc blockquote p:last-child { margin-bottom: 0; }
+
+.doc code {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.86em;
+  background: var(--surface); border: 1px solid var(--gold-border);
+  border-radius: 4px; padding: 1px 5px;
+}
+.doc pre {
+  background: var(--surface); border: 1px solid var(--gold-border);
+  border-radius: 8px; padding: 16px 18px; overflow-x: auto; margin: 0 0 20px;
+}
+.doc pre code { background: none; border: none; padding: 0; font-size: 13px; line-height: 1.6; }
+
+.doc table {
+  width: 100%; border-collapse: collapse; margin: 0 0 22px;
+  font-family: 'Inter', sans-serif; font-size: 14px;
+  display: block; overflow-x: auto;
+}
+.doc thead { border-bottom: 2px solid var(--gold-border); }
+.doc th { text-align: left; font-weight: 600; padding: 9px 14px; color: var(--gold-dim); white-space: nowrap; }
+.doc td { padding: 9px 14px; border-bottom: 1px solid var(--row-border); vertical-align: top; }
+.doc tbody tr:hover { background: var(--gold-subtle); }
+.doc img { max-width: 100%; height: auto; border-radius: 6px; }
+
+@media (max-width: 600px) {
+  .doc { font-size: 16.5px; padding: 36px 18px 90px; }
+  .doc h1 { font-size: 30px; }
+  .doc h2 { font-size: 23px; }
+  .bar .crumb { display: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <a class="home" href="/">← phicoherent.com</a>
+  <span class="crumb">Whitepaper</span>
+  <span class="spacer"></span>
+  <a class="dl" href="telluric-resonant-mhd.md" download="telluric-resonant-mhd.md">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M8 1.8v8.2M4.6 6.6 8 10l3.4-3.4M2.5 13.2h11"/>
+    </svg>
+    Download markdown
+  </a>
+</header>
+
+<main class="doc" id="doc">
+  <div class="loading">Loading whitepaper…</div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script>
+(function () {
+  'use strict';
+  var SRC = 'telluric-resonant-mhd.md';
+  var el = document.getElementById('doc');
+
+  function fail(msg) {
+    el.innerHTML = '<div class="error">' + msg +
+      ' You can still <a href="' + SRC + '" download>download the markdown</a>.</div>';
+  }
+
+  fetch(SRC, { cache: 'no-cache' })
+    .then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.text();
+    })
+    .then(function (md) {
+      if (!window.marked) { fail('The renderer failed to load.'); return; }
+      marked.setOptions({ gfm: true, breaks: false });
+      el.innerHTML = marked.parse(md);
+      // Set the document title from the first heading, if present.
+      var h1 = el.querySelector('h1');
+      if (h1) document.title = 'φCoherent · ' + h1.textContent.trim();
+    })
+    .catch(function (e) {
+      fail('Could not load the whitepaper (' + e.message + ').');
+    });
+})();
+</script>
+</body>
+</html>

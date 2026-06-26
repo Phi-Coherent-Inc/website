@@ -793,8 +793,14 @@
 </div><!-- .main -->
 
 <script src="assets/demo-header.js?v=20260622"></script>
-<script>
+<script type="module">
 'use strict';
+
+// All physics is computed in phi-pyramid-cpp (compiled to WASM); this module only
+// marshals UI inputs in and reads numbers out. There is NO JS physics engine — the
+// material tables below are on-screen reference datasheets (identical to the C++
+// constants), not the calculator.
+import { ready, PhiPyramid } from './assets/js/phi-pyramid.js?v=20260626';
 
 // ── roundRect polyfill ────────────────────────────────────────────────────────
 if (!CanvasRenderingContext2D.prototype.roundRect) {
@@ -809,24 +815,18 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
   };
 }
 
-// ── Physics constants ─────────────────────────────────────────────────────────
-const PHI     = (1 + Math.sqrt(5)) / 2;
-const C_LIGHT = 2.99792458e8;   // m/s
-const R_EARTH = 6.371e6;        // m (R_EARTH_MEAN)
-
-// Minimum power to sustain a liquid-metal (mercury) plasma arc:
-// arc voltage ~15 V × minimum sustaining current ~1.3 A ≈ 20 W. Below this the
-// arc cannot ionize, so the chopping element is a solid-state / spark-gap switch
-// rather than a plasma reactor.
+// ── Display labels ────────────────────────────────────────────────────────────
+// 20 W = the minimum power to sustain a liquid-metal plasma arc (arc voltage ~15 V ×
+// minimum sustaining current ~1.3 A). The actual arc-vs-solid-state decision is made
+// in C++ (result.arcSustained); this constant is only for the on-screen "≥ 20 W" text.
 const ARC_THRESHOLD_W = 20;
 
-// φ-corrected Schumann frequencies for modes 1–8
-const SCHUMANN = Array.from({ length: 8 }, (_, i) => {
-  const n = i + 1;
-  return (C_LIGHT / (2 * Math.PI * R_EARTH)) * (1 / Math.sqrt(PHI)) * Math.sqrt(n * (n + 1));
-});
+// φ-corrected Schumann frequencies for modes 1–8 — filled from the WASM at init()
+// (PhiPyramid.schumannHz), never re-derived in JS.
+const SCHUMANN = new Array(8).fill(0);
 
-// Fluid properties (exact phi-pyramid-cpp values: mercury.hpp / galinstan.hpp)
+// Fluid properties (display datasheet — identical to phi-pyramid-cpp; the calculator
+// reads them from C++, this table is for the on-screen labels only)
 const FLUIDS = {
   mercury:   { rho: 13534, c_s: 1451, eta: 1.526e-3, sigma: 1.04e6, name: 'Mercury'   },
   galinstan: { rho:  6440, c_s: 2730, eta:  2.4e-3,   sigma: 3.46e6, name: 'Galinstan' },
@@ -943,151 +943,63 @@ const ST = {
   ok1:false, ok2:false, ok3:false, ok4:false, ok5:false,
 };
 
-// ── Physics engine ────────────────────────────────────────────────────────────
+// ── Physics engine (WASM) ─────────────────────────────────────────────────────
+// The calculator is phi-pyramid-cpp compiled to WASM (PhiPyramid.mhdDesign). This
+// function only marshals the UI state into the C++ input struct and copies the
+// computed results back onto ST. No formula is evaluated in JS.
+let wasmReady = false;
+const FLUID_IDX = { mercury: 0, galinstan: 1 };
+const WALL_IDX  = { granite: 0, quartz: 1, alumina: 2, limestone: 3 };
+const GAS_IDX   = { air: 0, argon: 1, helium: 2 };
+
 function calc() {
+  if (!wasmReady) return;                  // results stay at their last values until WASM is live
   const s = ST;
-  const fl = FLUIDS[s.fluid];
+  const r = PhiPyramid.mhdDesign({
+    sourceType:  s.sourceType === 'artificial' ? 1 : 0,
+    nMode:       s.n,
+    customF:     s.customF,
+    EtmV:        s.Et,
+    Lkm:         s.Lkm,
+    sigmaGround: s.sigma,
+    aContact:    s.a_m,
+    Vin:         s.Vin,
+    RsArt:       s.Rs_Ohm,
+    fluid:       FLUID_IDX[s.fluid] ?? 0,
+    Lv:          s.Lv,
+    fillAuto:    s.fillMode === 'auto' ? 1 : 0,
+    fillRat:     s.fillRat,
+    B:           s.B,
+    rMm:         s.r_mm,
+    VactCm3:     s.Vact,
+    Qd:          s.Qd,
+    harmonic:    s.harmonic,
+    RdamMOhm:    s.R_dam_mOhm,
+    PthermalKW:  s.P_thermal_kW,
+    wall:        WALL_IDX[s.wallMat] ?? 0,
+    tWallCm:     s.tWall,
+    gas:         GAS_IDX[s.cavGas] ?? 0,
+    cavN:        s.cavN,
+  });
 
-  // Telluric frequency
-  s.fTel = (s.n > 0) ? SCHUMANN[s.n - 1] : s.customF;
-
-  // Input source — natural telluric or artificial supply
-  if (s.sourceType === 'telluric') {
-    s.Voc   = s.Et * s.Lkm * 1e-3;                        // V_oc = E_t × L
-    s.Rsrc  = 1 / (Math.PI * s.sigma * s.a_m);            // contact resistance
-  } else {
-    s.Voc   = s.Vin;                                       // direct supply voltage
-    s.Rsrc  = s.Rs_Ohm;                                    // supply internal impedance
-  }
-  s.Pmatch = s.Voc * s.Voc / (4 * s.Rsrc);
-
-  // Vessel geometry (coffer aspect ratios: W=0.34L, D=0.44L)
-  const Lv = s.Lv;
-  const W  = 0.34 * Lv;
-  const D  = 0.44 * Lv;
-  const Vcav = Lv * W * D;
-
-  // Mercury added-mass tuning — matches phi-pyramid-cpp elements/coffer.hpp:
-  //   R_full = (HG_PARTICIPATION / COFFER_MODAL_FRACTION) · (m_fluid_full / m_granite)
-  // The granite shell volume is ≈0.979× the interior (Petrie ext−int), so R_full is
-  // scale-invariant and set by the fluid/granite density ratio. f(h)=f_empty/√(1+R·fill).
-  const HG_PARTICIPATION = 0.40, COFFER_MODAL_FRACTION = 0.35;   // [EST, ±2×]
-  const GRANITE_RHO = 2750, GRANITE_VOL_FRAC = 0.979;           // shell vol / interior vol
-  const m_full    = fl.rho * Vcav;
-  const m_granite = GRANITE_RHO * GRANITE_VOL_FRAC * Vcav;
-  s.Kload  = (HG_PARTICIPATION / COFFER_MODAL_FRACTION) * (m_full / m_granite);
-  s.fEmpty = 117 * (1.98 / Lv);          // BELL_MEASURED_HZ (117) scaled by 1/L
-
-  // Fill ratio
-  if (s.fillMode === 'auto') {
-    if (s.fTel >= s.fEmpty) {
-      s.fillUsed = 0;   s.fillOk = false;   // target above empty frequency
-    } else {
-      const req = ((s.fEmpty / s.fTel) ** 2 - 1) / s.Kload;
-      if (req > 1) { s.fillUsed = 1; s.fillOk = false; }  // full fill still not enough
-      else         { s.fillUsed = Math.max(0, req); s.fillOk = true; }
-    }
-  } else {
-    s.fillUsed = s.fillRat;
-    s.fillOk   = true;
-  }
-  s.fBell = s.fEmpty / Math.sqrt(1 + s.fillUsed * s.Kload);
-
-  // Hartmann number
-  const r_m = s.r_mm * 1e-3;
-  s.Ha = Math.sqrt(fl.sigma * s.B * s.B * r_m * r_m / fl.eta);
-
-  // Acoustic buildup estimate: E = Q·P/ω → P_ac = √(2ρc²E/V)
-  const omega   = 2 * Math.PI * s.fTel;
-  const E_store = s.Qd * s.Pmatch / omega;
-  s.Pac = Math.sqrt(2 * fl.rho * fl.c_s * fl.c_s * E_store / Vcav);
-
-  // Rayleigh boundary-layer streaming (the only viable ELF mechanism)
-  const U0 = s.Pac / (fl.rho * fl.c_s);
-  const vR_raw = (3 / 16) * U0 * U0 / fl.c_s;
-
-  // Coupled-resonator density-contrast velocity amplification:
-  //   g_net = sqrt(ρ_liquid · V_liquid / ρ_gas · V_gas)
-  // The gas cavity volume is the containment interior minus the coffer assembly.
-  // Cross-section scales with vessel dimensions; length = L_cav (from containment calc).
-  // Giza reference: Big Void 490 m³ vs coffer 1.18 m³ → g ≈ 5×.
-  // A compact acoustic containment unit (L_cav × vessel cross-section) gives higher gain
-  // because its gas volume is much smaller. Lighter gas = lower ρ_gas = more gain,
-  // but also longer L_cav (c/f scaling). Both effects are correctly modelled here.
-  const gas_cav = CAVITY_GASES[s.cavGas];
-  // Estimate containment cross-section from vessel geometry + magnet clearance
-  const cav_w = 0.34 * Lv + 0.40;   // m  (vessel width + lateral clearance)
-  const cav_h = 0.44 * Lv + 0.60;   // m  (vessel height + magnet stack + clearance)
-  // L_cav from the containment physics computed earlier (or derive directly):
-  const L_cav_now = s.fBell > 0 ? s.cavN * gas_cav.c / (2 * s.fBell) : Lv * 2;
-  const V_containment = L_cav_now * cav_w * cav_h;
-  const V_gas = Math.max(V_containment - Vcav, Vcav * 0.1);
-  s.g_coupled = Math.sqrt((fl.rho * Vcav) / (gas_cav.rho * V_gas));
-  s.V_gas = V_gas;
-  s.vR = vR_raw * s.g_coupled;
-
-  // MHD Faraday byproduct (alternator — tiny; the mercury sloshing as a generator)
-  s.Vemf = s.vR * s.B * (r_m * 2);
-  s.Pmhd = fl.sigma * s.vR * s.vR * s.B * s.B * (s.Vact * 1e-6) / 4;
-
-  // Telluric Chopper Output (Machine C / dam-shunt — the PRIMARY output)
-  // The 50 Hz mercury slosh GATES the telluric DC through-current like a mechanical switch.
-  // Power comes FROM the telluric source via the geological dam, NOT from acoustic energy.
-  //   P_matched_dam = V_oc² / (4 · R_dam)
-  //   P_chop = max(0, P_matched_dam − P_thermal_tax)
-  // At Giza: V_oc=100 V, R_dam=5 mΩ → P_matched=500 kW − 59 kW = 441 kW.
-  const R_dam = s.R_dam_mOhm * 1e-3;                   // Ω
-  const P_matched_dam = s.Voc * s.Voc / (4 * R_dam);   // W
-  const P_thermal = s.P_thermal_kW * 1e3;               // W
-  s.P_chop = Math.max(0, P_matched_dam - P_thermal);
-  s.R_dam_threshold = s.Voc > 0 ? s.Voc * s.Voc / (4 * P_thermal) : 0;  // max R_dam that sustains
-  s.chopper_sustains = P_matched_dam > P_thermal;
-
-  // Switching-element classification: a plasma arc requires ≥ ARC_THRESHOLD_W to
-  // sustain ionization. Below that the chopper is a solid-state / spark-gap switch.
-  s.arc_sustained = P_thermal >= ARC_THRESHOLD_W;
-  s.switchKind    = s.arc_sustained ? 'arc' : 'solid';
-
+  // Source + vessel
+  s.fTel = r.fTel; s.Voc = r.Voc; s.Rsrc = r.Rsrc; s.Pmatch = r.Pmatch;
+  s.fEmpty = r.fEmpty; s.Kload = r.Kload; s.fBell = r.fBell;
+  s.fillUsed = r.fillUsed; s.fillOk = r.fillOk;
+  // MHD
+  s.Ha = r.Ha; s.Pac = r.Pac; s.g_coupled = r.gCoupled; s.V_gas = r.Vgas;
+  s.vR = r.vR; s.Vemf = r.Vemf; s.Pmhd = r.Pmhd;
+  // Chopper
+  s.P_chop = r.Pchop; s.R_dam_threshold = r.RdamThresholdMOhm * 1e-3;   // mΩ → Ω
+  s.chopper_sustains = r.chopperSustains;
+  s.arc_sustained = r.arcSustained; s.switchKind = r.arcSustained ? 'arc' : 'solid';
   // Broadcast
-  s.fBcast     = s.fBell * s.harmonic;
-  s.lambda_km  = s.fBcast > 0 ? C_LIGHT / s.fBcast / 1e3 : 0;
-
-  // Checklist conditions
-  const df      = Math.abs(s.fBell - s.fTel) / Math.max(s.fTel, 1e-9);
-  s.ok1 = s.Voc    >= 0.010;    // ≥ 10 mV
-  s.ok2 = s.Pmatch >= 1e-6;     // ≥ 1 µW
-  s.ok3 = s.fillOk && df < 0.05;// bell resonance within 5%
-  s.ok4 = s.Ha     >= 10;        // Hartmann regime
-  s.ok5 = s.Vemf   >= 1e-7;     // ≥ 100 nV chopped signal
-
-  // ── Containment unit physics ──────────────────────────────────────────────
-  const mat   = WALL_MATS[s.wallMat];
-  const gas   = CAVITY_GASES[s.cavGas];
-  const MU0   = 4 * Math.PI * 1e-7;      // H/m
-
-  // Required cavity length for n-th harmonic at f_bell:  f = n·c/(2L)
-  s.cav_L = s.fBell > 0 ? s.cavN * gas.c / (2 * s.fBell) : 0;  // m
-
-  // EM skin depth in wall material at f_bell:  δ = √(2ρ_e / (ω·μ₀))
-  const omega_cav = 2 * Math.PI * Math.max(s.fBell, 1e-3);
-  s.cav_delta = Math.sqrt(2 * mat.rho_e / (omega_cav * MU0));   // m
-
-  // Transparency ratio: δ / t_wall  (want >> 1; ≥ 1000 = essentially lossless)
-  const t_m = s.tWall * 0.01;                                     // cm → m
-  s.cav_trans = s.cav_delta / t_m;
-
-  // Acoustic impedance mismatch (wall vs interior gas)
-  const Z_wall = mat.rho * mat.c_p;   // Rayl
-  const Z_gas  = gas.rho * gas.c;     // Rayl
-  // Reflection coeff ≈ 1 (solid vs gas): walls are acoustically reflective → high Q cavity
-  const refl = (Z_wall - Z_gas) / (Z_wall + Z_gas);
-  s.cav_Trefl = refl * refl;           // energy reflection (close to 1 = good: energy stays in)
-  s.cav_Q     = mat.Q_ac;              // cavity Q (material property)
-
-  // Conditions
-  s.ok6 = s.cav_trans >= 100            // δ >> t_wall: EM-transparent
-       && s.cav_L > 0 && s.cav_L < 200 // physically realizable cavity
-       && mat.Q_ac >= 100;              // sufficient acoustic Q
+  s.fBcast = r.fBcast; s.lambda_km = r.lambdaKm;
+  // Containment
+  s.cav_L = r.cavL; s.cav_delta = r.cavDelta; s.cav_trans = r.cavTrans;
+  s.cav_Trefl = r.cavTrefl; s.cav_Q = r.cavQ; s.zRatio = r.zRatio;
+  // Checklist
+  s.ok1 = r.ok1; s.ok2 = r.ok2; s.ok3 = r.ok3; s.ok4 = r.ok4; s.ok5 = r.ok5; s.ok6 = r.ok6;
 }
 
 // ── Formatting ────────────────────────────────────────────────────────────────
@@ -1717,7 +1629,13 @@ function linSlider(id, valId, fmt, setter) {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-function init() {
+async function init() {
+  // Bring the WASM physics module up first, then fill the Schumann ladder from C++
+  // (never re-derived in JS) so the chart axes and tooltips are ready before any draw.
+  await ready();
+  wasmReady = true;
+  for (let n = 1; n <= 8; n++) SCHUMANN[n - 1] = PhiPyramid.schumannHz(n);
+
   // Theme
   if (window.PhiTheme) {
     PAL = window.PhiTheme.palette();
@@ -2360,10 +2278,11 @@ function applyPreset(name) {
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
+const boot = () => init().catch(err => console.error('[mhd-designer] init failed:', err));
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
+  document.addEventListener('DOMContentLoaded', boot);
 } else {
-  init();
+  boot();
 }
 </script>
 </body>

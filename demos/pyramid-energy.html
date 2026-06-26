@@ -557,7 +557,10 @@
           <b style="color:#49c39a">Telluric clock:</b> <b id="cofrTelV">…</b> across the chamber (field <b id="cofrTelF">…</b>),
           the global ~50 Hz reference the cavity locks to, <b>not</b> the fuel.<br>
           <b style="color:#bfe3ff">Reactor:</b> mercury vapour <b id="cofrTemp">…</b> at <b id="cofrPres">…</b> ·
-          arc core <b id="cofrArc">…</b> · thermal tax <b id="cofrTax">…</b> (paid by the through-current).
+          arc core <b id="cofrArc">…</b> · thermal tax <b id="cofrTax">…</b> (paid by the through-current).<br>
+          <b style="color:#d8c4ff">Inner sleeve (most-stressed part):</b> the vacuum arc capillary submerged in the
+          pressurised hot mercury survives — crush buckling FOS <b id="cofrSleeveBuck">…</b>, thermal FOS
+          <b id="cofrSleeveTherm">…</b>, <b id="cofrSleeveCav">…</b>.
         </div>
         <div class="ledger" style="margin-top:14px">
           Field at pool: <b id="cofrB">…</b> &nbsp;·&nbsp; Slosh: <b id="cofrV">…</b> (fixed) &nbsp;·&nbsp; Short-circuit I: <b id="cofrIsc">…</b><br>
@@ -700,7 +703,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="assets/demo-header.js?v=20260622"></script>
 <script type="module">
-import { ready, PhiPyramid } from './assets/js/phi-pyramid.js?v=20260622';
+import { ready, PhiPyramid } from './assets/js/phi-pyramid.js?v=20260626';
 
 const pal = () => window.PhiTheme.palette();
 const C = (hex) => new THREE.Color(hex);
@@ -2230,6 +2233,11 @@ function setCofReadouts(f) {
   set('cofrPres', run ? f.pressureMPa.toFixed(2) + ' MPa' : '0.10 MPa (1 atm)');
   set('cofrArc', run ? Math.round(f.plasmaArcK).toLocaleString() + ' K' : on ? 'quenched' : 'none');
   set('cofrTax', run ? fmtW(f.thermalLeakW) + ' (paid)' : on ? fmtW(f.thermalLeakW) + ' (unpaid → quench)' : '0 W');
+  // inner-sleeve survivability — the structural spec holds whenever the cell is pressurised (running)
+  set('cofrSleeveBuck',  run ? '~' + Math.round(f.sleeveBucklingFos) : '—');
+  set('cofrSleeveTherm', run ? '~' + f.sleeveThermalFos.toFixed(0) : '—');
+  set('cofrSleeveCav',   run ? (f.sleeveNoCavitation ? 'no cavitation (pressurised)' : 'CAVITATING')
+                             : 'depressurised (1 atm)');
 }
 function cofLoop() {
   if (activeSystem !== 'coffer' || !cofDemo) { cofRunning = false; return; }

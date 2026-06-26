@@ -57,6 +57,14 @@ export const PhiPyramid = {
   //   hartmann, lorentzCoeff, internalROhm, powerDensity, hgMassKg, hgDepthM,
   //   cofferL, cofferW, cofferDepth }.
   createCofferMHD() { return new _module.CofferMHD(); },
+  // Parametric Telluric-Resonant MHD designer — the SAME verified phi-pyramid-cpp
+  // physics, run over any vessel/fluid/field the user dials in (no JS physics).
+  // Pass a plain inputs object (see MhdDesignerInputs in bindings.cpp) and read a
+  // plain results object back. Stateless — call it on every UI change.
+  mhdDesign(inputs) { return _module.analyzeMhdDesigner(inputs); },
+  // The φ-corrected Schumann line frequency for mode n (Hz) — for chart axes and
+  // tooltips, so the demo never re-derives the formula in JS.
+  schumannHz(n) { return _module.schumannHz(n); },
 };
 
 const api = { ready, isReady, PhiPyramid };
