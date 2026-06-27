@@ -20,6 +20,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/demo.css?v=20260622">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="assets/js/mhd-core-scene.js?v=20260627"></script>
 <style>
 /* ═══════════════════════════════════════════════════════════════════
    Local styles — only things NOT already in demo.css.
@@ -410,7 +411,7 @@
       <input type="range" id="Lv" min="-0.301" max="2" step="0.02" value="0.2967">
       <span class="slider-val" id="LvVal">1.98 m</span>
     </div>
-    <div class="ledger">f<sub>empty</sub> ∝ 1/L<sub>v</sub> · coffer proportions (W=0.34L, D=0.44L)</div>
+    <div class="ledger">f<sub>empty</sub> ∝ 1/L<sub>v</sub> · Giza uses the coffer aspect (W=0.34L, D=0.44L); the engineered vessel is squarer (W=D=0.50L)</div>
   </div>
 
   <div class="control-group">
@@ -537,15 +538,13 @@
       <div class="ledger" style="font-size:11px;">
         <b style="color:#9a7d56">granite coffer</b> (sealed vessel) ·
         <b style="color:#bfd3dd" id="dev3dFluid">Mercury</b> working fluid · fill = <span id="dev3dFill">78% · auto-tuned</span> ·
-        <b style="color:#c0432f">N magnet</b> / <b style="color:#3f63b0">S magnet</b> (outside, vertical B) ·
-        <b style="color:#4a4a52">flux yoke</b> ·
-        <b style="color:#e7d9a8">electrodes</b> (inside long walls) ·
+        <b style="color:#45423d">lodestone cage</b> + crown (permanent field across the width, no coil) ·
+        <b style="color:#e7d9a8">lid arc-electrodes</b> ·
         <b style="color:#cf6f5f">B-field</b> ·
-        <b style="color:#37b0c9">v×B current</b> ·
-        <b style="color:var(--demo-cyan)">wireless EMF output</b> (when ok5) ·
-        <b style="color:#49c39a">telluric clock</b> (when ok1) ·
-        <b style="color:#C9A830">resonance bell</b> (when ok3) ·
-        <b style="color:#cfe8ff">plasma arc</b> (when all 6 met) ·
+        <b style="color:var(--demo-cyan)">wireless EMF output</b> (when running) ·
+        <b style="color:#49c39a">telluric clock</b> ·
+        <b style="color:#C9A830">resonance bell</b> ·
+        <b style="color:#cfe8ff">plasma arc</b> (when all conditions met) ·
         outer <b id="dev3dMat" style="color:#9a7d56">granite</b> containment box (wireframe — EM-transparent)
       </div>
     </div>
@@ -800,7 +799,7 @@
 // marshals UI inputs in and reads numbers out. There is NO JS physics engine — the
 // material tables below are on-screen reference datasheets (identical to the C++
 // constants), not the calculator.
-import { ready, PhiPyramid } from './assets/js/phi-pyramid.js?v=20260626';
+import { ready, PhiPyramid } from './assets/js/phi-pyramid.js?v=20260627';
 
 // ── roundRect polyfill ────────────────────────────────────────────────────────
 if (!CanvasRenderingContext2D.prototype.roundRect) {
@@ -1868,148 +1867,39 @@ function init3D() {
   const dl = new THREE.DirectionalLight(0xffffff, 0.55);
   dl.position.set(3, 5, 2); scene.add(dl);
 
-  // Coffer proportions: Petrie interior × display scale
+  // ── Shared MHD Core ─────────────────────────────────────────────────────────
+  // The same cut-away builder pyramid-energy.html uses (mhd-core-scene.js): granite
+  // shell, working fluid, lodestone cage + crown, field, lid arc-electrodes, wireless
+  // rings, telluric clock, resonance halo, plasma. Built fresh whenever the fill level
+  // or working fluid changes; the slosh / glow / ring animation runs via the shared
+  // MhdCoreScene.update each frame. The designer adds its own containment cavity around it.
   const CFS = 0.84;
-  const cfIL = 1.9827 * CFS, cfIH = 0.8743 * CFS, cfIW = 0.6810 * CFS;
-  const cfWT = 0.11;
-  const cfEL = cfIL + 2 * cfWT, cfEH = cfIH + 2 * cfWT, cfEW = cfIW + 2 * cfWT;
-
-  // Granite shell — wireframe edges + translucent lid and floor
-  scene.add(new THREE.LineSegments(
-    new THREE.EdgesGeometry(new THREE.BoxGeometry(cfEL, cfEH, cfEW)),
-    new THREE.LineBasicMaterial({ color: C('#9a7d56'), transparent: true, opacity: 0.70 })));
-  [cfEH / 2 - cfWT / 2, -cfEH / 2 + cfWT / 2].forEach(y => {
-    const s = new THREE.Mesh(new THREE.BoxGeometry(cfEL, cfWT, cfEW),
-      new THREE.MeshBasicMaterial({ color: C('#8a7256'), transparent: true, opacity: 0.11, side: THREE.DoubleSide }));
-    s.position.y = y; scene.add(s);
-  });
-
-  // Mercury — full-height box; scale.y and position.y updated each tick to match fill
-  const cfHgMat = new THREE.MeshBasicMaterial({ color: C('#bfd3dd'), transparent: true, opacity: 0.90 });
-  const cfHg = new THREE.Mesh(new THREE.BoxGeometry(cfIL * 0.98, cfIH, cfIW * 0.98), cfHgMat);
-  scene.add(cfHg);
-
-  // NdFeB magnets: N (red) BELOW the floor, S (blue) ABOVE the lid → vertical B
-  const cfMagT = 0.13, cfMagGap = 0.04;
-  const cfMagNmat = new THREE.MeshBasicMaterial({ color: C('#c0432f') });
-  const cfMagSmat = new THREE.MeshBasicMaterial({ color: C('#3f63b0') });
-  const cfMagN = new THREE.Mesh(new THREE.BoxGeometry(cfIL, cfMagT, cfIW), cfMagNmat);
-  const cfMagS = new THREE.Mesh(new THREE.BoxGeometry(cfIL, cfMagT, cfIW), cfMagSmat);
-  cfMagN.position.y = -cfEH / 2 - cfMagGap - cfMagT / 2;
-  cfMagS.position.y =  cfEH / 2 + cfMagGap + cfMagT / 2;
-  scene.add(cfMagN); scene.add(cfMagS);
-
-  // Iron yoke — C-frame at both ends returning flux N↔S
-  const cfYokeMat = new THREE.MeshBasicMaterial({ color: C('#4a4a52') });
-  const cfYokeH = (cfMagS.position.y - cfMagN.position.y) + cfMagT;
-  [-1, 1].forEach(sx => {
-    const bar = new THREE.Mesh(new THREE.BoxGeometry(0.09, cfYokeH, cfIW), cfYokeMat);
-    bar.position.set(sx * (cfEL / 2 + 0.07), 0, 0); scene.add(bar);
-    [cfMagN.position.y - cfMagT / 2 - 0.025,
-     cfMagS.position.y + cfMagT / 2 + 0.025].forEach(my => {
-      const ret = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.05, cfIW), cfYokeMat);
-      ret.position.set(sx * (cfEL / 2), my, 0); scene.add(ret);
-    });
-  });
-
-  // B-field lines — vertical, N→S, 3×3 grid through the mercury
-  const y0f = cfMagN.position.y + cfMagT / 2, y1f = cfMagS.position.y - cfMagT / 2;
-  const cfFieldMat = new THREE.LineBasicMaterial({ color: C('#cf6f5f'), transparent: true, opacity: 0.52 });
-  for (let ix = -1; ix <= 1; ix++) for (let iz = -1; iz <= 1; iz++) {
-    const fx = ix * cfIL * 0.3, fz = iz * cfIW * 0.3;
-    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(fx, y0f, fz), new THREE.Vector3(fx, y1f, fz)]), cfFieldMat.clone()));
-    const head = new THREE.Mesh(new THREE.ConeGeometry(0.024, 0.07, 8),
-      new THREE.MeshBasicMaterial({ color: C('#cf6f5f'), transparent: true, opacity: 0.70 }));
-    head.position.set(fx, y1f - 0.035, fz); scene.add(head);
+  let coreH = null, coreGroup = null, coreFillKey = -1, coreFluidKey = '';
+  function ensureCore() {
+    const fillFrac   = Math.max(0.04, Math.min(1.0, ST.fillUsed || 0.5));
+    const fk         = Math.round(fillFrac * 50);          // quantise to avoid churn
+    const fluidColor = ST.fluid === 'galinstan'
+                     ? '#cdd2c8'                            // galinstan: a greener metal
+                     : (PAL.isDark ? '#c8dee8' : '#bfd3dd');// mercury
+    if (fk === coreFillKey && fluidColor === coreFluidKey && coreGroup) return;
+    coreFillKey = fk; coreFluidKey = fluidColor;
+    if (coreGroup) {
+      scene.remove(coreGroup);
+      coreGroup.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+    }
+    const built = MhdCoreScene.build(THREE, { scale: CFS, fillFrac, fluidColor, cyan: PAL.cyan });
+    coreGroup = built.group; coreH = built.handles; scene.add(coreGroup);
   }
-
-  // Electrodes — INSIDE on the two long z-walls, wetted by mercury.
-  // Built at full interior height; tick3 scales.y to the actual fill and bottom-anchors them
-  // so they only show where mercury is present. Kept subtle (low opacity) so mercury reads through.
-  const cfElecMats = [], cfElecMeshes = [];
-  [-1, 1].forEach(sz => {
-    const m = new THREE.MeshBasicMaterial({ color: C('#e7d9a8'), transparent: true, opacity: 0.16 });
-    const e = new THREE.Mesh(new THREE.BoxGeometry(cfIL * 0.90, cfIH, 0.014), m);
-    e.position.set(0, 0, sz * (cfIW / 2 - 0.012)); scene.add(e);
-    cfElecMats.push(m); cfElecMeshes.push(e);
-  });
-
-  // v×B current arrows — z-direction (EMF across width); shown when Ha regime
-  const cfCurrArrows = [];
-  [-0.5, 0, 0.5].forEach(ix => {
-    const arr = new THREE.ArrowHelper(
-      new THREE.Vector3(0, 0, 1), new THREE.Vector3(ix * cfIL * 0.55, 0, -cfIW * 0.35),
-      cfIW * 0.70, 0x37b0c9, 0.07, 0.05);
-    arr.line.material = arr.line.material.clone();
-    arr.cone.material = arr.cone.material.clone();
-    arr.line.material.transparent = true; arr.line.material.opacity = 0;
-    arr.cone.material.transparent = true; arr.cone.material.opacity = 0;
-    scene.add(arr); cfCurrArrows.push(arr);
-  });
-
-  // Axis triad: v→x (gold), B→y (red), EMF→z (cyan)
-  const triad = new THREE.Group();
-  triad.position.set(-cfEL / 2 - 0.14, -cfEH / 2 - 0.18, -cfEW / 2 - 0.10);
-  triad.add(new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(), 0.36, 0xC9A830, 0.06, 0.04));
-  triad.add(new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(), 0.36, 0xc0432f, 0.06, 0.04));
-  triad.add(new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(), 0.36, 0x37b0c9, 0.06, 0.04));
-  scene.add(triad);
-
-  // Wireless output rings — expand outward from coffer centre when ok5.
-  // Six rings at varied orientations so they're visible from any camera angle.
-  const cfOut = [];
-  const OUT_ROTS = [
-    [Math.PI / 2,  0,           0          ],  // horizontal (xz-plane)
-    [0,            0,           0          ],  // vertical yz-plane
-    [0,            Math.PI / 2, 0          ],  // vertical xz-plane
-    [Math.PI / 4,  0,           0          ],  // 45° tilt
-    [0,            0,           Math.PI / 4],  // 45° tilt the other way
-    [Math.PI / 3,  Math.PI / 4, 0          ],  // diagonal
-  ];
-  for (let i = 0; i < 6; i++) {
-    const r = new THREE.Mesh(
-      new THREE.RingGeometry(0.038, 0.056, 52),
-      new THREE.MeshBasicMaterial({ color: C('#40d0e8'), transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false }));
-    r.rotation.set(...OUT_ROTS[i]); scene.add(r); cfOut.push(r);
-  }
-
-  // Telluric clock rings — rise from below when ok1
-  const cfTel = [];
-  for (let i = 0; i < 4; i++) {
-    const r = new THREE.Mesh(
-      new THREE.RingGeometry(cfEL * 0.18, cfEL * 0.30, 46),
-      new THREE.MeshBasicMaterial({ color: C('#49c39a'), transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false }));
-    r.rotation.x = -Math.PI / 2; r.position.y = -cfEH / 2 - 0.55;
-    scene.add(r); cfTel.push(r);
-  }
-
-  // Resonance halo (gold box outline) + 3 antinode discs — when ok3
-  const cfHaloMat = new THREE.LineBasicMaterial({ color: C('#C9A830'), transparent: true, opacity: 0 });
-  const cfHalo = new THREE.LineSegments(
-    new THREE.EdgesGeometry(new THREE.BoxGeometry(cfEL * 1.07, cfEH * 1.07, cfEW * 1.07)), cfHaloMat);
-  scene.add(cfHalo);
-  const cfNodeMats = [];
-  for (let i = 0; i < 3; i++) {
-    const m = new THREE.MeshBasicMaterial({ color: C('#C9A830'), transparent: true, opacity: 0, side: THREE.DoubleSide });
-    const d = new THREE.Mesh(new THREE.PlaneGeometry(cfIL * 0.94, cfIW * 0.94), m);
-    d.rotation.x = -Math.PI / 2; d.position.set((i - 1) * cfIL * 0.30, 0, 0);
-    scene.add(d); cfNodeMats.push(m);
-  }
-
-  // Mercury-arc plasma — flickers when all 5 conditions met
-  const cfPlasmaMat = new THREE.MeshBasicMaterial({ color: C('#cfe8ff'), transparent: true, opacity: 0 });
-  const cfPlasma = new THREE.Mesh(new THREE.SphereGeometry(0.052, 14, 14), cfPlasmaMat);
-  scene.add(cfPlasma);
-  const cfArcMat = new THREE.LineBasicMaterial({ color: C('#eaf5ff'), transparent: true, opacity: 0 });
-  const cfArc = new THREE.Line(new THREE.BufferGeometry().setFromPoints([
-    new THREE.Vector3(), new THREE.Vector3(0, cfIH * 0.6, 0)]), cfArcMat);
-  scene.add(cfArc);
+  ensureCore();
+  // Exterior geometry the containment add-on and camera read (dims are fixed Petrie).
+  const _cg = coreH.geom;
+  const cfEL = _cg.cfEL, cfEH = _cg.cfEH, cfEW = _cg.cfEW, cfIL = _cg.cfIL;
 
   // Camera orbit with drag
   const LOOK  = new THREE.Vector3(0, 0.04, 0);
   let orbitR  = 4, orbitZoom = 1;
   let autoTh  = 0, manTh = 0, phi3 = 0.44, ptrDown = false, ptrPrev = [0, 0];
+  let lastNow3 = 0;
 
   canvas.addEventListener('pointerdown', e => { ptrDown = true; ptrPrev = [e.clientX, e.clientY]; });
   canvas.addEventListener('pointermove', e => {
@@ -2063,76 +1953,19 @@ function init3D() {
     const now = ts * 0.001;
     resize3();
 
-    const fill  = Math.max(0.04, Math.min(1.0, ST.fillUsed));
-    const sAmp  = Math.min(0.95, ST.vR > 0 ? Math.log10(1 + ST.vR / 1e-8) / 7 : 0.12);
     const allGo = ST.ok1 && ST.ok2 && ST.ok3 && ST.ok4 && ST.ok5;
     const pal   = PAL;
+    const dt    = Math.min(0.05, now - (lastNow3 || now)); lastNow3 = now;
 
-    // Mercury: bottom-anchor fill. Bottom of coffer interior = -cfIH/2
-    // Scaled box: centre at cfIH*(fill-1)/2, extends [0..fill*cfIH] from floor.
-    cfHg.scale.y = fill;
-    cfHg.position.y = cfIH * (fill - 1) / 2;
-    cfHg.rotation.z = Math.sin(now * 2.2 * Math.PI) * 0.13 * sAmp;
-    cfHg.position.x = Math.sin(now * 2.2 * Math.PI) * 0.055 * cfIL * sAmp;
-    cfHgMat.opacity = 0.48 + 0.47 * sAmp;
-    cfHgMat.color.set(C(pal.isDark ? '#c8dee8' : '#bfd3dd'));
-
-    // Top surface of mercury (used to anchor output rings and plasma)
-    const hgTop = cfIH * (fill - 1) / 2 + fill * cfIH / 2;   // = fill*cfIH - cfIH/2
-
-    // Electrodes — scale to mercury fill level (bottom-anchored), subtle gold tint
-    const elecFill = fill * 0.96;
-    cfElecMeshes.forEach(e => {
-      e.scale.y = elecFill;
-      e.position.y = cfIH * (elecFill - 1) / 2;   // same bottom-anchor formula as mercury
+    // Rebuild the core if the fill level or working fluid changed, then animate it via the
+    // SHARED update (identical motion to the pyramid-energy MHD core). on = energised
+    // (source + power present); sustains = fully running ⇒ broadcast rings, bell, plasma.
+    ensureCore();
+    MhdCoreScene.update(coreH, {
+      on:       ST.ok1 && ST.ok2,
+      sustains: allGo,
+      now, dt, cyan: pal.cyan,
     });
-    cfElecMats.forEach(m => { m.opacity = ST.ok4 ? 0.40 : 0.14; });
-
-    // Current arrows — visible when Hartmann regime
-    cfCurrArrows.forEach(arr => {
-      const op = ST.ok4 ? (0.55 + 0.40 * Math.abs(Math.sin(now * 2.2 * Math.PI))) : 0;
-      arr.line.material.opacity = op; arr.cone.material.opacity = op;
-    });
-
-    // Wireless output rings — 6 rings at varied orientations, all expanding outward from
-    // the mercury pool centre. Opacity depends only on ok5, not on sAmp (which can be tiny).
-    cfOut.forEach((r, i) => {
-      const ph = (now * 0.44 + i / cfOut.length) % 1;
-      r.position.y = hgTop * 0.5;               // mid-pool, same as original demo
-      r.scale.setScalar(ST.ok5 ? 0.22 + ph * 5.8 : 0);
-      r.material.color.set(C(pal.cyan));
-      r.material.opacity = ST.ok5 ? 0.62 * (1 - ph) : 0;
-    });
-
-    // Telluric clock rings — rise from below when ok1
-    cfTel.forEach((r, i) => {
-      const ph = (now * 0.38 + i / cfTel.length) % 1;
-      r.position.y = -cfEH / 2 - 0.55 + ph * 0.55;
-      r.scale.setScalar(1.0 - 0.28 * ph);
-      r.material.opacity = ST.ok1 ? 0.42 * (1 - ph) : 0;
-    });
-
-    // Resonance halo + antinode discs — pulse when ok3
-    const hPulse = ST.ok3 ? (0.32 + 0.26 * Math.sin(now * 2.2 * Math.PI) ** 2) : 0;
-    cfHaloMat.opacity = hPulse;
-    cfNodeMats.forEach((m, i) => {
-      m.opacity = ST.ok3 ? (0.16 + 0.14 * Math.sin(now * 2.2 * Math.PI + i * 2.1) ** 2) : 0;
-      m.position = undefined;  // disc positions are set at build time
-    });
-
-    // Update antinode disc y to follow mercury surface
-    cfNodeMats.forEach((m, i) => {
-      // find the disc mesh — it's the i-th child after the halo
-    });
-
-    // Plasma arc — flickers when all conditions met
-    const plOp = allGo ? (0.52 + 0.45 * Math.abs(Math.sin(now * 8.1) * Math.sin(now * 13.3))) : 0;
-    cfPlasmaMat.opacity = plOp;
-    cfPlasma.position.set(0, hgTop - fill * cfIH * 0.35, 0);
-    cfArcMat.opacity = allGo ? (0.60 + 0.38 * Math.abs(Math.sin(now * 15))) : 0;
-    cfArc.geometry.dispose();
-    cfArc.geometry = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(0, hgTop, 0), new THREE.Vector3(0, hgTop - fill * cfIH * 0.70, 0)]);
 
     // Scene background
     renderer.setClearColor(C(pal.canvas), 1);
@@ -2143,7 +1976,7 @@ function init3D() {
     // Cavity dimensions in display units (capped so it fits the scene)
     const cavL_m = ST.cav_L > 0 ? ST.cav_L : gas3.c / (2 * Math.max(ST.fBell, 1));
     const cavL_d = Math.min(cavL_m * CFS, cfIL * 5.5);     // display length (x)
-    const cavH_d = cfEH + cfMagT * 2 + cfMagGap * 2 + 0.30; // encloses magnets + yoke (y)
+    const cavH_d = cfEH + 0.46;                              // encloses the core + lodestone crown (y)
     const cavW_d = cfEW + 0.30;                               // slightly wider than coffer (z)
 
     cfCavEdge.scale.set(cavL_d, cavH_d, cavW_d);

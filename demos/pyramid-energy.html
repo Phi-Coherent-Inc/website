@@ -701,9 +701,10 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="assets/js/mhd-core-scene.js?v=20260627"></script>
 <script src="assets/demo-header.js?v=20260622"></script>
 <script type="module">
-import { ready, PhiPyramid } from './assets/js/phi-pyramid.js?v=20260626';
+import { ready, PhiPyramid } from './assets/js/phi-pyramid.js?v=20260627';
 
 const pal = () => window.PhiTheme.palette();
 const C = (hex) => new THREE.Color(hex);
@@ -1155,114 +1156,17 @@ function buildScene() {
   //  mV timing signal that gates the chopper. Driven by CofferMHD (no JS physics).
   // ════════════════════════════════════════════════════════════════════════════
   const cofGroup = new THREE.Group(); cofGroup.visible = false; scene.add(cofGroup);
-  const CFS = 0.9;                                                  // display scale
-  const cfIL = 1.9827 * CFS, cfIH = 0.8743 * CFS, cfIW = 0.6810 * CFS;  // interior L×H×W (x,y,z)
-  const cfWT = 0.12;                                                // granite wall thickness
-  const cfEL = cfIL + 2 * cfWT, cfEH = cfIH + 2 * cfWT, cfEW = cfIW + 2 * cfWT;  // exterior
-  const cfFillH = 0.75 * cfIH;                                      // mercury depth (75% fill)
-  const cfHgTopY = -cfIH / 2 + cfFillH;                             // mercury surface
-
-  // granite shell: wireframe edges (so the interior is visible) + translucent sealed lid/floor
-  cofGroup.add(new THREE.LineSegments(
-    new THREE.EdgesGeometry(new THREE.BoxGeometry(cfEL, cfEH, cfEW)),
-    new THREE.LineBasicMaterial({ color: C('#9a7d56'), transparent: true, opacity: 0.7 })));
-  const cfGranMat = new THREE.MeshBasicMaterial({ color: C('#8a7256'), transparent: true, opacity: 0.12, side: THREE.DoubleSide });
-  const cfLid   = new THREE.Mesh(new THREE.BoxGeometry(cfEL, cfWT, cfEW), cfGranMat); cfLid.position.y =  cfEH / 2 - cfWT / 2; cofGroup.add(cfLid);
-  const cfFloor = new THREE.Mesh(new THREE.BoxGeometry(cfEL, cfWT, cfEW), cfGranMat); cfFloor.position.y = -cfEH / 2 + cfWT / 2; cofGroup.add(cfFloor);
-
-  // mercury: reflective slab, slosh-animated
-  const cfHgMat = new THREE.MeshBasicMaterial({ color: C('#bfd3dd'), transparent: true, opacity: 0.92 });
-  const cfHg = new THREE.Mesh(new THREE.BoxGeometry(cfIL * 0.99, cfFillH, cfIW * 0.99), cfHgMat);
-  cfHg.position.y = cfHgTopY - cfFillH / 2; cofGroup.add(cfHg);
-
-  // ── LODESTONE CAGE: two combs of tapered spokes on the LONG walls (z=±), joined over the top.
-  //    A PERMANENT magnet of mined lodestone (the period-plausible field, no coil, no power). B
-  //    crosses the WIDTH; the spokes are translucent so the pool reads through them. ──
-  const cfLodeMat = new THREE.MeshBasicMaterial({ color: C('#33312e'), transparent: true, opacity: 0.42, side: THREE.DoubleSide });
-  const cfNSpoke = 5, cfZwall = cfEW / 2 + 0.045;
-  for (const sz of [-1, 1]) {                                  // a comb on each long wall
-    for (let i = 0; i < cfNSpoke; i++) {
-      const sx = (i - (cfNSpoke - 1) / 2) * (cfIL / cfNSpoke);
-      const sp = new THREE.Mesh(new THREE.BoxGeometry(cfIL / (cfNSpoke * 1.7), cfEH * 0.98, 0.06), cfLodeMat);
-      sp.position.set(sx, 0, sz * cfZwall); cofGroup.add(sp);
-    }
-  }
-  // the CROWN: the two combs joined OVER THE TOP — the cool magnet body, kept off the 517 °C cell
-  const cfCrown = new THREE.Mesh(new THREE.BoxGeometry(cfIL * 0.96, 0.07, cfEW + 0.18),
-    new THREE.MeshBasicMaterial({ color: C('#45423d'), transparent: true, opacity: 0.5 }));
-  cfCrown.position.y = cfEH / 2 + 0.07; cofGroup.add(cfCrown);
-
-  // B field lines: ACROSS THE WIDTH (z), long wall → long wall, through the mercury
-  const cfFieldMat = new THREE.LineBasicMaterial({ color: C('#cf6f5f'), transparent: true, opacity: 0.5 });
-  for (let ix = -1; ix <= 1; ix++) for (let iy = -1; iy <= 1; iy++) {
-    const fx = ix * cfIL * 0.3, fy = iy * cfIH * 0.28;
-    cofGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(
-      [new THREE.Vector3(fx, fy, -cfIW / 2), new THREE.Vector3(fx, fy, cfIW / 2)]), cfFieldMat.clone()));
-    const head = new THREE.Mesh(new THREE.ConeGeometry(0.024, 0.07, 8),
-      new THREE.MeshBasicMaterial({ color: C('#cf6f5f'), transparent: true, opacity: 0.7 }));
-    head.position.set(fx, fy, cfIW / 2 - 0.035); head.rotation.x = Math.PI / 2; cofGroup.add(head);
-  }
-
-  // ARC / sense electrodes: through the LID (the sealed coffer's top electrodes that run the gate arc)
-  const cfElecMat = [];
-  for (const sx of [-1, 1]) {
-    const m = new THREE.MeshBasicMaterial({ color: C('#e7d9a8'), transparent: true, opacity: 0.95 });
-    const e = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, cfWT * 2.4, 12), m);
-    e.position.set(sx * cfIL * 0.26, cfEH / 2 - cfWT * 0.6, 0); cofGroup.add(e); cfElecMat.push(m);
-  }
-  // WIRELESS output: NO wires, NO load box: the sealed coffer couples its 50 Hz AC out
-  // through the RESONANT FIELD (Tesla-style wireless link). Cyan wavefronts expand outward.
-  const cfOut = [];
-  for (let i = 0; i < 4; i++) {
-    const ring = new THREE.Mesh(
-      new THREE.RingGeometry(0.045, 0.055, 56),
-      new THREE.MeshBasicMaterial({ color: C(p.cyan), transparent: true, opacity: 0, side: THREE.DoubleSide }));
-    ring.rotation.x = -Math.PI / 2; ring.position.y = cfHgTopY - cfFillH / 2;   // mid-pool height
-    cofGroup.add(ring); cfOut.push(ring);
-  }
-
-  // axis triad: slosh (x, gold) / B (y, red) / current (z, cyan)
-  const cfTriad = new THREE.Group();
-  cfTriad.position.set(-cfEL / 2 - 0.2, -cfEH / 2 - 0.2, -cfEW / 2 - 0.1); cofGroup.add(cfTriad);
-  cfTriad.add(new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(), 0.42, 0xC9A830));  // slosh x (gold)
-  cfTriad.add(new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(), 0.42, 0xc0432f));  // B z (red, across width)
-  cfTriad.add(new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(), 0.42, 0x37b0c9));  // current y (cyan)
-
-  // ── RUNNING-STATE visuals: the telluric clock, the resonance (bell), the plasma ──
-  // Telluric "clock" wavefronts: rise from the aquifer/ground (below) up through the floor:
-  // the faint global ~50 Hz reference the chamber phase-locks to (the clock, not the fuel).
-  const cfTel = [];
-  for (let i = 0; i < 4; i++) {
-    const ring = new THREE.Mesh(
-      new THREE.RingGeometry(cfEL * 0.20, cfEL * 0.30, 48),
-      new THREE.MeshBasicMaterial({ color: C('#49c39a'), transparent: true, opacity: 0, side: THREE.DoubleSide }));
-    ring.rotation.x = -Math.PI / 2; ring.position.y = -cfEH / 2 - 0.6;
-    cofGroup.add(ring); cfTel.push(ring);
-  }
-  // Resonance halo: the coffer rings like a bell at f₈≈50 Hz (high Q): a golden shell that
-  // pulses with the standing wave + three horizontal antinode discs (the (3,0,0)-style mode).
-  const cfHaloMat = new THREE.LineBasicMaterial({ color: C('#C9A830'), transparent: true, opacity: 0 });
-  const cfHalo = new THREE.LineSegments(
-    new THREE.EdgesGeometry(new THREE.BoxGeometry(cfEL * 1.05, cfEH * 1.05, cfEW * 1.05)), cfHaloMat);
-  cofGroup.add(cfHalo);
-  const cfNodes = [];
-  for (let i = 0; i < 3; i++) {
-    const disc = new THREE.Mesh(
-      new THREE.PlaneGeometry(cfIL * 0.96, cfIW * 0.96),
-      new THREE.MeshBasicMaterial({ color: C('#C9A830'), transparent: true, opacity: 0, side: THREE.DoubleSide }));
-    disc.rotation.x = -Math.PI / 2;
-    disc.position.set((i - 1) * cfIL * 0.30, cfHgTopY + 0.006, 0);   // 3 antinodes along the length
-    cofGroup.add(disc); cfNodes.push(disc);
-  }
-  // Mercury-arc plasma gate: a hot flickering core at the antinode + a vertical arc the
-  // slosh switches at 50 Hz; the mercury glows (running at ~517 °C / 1.0 MPa).
-  const cfPlasma = new THREE.Mesh(new THREE.SphereGeometry(0.055, 14, 14),
-    new THREE.MeshBasicMaterial({ color: C('#cfe8ff'), transparent: true, opacity: 0 }));
-  cfPlasma.position.set(0, cfHgTopY - cfFillH * 0.35, 0); cofGroup.add(cfPlasma);
-  const cfArc = new THREE.Line(new THREE.BufferGeometry().setFromPoints(
-    [new THREE.Vector3(0, cfHgTopY, 0), new THREE.Vector3(0, cfHgTopY - cfFillH * 0.7, 0)]),
-    new THREE.LineBasicMaterial({ color: C('#eaf5ff'), transparent: true, opacity: 0 }));
-  cofGroup.add(cfArc);
+  // The coffer core (shell, mercury, lodestone cage, field, electrodes, wireless rings,
+  // telluric clock, resonance halo, plasma) is the SHARED MHD Core builder — the same code
+  // the designer uses, so the two demos cannot drift. The King's Chamber room below is the
+  // Giza-specific add-on, kept here and driven by the resonance this core returns.
+  const cfCore = MhdCoreScene.build(THREE, { scale: 0.9, cyan: p.cyan });   // mercury defaults
+  cofGroup.add(cfCore.group);
+  const cofH = cfCore.handles;
+  // Geometry aliases the King's-Chamber add-on reads:
+  const _g = cfCore.geom;
+  const cfIL = _g.cfIL, cfIH = _g.cfIH, cfIW = _g.cfIW, cfWT = _g.cfWT,
+        cfEL = _g.cfEL, cfEH = _g.cfEH, cfEW = _g.cfEW, cfFillH = _g.cfFillH, cfHgTopY = _g.cfHgTopY;
 
   // ── KING'S CHAMBER containment ─────────────────────────────────────────────
   // The coffer is NOT in free space: it sits inside the granite King's Chamber,
@@ -1317,8 +1221,6 @@ function buildScene() {
       new THREE.Vector3(sz * 0.45, ckCeilY + 0.22, sz * (ckHalfW + 0.6))]),
       new THREE.LineBasicMaterial({ color: C('#6f8fb0'), transparent: true, opacity: 0.5 })));
   }
-
-  let cfPhase = 0;
 
   let displayPhase = 0, lastW = 0, lastH = 0;
   // Feedback-FREE resize: size from the canvas's own CSS-laid-out box and pass
@@ -1469,69 +1371,17 @@ function buildScene() {
     lastW = 0;                                              // force resize() to refit orbitR
   }
 
-  // ── Animate the coffer MHD cut-away (B steady, slosh + polarity + current AC) ──
+  // ── Animate the coffer MHD cut-away via the SHARED core, then drive the King's Chamber ──
   function updateCoffer(f, dt, now, on, sustains) {
-    const q = pal();
-    // ── TELLURIC CLOCK / GROUND SYSTEM: ALWAYS present: the ambient atmospheric+ground
-    //    field touches the coffer whether ignited or not. Wavefronts climb from the aquifer. ──
-    cfTel.forEach((ring, i) => {
-      const ph = (now * (on ? 0.55 : 0.30) + i / cfTel.length) % 1;   // climb (faster when running)
-      ring.position.y = (-cfEH / 2 - 0.6) + ph * 0.6;
-      ring.scale.setScalar(0.6 + ph * 0.8);
-      const beat = on ? (0.45 + 0.55 * (0.5 + 0.5 * Math.cos(cfPhase))) : 0.5;
-      ring.material.opacity = (on ? 0.40 : 0.22) * (1 - ph) * beat;
-    });
-    if (!on) {
-      // ── DORMANT (OFF): cool, still mercury; no slosh, no plasma, no resonance bell ──
-      cfHg.position.x = 0; cfHg.rotation.z = 0;
-      cfHgMat.opacity = 0.9; cfHgMat.color.copy(C('#9fb6c4'));   // cool, settled
-      const base = C('#e7d9a8'); cfElecMat[0].color.copy(base); cfElecMat[1].color.copy(base);
-      cfOut.forEach((r) => { r.material.opacity = 0; });
-      cfHaloMat.opacity = 0; cfNodes.forEach((d) => { d.material.opacity = 0; });
-      cfPlasma.material.opacity = 0; cfArc.material.opacity = 0;
-      // King's Chamber sits quiet; the containment is shown but not resonating
+    const r = MhdCoreScene.update(cofH, { on, sustains, now, dt, cyan: pal().cyan });
+    // The King's Chamber is the Giza-specific add-on: its granite walls and the relieving-
+    // chamber capacitor stack ring in step with the resonance the core reports.
+    if (!r.on) {
       ckWallMat.opacity = 0.32; ckReliev.forEach((rc) => { rc.material.opacity = 0.18; });
-      orbitRender(now); return;
-    }
-    // ── RUNNING (ON / ignited): the full reactor ──
-    cfPhase += dt * 4.0;                                    // viewable cadence (represents 50 Hz)
-    const s = Math.sin(cfPhase);
-    // mercury surges along the long axis and its surface tilts
-    cfHg.position.x = s * 0.05 * cfIL; cfHg.rotation.z = s * 0.045;
-    cfHgMat.opacity = 0.85 + 0.12 * Math.abs(s);
-    // electrode polarity follows v×B: a +x surge drives one wall +, the other − (flips at 50 Hz)
-    const hot = C('#ff7a5a'), cold = C('#5a9bff'), base = C('#e7d9a8');
-    cfElecMat[1].color.copy(base.clone().lerp(s > 0 ? hot : cold, Math.min(1, Math.abs(s))));
-    cfElecMat[0].color.copy(base.clone().lerp(s > 0 ? cold : hot, Math.min(1, Math.abs(s))));
-    if (sustains) {
-      // SUSTAINED (R ≤ threshold): full hot reactor: wireless broadcast, bell, hot Hg, plasma
-      // WIRELESS OUTPUT: cyan wavefronts expand outward: the 50 Hz AC couples out (no wires)
-      cfOut.forEach((ring, i) => {
-        const ph = (now * 0.7 + i / cfOut.length) % 1;       // expand 0→1
-        ring.scale.setScalar(1.0 + ph * 34.0);
-        ring.material.color.set(q.cyan);
-        ring.material.opacity = 0.5 * (1 - ph) * (0.5 + 0.5 * Math.abs(s));
-      });
-      // RESONANCE (the bell): golden shell + antinode discs breathe at f₈≈50 Hz, high Q
-      const res = 0.5 + 0.5 * Math.cos(cfPhase);
-      cfHaloMat.opacity = 0.12 + 0.48 * res; cfHalo.scale.setScalar(1.0 + 0.012 * res);
-      cfNodes.forEach((d, i) => { d.material.opacity = 0.05 + 0.34 * res * (i === 1 ? 1.0 : 0.55); });
-      // The KING'S CHAMBER is the cavity: its granite walls ring with the standing wave
-      // and the relieving-chamber capacitor stack charges in step with the resonance.
-      ckWallMat.opacity = 0.42 + 0.34 * res;
-      ckReliev.forEach((rc, i) => { rc.material.opacity = 0.22 + 0.40 * res * (1 - i * 0.13); });
-      cfHgMat.color.copy(C(q.cyan).lerp(C('#ffb060'), 0.22 + 0.26 * res));   // hot glow ~517 °C
-      // PLASMA ARC: hot flickering core + vertical arc: the running mercury-arc reactor
-      const flick = 0.55 + 0.45 * Math.abs(Math.sin(now * 37.0) * Math.sin(now * 13.0));
-      cfPlasma.material.opacity = 0.5 + 0.45 * flick; cfPlasma.scale.setScalar(0.8 + 0.5 * flick);
-      cfArc.material.opacity = 0.28 + 0.6 * flick;
+    } else if (r.sustains) {
+      ckWallMat.opacity = 0.42 + 0.34 * r.res;
+      ckReliev.forEach((rc, i) => { rc.material.opacity = 0.22 + 0.40 * r.res * (1 - i * 0.13); });
     } else {
-      // STALLED (ON but R > threshold): the slosh runs, but the arc quenches: cool, no broadcast
-      cfOut.forEach((r) => { r.material.opacity = 0; });
-      cfHaloMat.opacity = 0; cfNodes.forEach((d) => { d.material.opacity = 0; });
-      cfPlasma.material.opacity = 0; cfArc.material.opacity = 0;
-      cfHgMat.color.copy(C('#9fb6c4'));   // cool (quenched)
-      // chamber is energised but not ringing: faint, steady (no standing wave)
       ckWallMat.opacity = 0.36; ckReliev.forEach((rc) => { rc.material.opacity = 0.20; });
     }
     orbitRender(now);
