@@ -36,6 +36,10 @@
     var fillFrac = opts.fillFrac != null ? opts.fillFrac : 0.75;
     var fluidColor = opts.fluidColor || '#bfd3dd';
     var cyan = opts.cyan || '#37b0c9';
+    // Field hardware — the one piece that genuinely differs by scale:
+    //   'lodestone'  : Giza's coil-free permanent-magnet cage + crown, B across the width
+    //   'engineered' : a lab/site NdFeB array (N/S slabs + iron yoke), vertical B
+    var field = opts.field === 'engineered' ? 'engineered' : 'lodestone';
 
     var group = new THREE.Group();
 
@@ -58,30 +62,59 @@
     var cfHg = new THREE.Mesh(new THREE.BoxGeometry(cfIL * 0.99, cfFillH, cfIW * 0.99), cfHgMat);
     cfHg.position.y = cfHgTopY - cfFillH / 2; group.add(cfHg);
 
-    // LODESTONE CAGE: two combs of tapered spokes on the LONG walls (z=±), joined over the top.
-    var cfLodeMat = new THREE.MeshBasicMaterial({ color: C('#33312e'), transparent: true, opacity: 0.42, side: THREE.DoubleSide });
-    var cfNSpoke = 5, cfZwall = cfEW / 2 + 0.045;
-    [-1, 1].forEach(function (sz) {
-      for (var i = 0; i < cfNSpoke; i++) {
-        var sx = (i - (cfNSpoke - 1) / 2) * (cfIL / cfNSpoke);
-        var sp = new THREE.Mesh(new THREE.BoxGeometry(cfIL / (cfNSpoke * 1.7), cfEH * 0.98, 0.06), cfLodeMat);
-        sp.position.set(sx, 0, sz * cfZwall); group.add(sp);
-      }
-    });
-    // the CROWN: the two combs joined OVER THE TOP — the cool magnet body off the hot cell
-    var cfCrown = new THREE.Mesh(new THREE.BoxGeometry(cfIL * 0.96, 0.07, cfEW + 0.18),
-      new THREE.MeshBasicMaterial({ color: C('#45423d'), transparent: true, opacity: 0.5 }));
-    cfCrown.position.y = cfEH / 2 + 0.07; group.add(cfCrown);
-
-    // B field lines: ACROSS THE WIDTH (z), long wall → long wall, through the fluid
+    // ── FIELD HARDWARE (scale-specific) ──────────────────────────────────────
     var cfFieldMat = new THREE.LineBasicMaterial({ color: C('#cf6f5f'), transparent: true, opacity: 0.5 });
-    for (var ix = -1; ix <= 1; ix++) for (var iy = -1; iy <= 1; iy++) {
-      var fx = ix * cfIL * 0.3, fy = iy * cfIH * 0.28;
-      group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(
-        [new THREE.Vector3(fx, fy, -cfIW / 2), new THREE.Vector3(fx, fy, cfIW / 2)]), cfFieldMat.clone()));
-      var head = new THREE.Mesh(new THREE.ConeGeometry(0.024, 0.07, 8),
-        new THREE.MeshBasicMaterial({ color: C('#cf6f5f'), transparent: true, opacity: 0.7 }));
-      head.position.set(fx, fy, cfIW / 2 - 0.035); head.rotation.x = Math.PI / 2; group.add(head);
+    if (field === 'engineered') {
+      // ENGINEERED ARRAY: NdFeB slabs — N (red) below the floor, S (blue) above the lid —
+      // returned by an iron yoke C-frame. B is VERTICAL (y), N→S, through the fluid.
+      var magT = 0.13, magGap = 0.04;
+      var magNy = -cfEH / 2 - magGap - magT / 2, magSy = cfEH / 2 + magGap + magT / 2;
+      var magN = new THREE.Mesh(new THREE.BoxGeometry(cfIL, magT, cfIW), new THREE.MeshBasicMaterial({ color: C('#c0432f') }));
+      var magS = new THREE.Mesh(new THREE.BoxGeometry(cfIL, magT, cfIW), new THREE.MeshBasicMaterial({ color: C('#3f63b0') }));
+      magN.position.y = magNy; magS.position.y = magSy; group.add(magN); group.add(magS);
+      var yokeMat = new THREE.MeshBasicMaterial({ color: C('#4a4a52') });
+      var yokeH = (magSy - magNy) + magT;
+      [-1, 1].forEach(function (sx) {
+        var bar = new THREE.Mesh(new THREE.BoxGeometry(0.09, yokeH, cfIW), yokeMat);
+        bar.position.set(sx * (cfEL / 2 + 0.07), 0, 0); group.add(bar);
+        [magNy - magT / 2 - 0.025, magSy + magT / 2 + 0.025].forEach(function (my) {
+          var ret = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.05, cfIW), yokeMat);
+          ret.position.set(sx * (cfEL / 2), my, 0); group.add(ret);
+        });
+      });
+      var y0f = magNy + magT / 2, y1f = magSy - magT / 2;
+      for (var ix = -1; ix <= 1; ix++) for (var iz = -1; iz <= 1; iz++) {
+        var fx = ix * cfIL * 0.3, fz = iz * cfIW * 0.3;
+        group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+          [new THREE.Vector3(fx, y0f, fz), new THREE.Vector3(fx, y1f, fz)]), cfFieldMat.clone()));
+        var headE = new THREE.Mesh(new THREE.ConeGeometry(0.024, 0.07, 8),
+          new THREE.MeshBasicMaterial({ color: C('#cf6f5f'), transparent: true, opacity: 0.7 }));
+        headE.position.set(fx, y1f - 0.035, fz); group.add(headE);
+      }
+    } else {
+      // LODESTONE CAGE: two combs of tapered spokes on the LONG walls (z=±), joined over the top.
+      var cfLodeMat = new THREE.MeshBasicMaterial({ color: C('#33312e'), transparent: true, opacity: 0.42, side: THREE.DoubleSide });
+      var cfNSpoke = 5, cfZwall = cfEW / 2 + 0.045;
+      [-1, 1].forEach(function (sz) {
+        for (var i = 0; i < cfNSpoke; i++) {
+          var sx = (i - (cfNSpoke - 1) / 2) * (cfIL / cfNSpoke);
+          var sp = new THREE.Mesh(new THREE.BoxGeometry(cfIL / (cfNSpoke * 1.7), cfEH * 0.98, 0.06), cfLodeMat);
+          sp.position.set(sx, 0, sz * cfZwall); group.add(sp);
+        }
+      });
+      // the CROWN: the two combs joined OVER THE TOP — the cool magnet body off the hot cell
+      var cfCrown = new THREE.Mesh(new THREE.BoxGeometry(cfIL * 0.96, 0.07, cfEW + 0.18),
+        new THREE.MeshBasicMaterial({ color: C('#45423d'), transparent: true, opacity: 0.5 }));
+      cfCrown.position.y = cfEH / 2 + 0.07; group.add(cfCrown);
+      // B field lines: ACROSS THE WIDTH (z), long wall → long wall, through the fluid
+      for (var lx = -1; lx <= 1; lx++) for (var ly = -1; ly <= 1; ly++) {
+        var lfx = lx * cfIL * 0.3, lfy = ly * cfIH * 0.28;
+        group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+          [new THREE.Vector3(lfx, lfy, -cfIW / 2), new THREE.Vector3(lfx, lfy, cfIW / 2)]), cfFieldMat.clone()));
+        var headL = new THREE.Mesh(new THREE.ConeGeometry(0.024, 0.07, 8),
+          new THREE.MeshBasicMaterial({ color: C('#cf6f5f'), transparent: true, opacity: 0.7 }));
+        headL.position.set(lfx, lfy, cfIW / 2 - 0.035); headL.rotation.x = Math.PI / 2; group.add(headL);
+      }
     }
 
     // ARC / sense electrodes through the LID
@@ -102,12 +135,15 @@
       group.add(ring); cfOut.push(ring);
     }
 
-    // axis triad: slosh (x, gold) / B (z, red across width) / current (y, cyan)
+    // axis triad: slosh (x, gold) / B (red) / current (cyan). The lodestone field crosses the
+    // WIDTH (B→z, current→y); the engineered array is VERTICAL (B→y, current→z).
+    var bVec = field === 'engineered' ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(0, 0, 1);
+    var iVec = field === 'engineered' ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(0, 1, 0);
     var cfTriad = new THREE.Group();
     cfTriad.position.set(-cfEL / 2 - 0.2, -cfEH / 2 - 0.2, -cfEW / 2 - 0.1); group.add(cfTriad);
     cfTriad.add(new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(), 0.42, 0xC9A830));
-    cfTriad.add(new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(), 0.42, 0xc0432f));
-    cfTriad.add(new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(), 0.42, 0x37b0c9));
+    cfTriad.add(new THREE.ArrowHelper(bVec, new THREE.Vector3(), 0.42, 0xc0432f));
+    cfTriad.add(new THREE.ArrowHelper(iVec, new THREE.Vector3(), 0.42, 0x37b0c9));
 
     // Telluric "clock" wavefronts: rise from the ground (below) up through the floor.
     var cfTel = [];

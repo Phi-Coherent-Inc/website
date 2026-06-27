@@ -538,7 +538,7 @@
       <div class="ledger" style="font-size:11px;">
         <b style="color:#9a7d56">granite coffer</b> (sealed vessel) ·
         <b style="color:#bfd3dd" id="dev3dFluid">Mercury</b> working fluid · fill = <span id="dev3dFill">78% · auto-tuned</span> ·
-        <b style="color:#45423d">lodestone cage</b> + crown (permanent field across the width, no coil) ·
+        <span id="dev3dField"><b style="color:#45423d">lodestone cage</b> + crown (permanent field across the width, no coil)</span> ·
         <b style="color:#e7d9a8">lid arc-electrodes</b> ·
         <b style="color:#cf6f5f">B-field</b> ·
         <b style="color:var(--demo-cyan)">wireless EMF output</b> (when running) ·
@@ -1165,6 +1165,10 @@ function updateDOM() {
   if (fillEl) fillEl.textContent = `${(s.fillUsed*100).toFixed(1)}% · ${s.fillMode === 'auto' ? 'auto-tuned' : 'manual'}`;
   const matEl = $('dev3dMat');
   if (matEl) { matEl.textContent = mat.name; matEl.style.color = mat.color; }
+  const fieldEl = $('dev3dField');
+  if (fieldEl) fieldEl.innerHTML = s.sourceType === 'artificial'
+    ? '<b style="color:#c0432f">N</b>/<b style="color:#3f63b0">S</b> NdFeB array + <b style="color:#4a4a52">iron yoke</b> (vertical B)'
+    : '<b style="color:#45423d">lodestone cage</b> + crown (permanent field across the width, no coil)';
 
   // Source & vessel metrics
   tx('mVoc',      fmtV(s.Voc));
@@ -1874,20 +1878,23 @@ function init3D() {
   // or working fluid changes; the slosh / glow / ring animation runs via the shared
   // MhdCoreScene.update each frame. The designer adds its own containment cavity around it.
   const CFS = 0.84;
-  let coreH = null, coreGroup = null, coreFillKey = -1, coreFluidKey = '';
+  let coreH = null, coreGroup = null, coreFillKey = -1, coreFluidKey = '', coreFieldKey = '';
   function ensureCore() {
     const fillFrac   = Math.max(0.04, Math.min(1.0, ST.fillUsed || 0.5));
     const fk         = Math.round(fillFrac * 50);          // quantise to avoid churn
     const fluidColor = ST.fluid === 'galinstan'
                      ? '#cdd2c8'                            // galinstan: a greener metal
                      : (PAL.isDark ? '#c8dee8' : '#bfd3dd');// mercury
-    if (fk === coreFillKey && fluidColor === coreFluidKey && coreGroup) return;
-    coreFillKey = fk; coreFluidKey = fluidColor;
+    // Field hardware follows the SYSTEM: Giza (natural telluric) → lodestone cage;
+    // the engineered device (artificial supply) → an NdFeB array.
+    const fieldKind  = ST.sourceType === 'artificial' ? 'engineered' : 'lodestone';
+    if (fk === coreFillKey && fluidColor === coreFluidKey && fieldKind === coreFieldKey && coreGroup) return;
+    coreFillKey = fk; coreFluidKey = fluidColor; coreFieldKey = fieldKind;
     if (coreGroup) {
       scene.remove(coreGroup);
       coreGroup.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
     }
-    const built = MhdCoreScene.build(THREE, { scale: CFS, fillFrac, fluidColor, cyan: PAL.cyan });
+    const built = MhdCoreScene.build(THREE, { scale: CFS, fillFrac, fluidColor, field: fieldKind, cyan: PAL.cyan });
     coreGroup = built.group; coreH = built.handles; scene.add(coreGroup);
   }
   ensureCore();
