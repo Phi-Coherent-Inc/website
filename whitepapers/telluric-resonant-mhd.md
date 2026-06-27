@@ -135,9 +135,9 @@ near-coincidence the geodetic reading rests on:
     perimeter/h = 4b / [(b/2)√φ] = 8/√φ = 6.28921 ≈ 2π                          (4)
 
 Every φ-pyramid thus encodes a sphere of radius ≈ its own height. Fixing the size selects which sphere;
-at Earth's polar radius (F14) and p = 34 the scale factor is a φ-power and a Fibonacci integer at once:
+at Earth's polar radius (F14) and p = 34 the scale factor is a φ-power that sits ~8×10⁻⁸ from an integer:
 
-    h = R_body/φ^p,   φ³⁴ = F(34)√5 = 12,752,043,   h_C = R_polar/φ³⁴ = 498.508 mm   (5)
+    h = R_body/φ^p,   φ³⁴ ≈ F(34)√5 ≈ 12,752,043 = L(34),   h_C = R_polar/φ³⁴ = 498.508 mm   (5)
 
 The remaining scale-free identities are exact consequences of (1):
 
