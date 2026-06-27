@@ -708,3 +708,7 @@ Status: **EXACT** = algebraic consequence of Eq. (1) or an exact textbook relati
 6. F. W. Peek, *Dielectric Phenomena in High Voltage Engineering*, McGraw-Hill (1929).
 7. L. D. Landau and E. M. Lifshitz, *Mechanics*, 3rd ed., §27, Pergamon (1976).
 8. H. Rissik, *Mercury-Arc Current Convertors*, Pitman (1941).
+
+---
+
+*© 2026 Phi-Coherent Inc. All rights reserved. Published under AGPLv3, commercial licensing available. phicoherent.com*
