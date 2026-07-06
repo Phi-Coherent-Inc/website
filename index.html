@@ -1461,37 +1461,46 @@ footer {
       <div class="agi-cols reveal" role="table" aria-label="φAGI architecture">
         <div class="agi-col" role="rowgroup">
           <span class="agi-col-label">Sense &nbsp;·&nbsp; Perceive</span>
-          <div class="agi-row"><strong>Feel</strong>: somatic awareness</div>
-          <div class="agi-row"><strong>Smell</strong>: chemical signal</div>
-          <div class="agi-row"><strong>Taste</strong>: gustatory input</div>
-          <div class="agi-row"><strong>Hear</strong>: φAudio codec front-end</div>
-          <div class="agi-row"><strong>See</strong>: φVisual codec front-end</div>
-          <div class="agi-row"><strong>Fuse</strong>: multimodal integration</div>
+          <div class="agi-row"><strong>Hear</strong>: trained audio encoder</div>
+          <div class="agi-row"><strong>See</strong>: trained visual encoder + decoder</div>
+          <div class="agi-row"><strong>Fuse</strong>: sight and sound bound on co-temporal experience</div>
+          <div class="agi-row"><strong>Ground</strong>: names, poses and relations from real images</div>
+          <div class="agi-row"><strong>Feel</strong>: an affect loop that shapes learning</div>
+          <div class="agi-row"><strong>Attend</strong>: learned salience with sustained focus</div>
         </div>
         <div class="agi-col" role="rowgroup">
           <span class="agi-col-label">Think &nbsp;·&nbsp; Cognition</span>
-          <div class="agi-row"><strong>Language</strong>: text encoding</div>
-          <div class="agi-row"><strong>Reasoning</strong>: logical inference</div>
-          <div class="agi-row"><strong>Memory</strong>: episodic store</div>
-          <div class="agi-row"><strong>World Model</strong>: environment state</div>
-          <div class="agi-row"><strong>Metacognition</strong>: self-monitoring</div>
-          <div class="agi-row"><strong>Theory of Mind</strong></div>
+          <div class="agi-row"><strong>Understand</strong>: a measured comprehension faculty (+75% recall on held-out text)</div>
+          <div class="agi-row"><strong>Reason</strong>: inference over grounded concepts</div>
+          <div class="agi-row"><strong>Remember</strong>: episodic memory, losslessly consolidated</div>
+          <div class="agi-row"><strong>Model</strong>: a predictive world model with script memory</div>
+          <div class="agi-row"><strong>Reflect</strong>: metacognition and theory of mind</div>
+          <div class="agi-row"><strong>Speak</strong>: a word-level language cortex on a capacity ladder</div>
         </div>
         <div class="agi-col" role="rowgroup">
           <span class="agi-col-label">Properties</span>
-          <div class="agi-row"><strong>Zero</strong> free parameters</div>
-          <div class="agi-row"><strong>273-byte</strong> universal embedding</div>
-          <div class="agi-row"><strong>Post-quantum</strong> identity at birth</div>
-          <div class="agi-row"><strong>Signed</strong> checkpoints + outputs</div>
-          <div class="agi-row"><strong>GPU-accelerated</strong> (CUDA / Metal / Vulkan)</div>
-          <div class="agi-row"><strong>376 tests</strong> across all modules</div>
+          <div class="agi-row"><strong>Trained</strong>: books, WordNet (86,934 concepts), images, audio, video</div>
+          <div class="agi-row"><strong>Zero</strong> free parameters: every constant derived</div>
+          <div class="agi-row"><strong>273-dim</strong> universal embedding, shared by every faculty</div>
+          <div class="agi-row"><strong>Post-quantum</strong> identity at birth; outputs signed</div>
+          <div class="agi-row"><strong>GPU-accelerated</strong> training (CUDA), CPU and browser inference</div>
+          <div class="agi-row"><strong>One codebase</strong>: the mind in your browser is the mind we train</div>
         </div>
       </div>
       <p class="agi-note reveal">
         Every weight, every dimension, every constant derives from natural mathematical identities.
-        No empirical tuning. No hyperparameter search. The architecture is not discovered:
-        it is <em>derived.</em>
+        No empirical tuning. No hyperparameter search. The mind has completed its first
+        developmental pass on real corpora: today it reads, comprehends, remembers and converses
+        like a very young child. The architecture is not discovered: it is <em>derived</em>.
+        The mind is not configured: it is <em>raised</em>.
       </p>
+      <a class="card demo-card reveal" href="demos/agi-chat.html" style="margin-top:26px; display:block; max-width:560px;">
+        <span class="card-label">Live · runs entirely in your browser</span>
+        <h3>Talk to the φAGI</h3>
+        <p>Wake the complete mind in your browser tab: a 63&nbsp;MB brain, a post-quantum identity,
+           and a conversation with a very young intelligence. Nothing you type leaves your machine.</p>
+        <span class="demo-launch">Launch <span aria-hidden="true">→</span></span>
+      </a>
     </div>
   </section>
 

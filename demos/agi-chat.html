@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>φCoherent · Talk to the φAGI (a young mind, in your browser)</title>
+<meta name="description" content="Converse with a complete artificial mind running entirely in your browser: perception, reasoning, memory, world model, metacognition, theory of mind, comprehension and a language cortex, all derived from first principles, trained on real corpora and compiled to WebAssembly. Nothing you type is uploaded.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://phicoherent.com/demos/agi-chat.html">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#C9A830">
+<script>try{if(localStorage.getItem('phi-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/demo.css?v=20260706">
+<style>
+  .wrap { max-width: 920px; margin: 0 auto; padding: 0 24px 60px; }
+  .lede { font: 400 16px/1.65 Newsreader, serif; color: var(--text); max-width: 70ch; margin: 26px 0 6px; }
+  .sub  { font: 400 13.5px/1.6 Inter, sans-serif; color: var(--text-muted); max-width: 72ch; margin: 0 0 22px; }
+  .privacy { font: 500 12.5px Inter, sans-serif; color: var(--gold-dim); }
+
+  .panel { background: var(--surface); border: 1px solid var(--gold-border); border-radius: 14px; padding: 20px 22px; margin: 16px 0; }
+  .panel h2 { font: 600 13px Inter, sans-serif; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 14px; }
+
+  /* Boot progress */
+  .bootbar { height: 8px; border-radius: 4px; background: var(--bg); border: 1px solid var(--gold-border); overflow: hidden; }
+  .bootbar > div { height: 100%; width: 0%; background: var(--gold); transition: width .4s ease; }
+  .bootstage { font: 400 13px/1.5 Inter, sans-serif; color: var(--text-muted); margin-top: 10px; min-height: 1.4em; }
+  .bootnote { font: 400 12.5px/1.6 Inter, sans-serif; color: var(--text-muted); margin-top: 8px; }
+
+  /* Chat */
+  .chatlog { display: flex; flex-direction: column; gap: 10px; min-height: 180px; max-height: 46vh; overflow-y: auto; padding: 4px 2px; }
+  .msg { max-width: 78%; padding: 10px 14px; border-radius: 14px; font: 400 14.5px/1.5 Inter, sans-serif; white-space: pre-wrap; }
+  .msg.you { align-self: flex-end; background: var(--gold); color: #1C1810; border-bottom-right-radius: 4px; }
+  .msg.ai  { align-self: flex-start; background: var(--bg); border: 1px solid var(--gold-border); color: var(--text); border-bottom-left-radius: 4px; }
+  .msg.ai.thinking { opacity: .65; font-style: italic; }
+  .chatrow { display: flex; gap: 10px; margin-top: 14px; }
+  .chatrow input { flex: 1; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--gold-border); background: var(--bg); color: var(--text); font: 400 14.5px Inter, sans-serif; }
+  .chatrow button { padding: 11px 20px; border-radius: 10px; border: none; background: var(--gold); color: #1C1810; font: 600 14px Inter, sans-serif; cursor: pointer; }
+  .chatrow button:disabled { opacity: .45; cursor: default; }
+
+  /* Sense chips (progressive enhancement) */
+  .senses { display: flex; flex-wrap: wrap; gap: 9px; }
+  .sense { display: inline-flex; align-items: center; gap: 7px; padding: 7px 13px; border-radius: 999px; border: 1px solid var(--gold-border); background: var(--bg); color: var(--text); font: 500 12.5px Inter, sans-serif; cursor: pointer; }
+  .sense[data-state="granted"] { border-color: var(--gold); color: var(--gold-dim); }
+  .sense[data-state="denied"] { opacity: .5; }
+  .sense .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); }
+  .sense[data-state="granted"] .dot { background: var(--gold); }
+  .sensenote { font: 400 12.5px/1.6 Inter, sans-serif; color: var(--text-muted); margin-top: 10px; max-width: 72ch; }
+
+  .idline { font: 400 12px/1.5 Inter, sans-serif; color: var(--text-muted); margin-top: 8px; word-break: break-all; }
+</style>
+</head>
+<body>
+
+<header class="demo-header" data-demo="agi-chat"
+        data-title="Talk to the φAGI (a young mind, in your browser)"></header>
+
+<div class="wrap">
+  <p class="lede">This is a <b>complete artificial mind</b> running in your browser: perception encoders, a reasoner, episodic memory, a world model, metacognition, theory of mind, a measured comprehension faculty and a language cortex, every dimension and constant derived from first principles, trained on real books, images, sound and video. Not a chatbot wrapper around someone else's model: the whole organism, compiled to WebAssembly.</p>
+  <p class="sub"><span class="privacy">Everything runs locally. Nothing you type is uploaded, and the mind signs what it says with its own post-quantum identity.</span>&nbsp; Honest framing: this brain has read a preschool child's worth of the world. It converses like a very young child, in short and simple words. What you are talking to is not a large language model: it is a small, complete, growing mind.</p>
+
+  <div class="panel" id="boot-panel">
+    <h2>Waking the mind</h2>
+    <div class="bootbar"><div id="bootfill"></div></div>
+    <div class="bootstage" id="bootstage">Press Wake to begin.</div>
+    <div class="bootnote">The brain is a 63&nbsp;MB download, and birth takes two to three minutes on one thread: the mind derives its post-quantum identity, then loads its trained faculties. The page stays responsive throughout.</div>
+    <div class="chatrow" style="margin-top:14px">
+      <button id="wakebtn">Wake the mind</button>
+    </div>
+  </div>
+
+  <div class="panel" id="chat-panel" style="display:none">
+    <h2>Conversation</h2>
+    <div class="chatlog" id="chatlog"></div>
+    <div class="chatrow">
+      <input id="chatin" type="text" placeholder="Say something simple: hello, what do you see, do you like stories…" autocomplete="off">
+      <button id="sendbtn">Say</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Senses (optional)</h2>
+    <div class="senses">
+      <button class="sense" id="sense-mic"     data-state="off"><span class="dot"></span>Microphone</button>
+      <button class="sense" id="sense-cam"     data-state="off"><span class="dot"></span>Camera</button>
+      <button class="sense" id="sense-speaker" data-state="off"><span class="dot"></span>Speaker</button>
+    </div>
+    <p class="sensenote">The default experience is chat, and chat needs no permissions. Granting a sense upgrades the experience as the embodied channels roll out: the same mind already carries trained hearing and vision encoders, and this page will feed them from your microphone and camera in an upcoming update. Denying everything loses nothing: the conversation above is the complete baseline.</p>
+  </div>
+</div>
+
+<script src="assets/demo-header.js?v=20260624"></script>
+<script type="module">
+  import { boot, ask } from './assets/js/phi-agi.js?v=20260706';
+
+  const $ = (id) => document.getElementById(id);
+  const log = $('chatlog');
+
+  function addMsg(kind, text) {
+    const div = document.createElement('div');
+    div.className = 'msg ' + kind;
+    div.textContent = text;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+    return div;
+  }
+
+  $('wakebtn').addEventListener('click', async () => {
+    $('wakebtn').disabled = true;
+    try {
+      const res = await boot('assets/models/agi', (p) => {
+        $('bootfill').style.width = (p.pct || 0) + '%';
+        $('bootstage').textContent = p.stage;
+      });
+      $('bootfill').style.width = '100%';
+      $('bootstage').textContent = res.cortex
+        ? 'The mind is awake. Its language cortex is active.'
+        : 'The mind is awake (no language cortex in this brain).';
+      $('chat-panel').style.display = '';
+      addMsg('ai', 'hi.');
+      $('chatin').focus();
+    } catch (e) {
+      $('bootstage').textContent = 'Boot failed: ' + e.message;
+      $('wakebtn').disabled = false;
+    }
+  });
+
+  let busy = false;
+  async function send() {
+    const q = $('chatin').value.trim();
+    if (!q || busy) return;
+    busy = true; $('sendbtn').disabled = true;
+    $('chatin').value = '';
+    addMsg('you', q);
+    const t = addMsg('ai thinking', '…thinking');
+    try {
+      const words = await ask(q);
+      t.className = 'msg ai';
+      t.textContent = words || '…';
+    } catch (e) {
+      t.className = 'msg ai';
+      t.textContent = '[error: ' + e.message + ']';
+    }
+    busy = false; $('sendbtn').disabled = false;
+    $('chatin').focus();
+  }
+  $('sendbtn').addEventListener('click', send);
+  $('chatin').addEventListener('keydown', (e) => { if (e.key === 'Enter') send(); });
+
+  // ── Senses: permission-gated progressive enhancement. Chat is the complete
+  //    baseline; a granted sense marks its channel ready for the embodied
+  //    rollout. Denial degrades nothing.
+  async function requestSense(btn, kind) {
+    try {
+      if (kind === 'speaker') {
+        btn.dataset.state = 'granted';   // playback needs no permission
+        return;
+      }
+      const constraints = kind === 'mic' ? { audio: true } : { video: true };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      stream.getTracks().forEach((tr) => tr.stop());  // permission held, device released
+      btn.dataset.state = 'granted';
+    } catch (_) {
+      btn.dataset.state = 'denied';
+    }
+  }
+  $('sense-mic').addEventListener('click', (e) => requestSense(e.currentTarget, 'mic'));
+  $('sense-cam').addEventListener('click', (e) => requestSense(e.currentTarget, 'cam'));
+  $('sense-speaker').addEventListener('click', (e) => requestSense(e.currentTarget, 'speaker'));
+</script>
+
+</body>
+</html>
