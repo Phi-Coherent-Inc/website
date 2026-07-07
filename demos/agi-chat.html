@@ -69,7 +69,7 @@
     <h2>Waking the mind</h2>
     <div class="bootbar"><div id="bootfill"></div></div>
     <div class="bootstage" id="bootstage">Press Wake to begin.</div>
-    <div class="bootnote">The brain is a 63&nbsp;MB download, and birth takes two to three minutes on one thread: the mind derives its post-quantum identity, then loads its trained faculties. The page stays responsive throughout.</div>
+    <div class="bootnote">The brain is a 72&nbsp;MB download, and birth takes two to three minutes on one thread: the mind derives its post-quantum identity, then loads its trained faculties. The page stays responsive throughout.</div>
     <div class="chatrow" style="margin-top:14px">
       <button id="wakebtn">Wake the mind</button>
     </div>
@@ -91,13 +91,15 @@
       <button class="sense" id="sense-cam"     data-state="off"><span class="dot"></span>Camera</button>
       <button class="sense" id="sense-speaker" data-state="off"><span class="dot"></span>Speaker</button>
     </div>
-    <p class="sensenote">The default experience is chat, and chat needs no permissions. Granting a sense upgrades the experience as the embodied channels roll out: the same mind already carries trained hearing and vision encoders, and this page will feed them from your microphone and camera in an upcoming update. Denying everything loses nothing: the conversation above is the complete baseline.</p>
+    <p class="sensenote">The default experience is chat, and chat needs no permissions. Each granted sense is wired to the mind's own trained faculties, live: the <b>camera</b> feeds frames through its trained visual encoder every few seconds and it may comment on what it sees; the <b>microphone</b> feeds sound windows through its trained hearing encoder; the <b>speaker</b> plays the mind's own voice, a vocalization decoded from its response state by its trained speech decoder (not text-to-speech). Sensing takes real thought: a glance costs seconds, a listen tens of seconds, so the mind samples its senses rather than streaming them. Deny everything and nothing is lost: the conversation above is the complete baseline.</p>
+    <video id="camview" playsinline muted style="display:none"></video>
+    <canvas id="camcanvas" width="144" height="144" style="display:none"></canvas>
   </div>
 </div>
 
 <script src="assets/demo-header.js?v=20260624"></script>
 <script type="module">
-  import { boot, ask } from './assets/js/phi-agi.js?v=20260706';
+  import { boot, ask, see, hear, voice } from './assets/js/phi-agi.js?v=20260707';
 
   const $ = (id) => document.getElementById(id);
   const log = $('chatlog');
@@ -143,6 +145,7 @@
       const words = await ask(q);
       t.className = 'msg ai';
       t.textContent = words || '…';
+      await playVoice();
     } catch (e) {
       t.className = 'msg ai';
       t.textContent = '[error: ' + e.message + ']';
@@ -153,19 +156,105 @@
   $('sendbtn').addEventListener('click', send);
   $('chatin').addEventListener('keydown', (e) => { if (e.key === 'Enter') send(); });
 
-  // ── Senses: permission-gated progressive enhancement. Chat is the complete
-  //    baseline; a granted sense marks its channel ready for the embodied
-  //    rollout. Denial degrades nothing.
+  // ── Senses: permission-gated progressive enhancement, wired LIVE to the
+  //    mind's trained faculties. Chat is the complete baseline; a granted sense
+  //    feeds the mind; denial degrades nothing. Sensing is serialized behind
+  //    conversation (one cognition at a time) and sampled, not streamed.
+  const senses = { cam: null, mic: null, speaker: false };
+  let sensing = false;   // one sensory cognition in flight at a time
+
+  function senseSay(kind, words) {
+    if (words && words.trim()) addMsg('ai', `(${kind}) ` + words.trim());
+  }
+
+  // Speaker: play the mind's OWN voice (one ~130 ms vocalization per reply).
+  let audioCtx = null;
+  async function playVoice() {
+    if (!senses.speaker) return;
+    try {
+      const wav = await voice();
+      if (!wav || !wav.length) return;
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 44100 });
+      const buf = audioCtx.createBuffer(1, wav.length, 44100);
+      buf.copyToChannel(new Float32Array(wav), 0);
+      const src = audioCtx.createBufferSource();
+      src.buffer = buf; src.connect(audioCtx.destination); src.start();
+    } catch (_) { /* voice is an enhancement — never break chat */ }
+  }
+
+  // Camera: one 144×144 glance every 12 s while the tab is visible.
+  async function camLoop() {
+    const v = $('camview'), cv = $('camcanvas'), ctx = cv.getContext('2d', { willReadFrequently: true });
+    while (senses.cam) {
+      if (!document.hidden && !busy && !sensing && $('chat-panel').style.display !== 'none') {
+        sensing = true;
+        try {
+          ctx.drawImage(v, 0, 0, 144, 144);
+          const px = ctx.getImageData(0, 0, 144, 144).data;
+          const words = await see(new Uint8Array(px.buffer.slice(0)), 144, 144);
+          senseSay('seeing', words);
+          await playVoice();
+        } catch (_) { /* enhancement */ }
+        sensing = false;
+      }
+      await new Promise((r) => setTimeout(r, 12000));
+    }
+  }
+
+  // Microphone: one ~130 ms listen every 30 s (hearing is the mind's most
+  // expensive sense in the browser).
+  async function micLoop() {
+    const stream = senses.mic;
+    const ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 44100 });
+    const srcNode = ctx.createMediaStreamSource(stream);
+    const proc = ctx.createScriptProcessor(16384, 1, 1);
+    let latest = null;
+    proc.onaudioprocess = (e) => { latest = e.inputBuffer.getChannelData(0).slice(0); };
+    srcNode.connect(proc); proc.connect(ctx.destination);
+    while (senses.mic) {
+      if (!document.hidden && !busy && !sensing && latest && $('chat-panel').style.display !== 'none') {
+        sensing = true;
+        try {
+          const win = new Float32Array(5733);
+          win.set(latest.subarray(0, Math.min(5733, latest.length)));
+          const words = await hear(win);
+          senseSay('hearing', words);
+          await playVoice();
+        } catch (_) { /* enhancement */ }
+        sensing = false;
+      }
+      await new Promise((r) => setTimeout(r, 30000));
+    }
+    proc.disconnect(); srcNode.disconnect(); ctx.close();
+  }
+
   async function requestSense(btn, kind) {
     try {
-      if (kind === 'speaker') {
-        btn.dataset.state = 'granted';   // playback needs no permission
+      if (btn.dataset.state === 'granted') {   // toggle off — sense removed
+        if (kind === 'cam' && senses.cam) { senses.cam.getTracks().forEach((t) => t.stop()); senses.cam = null; }
+        if (kind === 'mic' && senses.mic) { senses.mic.getTracks().forEach((t) => t.stop()); senses.mic = null; }
+        if (kind === 'speaker') senses.speaker = false;
+        btn.dataset.state = 'off';
         return;
       }
-      const constraints = kind === 'mic' ? { audio: true } : { video: true };
+      if (kind === 'speaker') {
+        senses.speaker = true;
+        btn.dataset.state = 'granted';
+        playVoice();
+        return;
+      }
+      const constraints = kind === 'mic' ? { audio: true } : { video: { width: 320, height: 240 } };
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      stream.getTracks().forEach((tr) => tr.stop());  // permission held, device released
       btn.dataset.state = 'granted';
+      if (kind === 'cam') {
+        senses.cam = stream;
+        const v = $('camview');
+        v.srcObject = stream; await v.play();
+        camLoop();
+      } else {
+        senses.mic = stream;
+        micLoop();
+      }
     } catch (_) {
       btn.dataset.state = 'denied';
     }

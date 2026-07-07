@@ -36,6 +36,9 @@ const BRAIN_FILES = [
   ['memory_episodic.pcz', 647034],
   ['cortex.safetensors', 40738291],
   ['cortex.vocab.json', 59837],
+  ['audio_encoder.safetensors', 1581126],
+  ['video_encoder.safetensors', 1893208],
+  ['speak_decoder.safetensors', 6038612],
 ];
 
 function post(id, payload) { self.postMessage({ id, ...payload }); }
@@ -73,7 +76,8 @@ async function boot(id, base) {
   const err = chat.load('/brain');
   if (err) { post(id, { ok: false, error: 'brain load: ' + err }); return; }
 
-  post(id, { ok: true, done: true, cortex: chat.hasCortex() });
+  post(id, { ok: true, done: true, cortex: chat.hasCortex(),
+             see: chat.hasSee(), hear: chat.hasHear(), voice: chat.hasVoice() });
 }
 
 self.onmessage = async (e) => {
@@ -85,6 +89,18 @@ self.onmessage = async (e) => {
       if (!chat) { post(id, { ok: false, error: 'not booted' }); return; }
       const words = chat.ask(String(e.data.text));
       post(id, { ok: true, result: words });
+    } else if (op === 'see') {
+      if (!chat) { post(id, { ok: false, error: 'not booted' }); return; }
+      const words = chat.see(e.data.rgba, e.data.w | 0, e.data.h | 0);
+      post(id, { ok: true, result: words });
+    } else if (op === 'hear') {
+      if (!chat) { post(id, { ok: false, error: 'not booted' }); return; }
+      const words = chat.hear(e.data.pcm);
+      post(id, { ok: true, result: words });
+    } else if (op === 'voice') {
+      if (!chat) { post(id, { ok: false, error: 'not booted' }); return; }
+      const wav = chat.voice();
+      post(id, { ok: true, result: wav });
     } else {
       post(id, { ok: false, error: 'unknown op: ' + op });
     }

@@ -41,11 +41,31 @@ function call(msg, onProgress) {
 
 // Boot the mind: fetch + stage the brain, derive the identity, load the
 // weights. `onProgress({stage, pct})` narrates. Resolves {cortex:boolean}.
+// `base` is resolved against the PAGE's URL here — inside the worker a
+// relative fetch would resolve against the worker script's directory.
 export function boot(base, onProgress) {
-  return call({ op: 'boot', base }, onProgress);
+  const absBase = new URL(base, document.baseURI).href.replace(/\/$/, '');
+  return call({ op: 'boot', base: absBase }, onProgress);
 }
 
 // One conversational turn: a full cognitive step, words out.
 export function ask(text) {
   return call({ op: 'ask', text });
+}
+
+// SEE: one RGBA frame (Uint8Array, w*h*4) through the trained visual encoder
+// into perceive(); resolves the mind's spontaneous words (often '').
+export function see(rgba, w, h) {
+  return call({ op: 'see', rgba, w, h });
+}
+
+// HEAR: one ~130 ms mono Float32 PCM window (44.1 kHz, 5733 samples) through
+// the trained audio encoder into perceive(); words as above.
+export function hear(pcm) {
+  return call({ op: 'hear', pcm });
+}
+
+// The mind's OWN voice: Float32Array waveform (44.1 kHz) of its last response.
+export function voice() {
+  return call({ op: 'voice' });
 }
