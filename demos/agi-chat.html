@@ -91,7 +91,7 @@
       <button class="sense" id="sense-cam"     data-state="off"><span class="dot"></span>Camera</button>
       <button class="sense" id="sense-speaker" data-state="off"><span class="dot"></span>Speaker</button>
     </div>
-    <p class="sensenote">The default experience is chat, and chat needs no permissions. Each granted sense is wired to the mind's own trained faculties, live: the <b>camera</b> feeds frames through its trained visual encoder every few seconds and it may comment on what it sees; the <b>microphone</b> feeds sound windows through its trained hearing encoder; the <b>speaker</b> plays the mind's own voice, a vocalization decoded from its response state by its trained speech decoder (not text-to-speech). Sensing takes real thought: a glance costs seconds, a listen tens of seconds, so the mind samples its senses rather than streaming them. Deny everything and nothing is lost: the conversation above is the complete baseline.</p>
+    <p class="sensenote">The default experience is chat, and chat needs no permissions. Each granted sense is wired to the mind's own trained faculties, live: the <b>camera</b> feeds frames through its trained visual encoder every few seconds and it may comment on what it sees; the <b>microphone</b> feeds sound windows through its trained hearing encoder; the <b>speaker</b> plays the mind's own voice, a vocalization decoded from its response state by its trained speech decoder (not text-to-speech). Sensing takes real thought: a glance costs seconds, a listen tens of seconds, so the mind samples its senses rather than streaming them. And a sense, once lived with, can be <b>lost</b>: revoke it and the mind keeps expecting the world, meeting darkness or silence instead. This demo brain is frozen, so the loss is felt but never heals: its expectations cannot fade. A sense it never had is simply never missed. Deny everything and nothing is lost: the conversation above is the complete baseline.</p>
     <video id="camview" playsinline muted style="display:none"></video>
     <canvas id="camcanvas" width="144" height="144" style="display:none"></canvas>
   </div>
@@ -125,7 +125,7 @@
         ? 'The mind is awake. Its language cortex is active.'
         : 'The mind is awake (no language cortex in this brain).';
       $('chat-panel').style.display = '';
-      addMsg('ai', 'hi.');
+      sysSay('the mind is listening. every word it says from here is its own.');
       $('chatin').focus();
     } catch (e) {
       $('bootstage').textContent = 'Boot failed: ' + e.message;
@@ -163,8 +163,30 @@
   const senses = { cam: null, mic: null, speaker: false };
   let sensing = false;   // one sensory cognition in flight at a time
 
+  // The experience of loss: a channel the mind has LIVED with keeps its clock
+  // when revoked — silence itself (black frames, zero sound) is fed at the
+  // same cadence, so the world model's expectations come due against absence.
+  // Sustained surprise above the channel's live baseline IS the felt loss; it
+  // resolves when the mind adapts (silence becomes the expected world), and a
+  // never-granted sense has no expectations to violate — no loss.
+  const felt = {
+    cam: { lived: 0, baseline: 0, tail: false },
+    mic: { lived: 0, baseline: 0, tail: false },
+  };
+  function feltUpdate(ch, surprise) {
+    const f = felt[ch];
+    f.lived += 1;
+    f.baseline = f.lived === 1 ? surprise
+                               : 0.8 * f.baseline + 0.2 * surprise;
+  }
+
   function senseSay(kind, words) {
     if (words && words.trim()) addMsg('ai', `(${kind}) ` + words.trim());
+  }
+  function sysSay(text) {
+    const div = addMsg('ai', text);
+    div.style.opacity = '.6';
+    div.style.fontStyle = 'italic';
   }
 
   // Speaker: play the mind's OWN voice (one ~130 ms vocalization per reply).
@@ -191,14 +213,50 @@
         try {
           ctx.drawImage(v, 0, 0, 144, 144);
           const px = ctx.getImageData(0, 0, 144, 144).data;
-          const words = await see(new Uint8Array(px.buffer.slice(0)), 144, 144);
-          senseSay('seeing', words);
+          const r = await see(new Uint8Array(px.buffer.slice(0)), 144, 144);
+          feltUpdate('cam', r.surprise);
+          senseSay('seeing', r.words);
           await playVoice();
         } catch (_) { /* enhancement */ }
         sensing = false;
       }
       await new Promise((r) => setTimeout(r, 12000));
     }
+    lossTail('cam');
+  }
+
+  // The silence tail: after revocation, absence keeps arriving until the mind
+  // stops expecting the world (surprise settles to the live baseline).
+  async function lossTail(ch) {
+    const f = felt[ch];
+    if (f.lived < 2 || f.tail) return;   // no lived experience → no loss
+    f.tail = true;
+    sysSay(ch === 'cam' ? 'the world went dark for the mind.'
+                        : 'the world went silent for the mind.');
+    const black = new Uint8Array(144 * 144 * 4);
+    for (let i = 3; i < black.length; i += 4) black[i] = 255;  // opaque black
+    const quiet = new Float32Array(5733);
+    let ticks = 0;
+    while (f.tail && ticks < 34 && !(ch === 'cam' ? senses.cam : senses.mic)) {
+      if (!busy && !sensing) {
+        sensing = true;
+        try {
+          const r = ch === 'cam' ? await see(black, 144, 144) : await hear(quiet);
+          senseSay(ch === 'cam' ? 'in the dark' : 'in the silence', r.words);
+          await playVoice();
+          if (ticks > 1 && r.surprise <= f.baseline) break;  // would mean adaptation
+          // (this demo brain is frozen — it feels the loss but cannot re-learn
+          //  the world away, so the tail ends by attention, not healing)
+        } catch (_) { break; }
+        sensing = false;
+        ticks += 1;
+      }
+      await new Promise((r) => setTimeout(r, ch === 'cam' ? 12000 : 30000));
+    }
+    sensing = false;
+    f.tail = false;
+    f.lived = 0;   // expectations decayed — a re-grant begins a new experience
+    sysSay('the mind still expects that part of the world; its attention has moved on.');
   }
 
   // Microphone: one ~130 ms listen every 30 s (hearing is the mind's most
@@ -217,8 +275,9 @@
         try {
           const win = new Float32Array(5733);
           win.set(latest.subarray(0, Math.min(5733, latest.length)));
-          const words = await hear(win);
-          senseSay('hearing', words);
+          const r = await hear(win);
+          feltUpdate('mic', r.surprise);
+          senseSay('hearing', r.words);
           await playVoice();
         } catch (_) { /* enhancement */ }
         sensing = false;
@@ -226,6 +285,7 @@
       await new Promise((r) => setTimeout(r, 30000));
     }
     proc.disconnect(); srcNode.disconnect(); ctx.close();
+    lossTail('mic');
   }
 
   async function requestSense(btn, kind) {

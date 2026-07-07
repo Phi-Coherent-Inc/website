@@ -92,11 +92,11 @@ self.onmessage = async (e) => {
     } else if (op === 'see') {
       if (!chat) { post(id, { ok: false, error: 'not booted' }); return; }
       const words = chat.see(e.data.rgba, e.data.w | 0, e.data.h | 0);
-      post(id, { ok: true, result: words });
+      post(id, { ok: true, result: { words, surprise: chat.surprise() } });
     } else if (op === 'hear') {
       if (!chat) { post(id, { ok: false, error: 'not booted' }); return; }
       const words = chat.hear(e.data.pcm);
-      post(id, { ok: true, result: words });
+      post(id, { ok: true, result: { words, surprise: chat.surprise() } });
     } else if (op === 'voice') {
       if (!chat) { post(id, { ok: false, error: 'not booted' }); return; }
       const wav = chat.voice();
