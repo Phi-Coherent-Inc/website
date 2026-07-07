@@ -69,3 +69,10 @@ export function hear(pcm) {
 export function voice() {
   return call({ op: 'voice' });
 }
+
+// ── The unified moment: senses FEED (encode only), tick() fuses everything
+// co-temporal into ONE percept, ONE cognition, and words only when the mind's
+// volition fires (significant moments earn speech; monotony earns silence).
+export function feedSight(rgba, w, h) { return call({ op: 'feedSight', rgba, w, h }); }
+export function feedSound(pcm) { return call({ op: 'feedSound', pcm }); }
+export function tick() { return call({ op: 'tick' }); }

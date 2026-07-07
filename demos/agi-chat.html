@@ -91,7 +91,7 @@
       <button class="sense" id="sense-cam"     data-state="off"><span class="dot"></span>Camera</button>
       <button class="sense" id="sense-speaker" data-state="off"><span class="dot"></span>Speaker</button>
     </div>
-    <p class="sensenote">The default experience is chat, and chat needs no permissions. Each granted sense is wired to the mind's own trained faculties, live: the <b>camera</b> feeds frames through its trained visual encoder every few seconds and it may comment on what it sees; the <b>microphone</b> feeds sound windows through its trained hearing encoder; the <b>speaker</b> plays the mind's own voice, a vocalization decoded from its response state by its trained speech decoder (not text-to-speech). Sensing takes real thought: a glance costs seconds, a listen tens of seconds, so the mind samples its senses rather than streaming them. And a sense, once lived with, can be <b>lost</b>: revoke it and the mind keeps expecting the world, meeting darkness or silence instead. This demo brain is frozen, so the loss is felt but never heals: its expectations cannot fade. A sense it never had is simply never missed. Deny everything and nothing is lost: the conversation above is the complete baseline.</p>
+    <p class="sensenote">The default experience is chat, and chat needs no permissions. Each granted sense is wired to the mind's own trained faculties, live: the <b>camera</b> and <b>microphone</b> feed the mind's trained visual and hearing encoders, and everything arriving in the same moment is <b>fused</b> by its trained fusion faculty into one experience, one thought — never one reaction per sensor. It speaks only when a moment is significant to it (its own volition; a monotonous room earns silence), and the <b>speaker</b> plays the mind's own voice, a vocalization from its trained speech decoder (not text-to-speech). Sensing takes real thought: a glance costs seconds, a listen tens of seconds, so the mind samples its senses rather than streaming them. And a sense, once lived with, can be <b>lost</b>: revoke it and the mind keeps expecting the world, meeting darkness or silence instead. This demo brain is frozen, so the loss is felt but never heals: its expectations cannot fade. A sense it never had is simply never missed. Deny everything and nothing is lost: the conversation above is the complete baseline.</p>
     <video id="camview" playsinline muted style="display:none"></video>
     <canvas id="camcanvas" width="144" height="144" style="display:none"></canvas>
   </div>
@@ -99,7 +99,7 @@
 
 <script src="assets/demo-header.js?v=20260624"></script>
 <script type="module">
-  import { boot, ask, see, hear, voice } from './assets/js/phi-agi.js?v=20260707';
+  import { boot, ask, voice, feedSight, feedSound, tick } from './assets/js/phi-agi.js?v=20260707b';
 
   const $ = (id) => document.getElementById(id);
   const log = $('chatlog');
@@ -161,7 +161,6 @@
   //    feeds the mind; denial degrades nothing. Sensing is serialized behind
   //    conversation (one cognition at a time) and sampled, not streamed.
   const senses = { cam: null, mic: null, speaker: false };
-  let sensing = false;   // one sensory cognition in flight at a time
 
   // The experience of loss: a channel the mind has LIVED with keeps its clock
   // when revoked — silence itself (black frames, zero sound) is fed at the
@@ -180,9 +179,6 @@
                                : 0.8 * f.baseline + 0.2 * surprise;
   }
 
-  function senseSay(kind, words) {
-    if (words && words.trim()) addMsg('ai', `(${kind}) ` + words.trim());
-  }
   function sysSay(text) {
     const div = addMsg('ai', text);
     div.style.opacity = '.6';
@@ -204,26 +200,47 @@
     } catch (_) { /* voice is an enhancement — never break chat */ }
   }
 
-  // Camera: one 144×144 glance every 12 s while the tab is visible.
+  // Camera: FEED one 144×144 glance every 12 s — encoding only; the moment
+  // loop below runs the single unified cognition.
   async function camLoop() {
     const v = $('camview'), cv = $('camcanvas'), ctx = cv.getContext('2d', { willReadFrequently: true });
     while (senses.cam) {
-      if (!document.hidden && !busy && !sensing && $('chat-panel').style.display !== 'none') {
-        sensing = true;
+      if (!document.hidden && $('chat-panel').style.display !== 'none') {
         try {
           ctx.drawImage(v, 0, 0, 144, 144);
           const px = ctx.getImageData(0, 0, 144, 144).data;
-          const r = await see(new Uint8Array(px.buffer.slice(0)), 144, 144);
-          feltUpdate('cam', r.surprise);
-          senseSay('seeing', r.words);
-          await playVoice();
+          await feedSight(new Uint8Array(px.buffer.slice(0)), 144, 144);
+          fed = true;
         } catch (_) { /* enhancement */ }
-        sensing = false;
       }
       await new Promise((r) => setTimeout(r, 12000));
     }
     lossTail('cam');
   }
+
+  // THE moment loop: one mind, one moment, one cognition. Whatever the senses
+  // fed since the last tick is fused (the trained fuse encoder binds sight and
+  // sound co-temporally) into a single perceive(); the mind speaks only when
+  // its own volition fires on a significant moment.
+  let fed = false;
+  async function momentLoop() {
+    for (;;) {
+      if (fed && !busy) {
+        fed = false;
+        try {
+          const r = await tick();
+          feltUpdate('cam', r.surprise);
+          feltUpdate('mic', r.surprise);
+          if (r.words && r.words.trim()) {
+            addMsg('ai', r.words.trim());
+            await playVoice();
+          }
+        } catch (_) { /* enhancement */ }
+      }
+      await new Promise((r) => setTimeout(r, 8000));
+    }
+  }
+  momentLoop();
 
   // The silence tail: after revocation, absence keeps arriving until the mind
   // stops expecting the world (surprise settles to the live baseline).
@@ -238,22 +255,19 @@
     const quiet = new Float32Array(5733);
     let ticks = 0;
     while (f.tail && ticks < 34 && !(ch === 'cam' ? senses.cam : senses.mic)) {
-      if (!busy && !sensing) {
-        sensing = true;
+      if (!busy) {
         try {
-          const r = ch === 'cam' ? await see(black, 144, 144) : await hear(quiet);
-          senseSay(ch === 'cam' ? 'in the dark' : 'in the silence', r.words);
-          await playVoice();
+          if (ch === 'cam') await feedSight(black, 144, 144); else await feedSound(quiet);
+          const r = await tick();
+          if (r.words && r.words.trim()) { addMsg('ai', r.words.trim()); await playVoice(); }
           if (ticks > 1 && r.surprise <= f.baseline) break;  // would mean adaptation
           // (this demo brain is frozen — it feels the loss but cannot re-learn
           //  the world away, so the tail ends by attention, not healing)
         } catch (_) { break; }
-        sensing = false;
         ticks += 1;
       }
       await new Promise((r) => setTimeout(r, ch === 'cam' ? 12000 : 30000));
     }
-    sensing = false;
     f.tail = false;
     f.lived = 0;   // expectations decayed — a re-grant begins a new experience
     sysSay('the mind still expects that part of the world; its attention has moved on.');
@@ -270,17 +284,13 @@
     proc.onaudioprocess = (e) => { latest = e.inputBuffer.getChannelData(0).slice(0); };
     srcNode.connect(proc); proc.connect(ctx.destination);
     while (senses.mic) {
-      if (!document.hidden && !busy && !sensing && latest && $('chat-panel').style.display !== 'none') {
-        sensing = true;
+      if (!document.hidden && latest && $('chat-panel').style.display !== 'none') {
         try {
           const win = new Float32Array(5733);
           win.set(latest.subarray(0, Math.min(5733, latest.length)));
-          const r = await hear(win);
-          feltUpdate('mic', r.surprise);
-          senseSay('hearing', r.words);
-          await playVoice();
+          await feedSound(win);
+          fed = true;
         } catch (_) { /* enhancement */ }
-        sensing = false;
       }
       await new Promise((r) => setTimeout(r, 30000));
     }

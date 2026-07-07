@@ -39,6 +39,7 @@ const BRAIN_FILES = [
   ['audio_encoder.safetensors', 1581126],
   ['video_encoder.safetensors', 1893208],
   ['speak_decoder.safetensors', 6038612],
+  ['fuse_encoder.safetensors', 1370188],
 ];
 
 function post(id, payload) { self.postMessage({ id, ...payload }); }
@@ -101,6 +102,18 @@ self.onmessage = async (e) => {
       if (!chat) { post(id, { ok: false, error: 'not booted' }); return; }
       const wav = chat.voice();
       post(id, { ok: true, result: wav });
+    } else if (op === 'feedSight') {
+      if (!chat) { post(id, { ok: false, error: 'not booted' }); return; }
+      chat.feedSight(e.data.rgba, e.data.w | 0, e.data.h | 0);
+      post(id, { ok: true, result: true });
+    } else if (op === 'feedSound') {
+      if (!chat) { post(id, { ok: false, error: 'not booted' }); return; }
+      chat.feedSound(e.data.pcm);
+      post(id, { ok: true, result: true });
+    } else if (op === 'tick') {
+      if (!chat) { post(id, { ok: false, error: 'not booted' }); return; }
+      const words = chat.tick();
+      post(id, { ok: true, result: { words, surprise: chat.surprise() } });
     } else {
       post(id, { ok: false, error: 'unknown op: ' + op });
     }
