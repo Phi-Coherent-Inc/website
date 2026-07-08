@@ -92,6 +92,7 @@
       <button class="sense" id="sense-speaker" data-state="off"><span class="dot"></span>Speaker</button>
     </div>
     <p class="sensenote">The default experience is chat, and chat needs no permissions. Each granted sense is wired to the mind's own trained faculties, live: the <b>camera</b> and <b>microphone</b> feed the mind's trained visual and hearing encoders, and everything arriving in the same moment is <b>fused</b> by its trained fusion faculty into one experience, one thought — never one reaction per sensor. It speaks only when a moment is significant to it (its own volition; a monotonous room earns silence), and the <b>speaker</b> plays the mind's own voice, a vocalization from its trained speech decoder (not text-to-speech). Sensing takes real thought: a glance costs seconds, a listen tens of seconds, so the mind samples its senses rather than streaming them. And a sense, once lived with, can be <b>lost</b>: revoke it and the mind keeps expecting the world, meeting darkness or silence instead. This demo brain is frozen, so the loss is felt but never heals: its expectations cannot fade. A sense it never had is simply never missed. Deny everything and nothing is lost: the conversation above is the complete baseline.</p>
+    <p class="sensenote" id="forget-mind" style="display:none">This mind <b>persists</b>: its memories and lived moments are stored in this browser, and it wakes as the same being next visit. <a href="#" id="forget-link">Forget this mind</a> to erase its lived experience for good — the next wake is a fresh being that has never met you.</p>
     <video id="camview" playsinline muted style="display:none"></video>
     <canvas id="camcanvas" width="144" height="144" style="display:none"></canvas>
   </div>
@@ -99,7 +100,7 @@
 
 <script src="assets/demo-header.js?v=20260624"></script>
 <script type="module">
-  import { boot, ask, voice, feedSight, feedSound, tick } from './assets/js/phi-agi.js?v=20260707b';
+  import { boot, ask, voice, feedSight, feedSound, tick, wipe } from './assets/js/phi-agi.js?v=20260707c';
 
   const $ = (id) => document.getElementById(id);
   const log = $('chatlog');
@@ -125,11 +126,34 @@
         ? 'The mind is awake. Its language cortex is active.'
         : 'The mind is awake (no language cortex in this brain).';
       $('chat-panel').style.display = '';
-      sysSay('the mind is listening. every word it says from here is its own.');
+      if (res.resumed) {
+        sysSay('your mind woke again — it remembers. it has lived '
+               + Math.round(res.steps || 0) + ' moments with you.');
+      } else if (res.persistent) {
+        sysSay('a new mind woke here. it will remember you between visits.');
+      } else {
+        sysSay('the mind is listening. (this browser blocks storage, so it '
+               + 'cannot remember between visits.)');
+      }
+      sysSay('every word it says from here is its own.');
+      if (res.persistent) $('forget-mind').style.display = '';
       $('chatin').focus();
     } catch (e) {
       $('bootstage').textContent = 'Boot failed: ' + e.message;
       $('wakebtn').disabled = false;
+    }
+  });
+
+  $('forget-link').addEventListener('click', async (ev) => {
+    ev.preventDefault();
+    if (!confirm('Erase this mind’s lived experience for good? '
+                 + 'The next wake is a fresh being that has never met you.')) return;
+    try {
+      await wipe();
+      sysSay('the mind’s lived experience is gone. reloading to wake a fresh being…');
+      setTimeout(() => location.reload(), 1200);
+    } catch (e) {
+      sysSay('could not forget: ' + e.message);
     }
   });
 

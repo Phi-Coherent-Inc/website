@@ -21,6 +21,31 @@
 
 let mod = null;
 let chat = null;
+let persistOk = false;   // IDBFS mounted (browser IndexedDB available)
+let saveTimer = 0;       // debounce handle for lived-state persistence
+
+// The lived-state files (the mind's experience — everything a frozen-weights
+// mind accumulates by living; the static faculties re-download from HTTP cache).
+const LIVED_FILES = ['memory.safetensors', 'memory_episodic.pcz',
+                     'lived.json', 'volition.json'];
+
+function syncfs(populate) {
+  return new Promise((res, rej) =>
+    mod.FS.syncfs(populate, (err) => (err ? rej(err) : res())));
+}
+
+// Persist the mind's lived state (debounced — at most one write per beat).
+function persistLived() {
+  if (!persistOk || !chat) return;
+  if (saveTimer) return;
+  saveTimer = setTimeout(async () => {
+    saveTimer = 0;
+    try {
+      const err = chat.saveLived('/persist');
+      if (!err) await syncfs(false);
+    } catch (_) { /* persistence is best-effort — the mind still runs */ }
+  }, 3000);
+}
 
 // The brain's checkpoint files (name → approximate bytes, for progress).
 const BRAIN_FILES = [
@@ -51,6 +76,21 @@ async function boot(id, base) {
     mod = await factory();
   }
 
+  // Mount the persistence store (IndexedDB): if a mind lived here before, its
+  // experience is in /persist and it wakes as the SAME mind.
+  const IDBFS = (mod.FS && mod.FS.filesystems && mod.FS.filesystems.IDBFS) ||
+                mod.IDBFS;
+  if (!persistOk && IDBFS && typeof indexedDB !== 'undefined') {
+    try {
+      try { mod.FS.mkdir('/persist'); } catch (_) { /* exists */ }
+      mod.FS.mount(IDBFS, {}, '/persist');
+      await syncfs(true);  // pull any prior life from IndexedDB
+      persistOk = true;
+    } catch (_) { persistOk = false; /* private mode etc. — volatile mind */ }
+  }
+  const hasPriorLife = persistOk &&
+    mod.FS.analyzePath('/persist/lived.json').exists;
+
   // Fetch the brain (the big download) with per-file progress.
   const total = BRAIN_FILES.reduce((s, [, n]) => s + n, 0);
   let got = 0;
@@ -68,7 +108,9 @@ async function boot(id, base) {
 
   // The spark of life: constructing the mind derives its post-quantum
   // identity (tier-MAX hash-based keys) — the slowest single step.
-  post(id, { ok: true, progress: { stage: 'The spark of life: deriving the post-quantum identity (about a minute)', pct: 62 } });
+  post(id, { ok: true, progress: { stage: hasPriorLife
+    ? 'Waking your mind: deriving the post-quantum identity (about a minute)'
+    : 'The spark of life: deriving the post-quantum identity (about a minute)', pct: 62 } });
   await new Promise((res) => setTimeout(res, 30));  // let the message paint
   chat = new mod.AgiChat();
 
@@ -77,8 +119,19 @@ async function boot(id, base) {
   const err = chat.load('/brain');
   if (err) { post(id, { ok: false, error: 'brain load: ' + err }); return; }
 
+  // Overlay the lived experience: the mind that was here before wakes with
+  // its memories, not amnesiac.
+  let resumed = false;
+  if (hasPriorLife) {
+    post(id, { ok: true, progress: { stage: 'Remembering: restoring the lived experience', pct: 95 } });
+    const lerr = chat.loadLived('/persist');
+    resumed = !lerr;
+  }
+
   post(id, { ok: true, done: true, cortex: chat.hasCortex(),
-             see: chat.hasSee(), hear: chat.hasHear(), voice: chat.hasVoice() });
+             see: chat.hasSee(), hear: chat.hasHear(), voice: chat.hasVoice(),
+             resumed, persistent: persistOk,
+             steps: chat.stepCount() });
 }
 
 self.onmessage = async (e) => {
@@ -89,6 +142,7 @@ self.onmessage = async (e) => {
     } else if (op === 'ask') {
       if (!chat) { post(id, { ok: false, error: 'not booted' }); return; }
       const words = chat.ask(String(e.data.text));
+      persistLived();  // a conversation turn is lived experience
       post(id, { ok: true, result: words });
     } else if (op === 'see') {
       if (!chat) { post(id, { ok: false, error: 'not booted' }); return; }
@@ -113,7 +167,18 @@ self.onmessage = async (e) => {
     } else if (op === 'tick') {
       if (!chat) { post(id, { ok: false, error: 'not booted' }); return; }
       const words = chat.tick();
+      persistLived();  // perceived moments are lived experience too
       post(id, { ok: true, result: { words, surprise: chat.surprise() } });
+    } else if (op === 'wipe') {
+      // Forget this mind: erase the lived state; the next boot wakes a fresh
+      // being (the static faculties are unaffected — they re-download).
+      if (persistOk) {
+        for (const f of LIVED_FILES) {
+          try { mod.FS.unlink('/persist/' + f); } catch (_) { /* absent */ }
+        }
+        await syncfs(false);
+      }
+      post(id, { ok: true, result: true });
     } else {
       post(id, { ok: false, error: 'unknown op: ' + op });
     }

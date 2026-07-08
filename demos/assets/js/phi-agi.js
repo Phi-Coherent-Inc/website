@@ -25,7 +25,10 @@ function getWorker() {
       if (m.ok && m.progress) { if (p.onProgress) p.onProgress(m.progress); return; }
       _pending.delete(m.id);
       if (!m.ok) p.reject(new Error(m.error));
-      else p.resolve(m.done ? { cortex: m.cortex } : m.result);
+      else if (m.done) {
+        const { id: _i, ok: _o, done: _d, ...bootInfo } = m;
+        p.resolve(bootInfo);  // {cortex, see, hear, voice, resumed, persistent, steps}
+      } else p.resolve(m.result);
     };
   }
   return _worker;
@@ -76,3 +79,7 @@ export function voice() {
 export function feedSight(rgba, w, h) { return call({ op: 'feedSight', rgba, w, h }); }
 export function feedSound(pcm) { return call({ op: 'feedSound', pcm }); }
 export function tick() { return call({ op: 'tick' }); }
+
+// Forget this mind: erase the persisted lived state (memories, experience,
+// counters). The next boot wakes a FRESH being. Irreversible.
+export function wipe() { return call({ op: 'wipe' }); }
