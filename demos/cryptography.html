@@ -305,6 +305,38 @@
       </div>
     </section>
 
+    <!-- Related Packages -->
+    <section class="cx-panel span2">
+      <span class="tag">the φCrypt ecosystem</span>
+      <h2>Related packages</h2>
+      <div class="sub">
+        Where these primitives run beyond this demo. All pre-production — each repo documents
+        its own status.
+      </div>
+      <div class="cx-table-scroll">
+        <table class="cx-audit">
+          <thead>
+            <tr><th>Package</th><th>What it is</th><th>φCrypt primitives</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>phi-quic</td><td>QUIC / TLS 1.3 transport</td><td>φHash + φCipher, as a native TLS cipher suite</td></tr>
+            <tr><td>phi-ossl-provider</td><td>OpenSSL 3 provider</td><td>φHash + φCipher, exposed to any OpenSSL app by algorithm name</td></tr>
+            <tr><td>phi-sqlvfs</td><td>Encrypted SQLite VFS</td><td>φHash (key derivation) + φCipher (page encryption)</td></tr>
+            <tr><td>phi-net-cpp</td><td>P2P network layer — DHT, gossip, routing</td><td>φHash (DHT placement) + φSign (peer-record authentication)</td></tr>
+            <tr><td>phi-zk-php</td><td>Server-side verifier for the φ zero-knowledge proof stack</td><td>φDSA (billing-ticket signing) + φHash</td></tr>
+            <tr><td>phi-rpc-cpp</td><td>Transport-agnostic JSON-RPC engine</td><td>φCrypt's CSPRNG only — channel security is delegated to phi-ossl-provider / phi-quic</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="cx-callout">
+        <strong>Mobile.</strong> Five React Native packages bridge these into the mobile wallet over
+        JSI: react-native-phi-crypt (φCrypt itself), react-native-phi-sqlite (phi-sqlvfs),
+        react-native-phi-tcp (the TLS-over-TCP fallback), react-native-phi-rpc-client (phi-rpc-cpp),
+        and react-native-phi-zk (the ZK statement library). None are published to npm yet — install
+        from the monorepo directly.
+      </div>
+    </section>
+
   </div>
 
   <div class="cx-footer-note" id="footerNote"></div>
