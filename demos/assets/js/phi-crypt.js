@@ -71,6 +71,9 @@ export function toHex(bytes) {
 export const PhiHash = {
   // chandas 0/1/2 -> 29/47/76-byte digest.
   hash(text, chandas = 0) { return _module.hash(enc(text), chandas | 0); },
+  // NIST-KAT-validated FIPS-202 reference (32-byte digest) — the avalanche
+  // widget's yardstick, not a suite primitive.
+  sha3_256(text) { return _module.sha3_256(enc(text)); },
 };
 
 // ── φCipher (AEAD) ───────────────────────────────────────────────────────

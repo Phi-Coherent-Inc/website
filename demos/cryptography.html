@@ -250,7 +250,12 @@
         </select>
       </div>
       <div class="cx-out" id="hashOut">—</div>
-      <div class="cx-callout" id="hashAvalanche">Flip one character above to see the avalanche.</div>
+      <div class="cx-out" id="hashSha3Out" style="margin-top:10px">—</div>
+      <div class="cx-callout" id="hashAvalanche">Flip one character above to see the avalanche —
+        measured side by side against SHA3-256, the NIST reference (its export here is validated
+        against the official test vectors). Identical-looking diffusion beside the standard is the
+        meaningful statement; an avalanche readout alone is not, since every hash, including broken
+        ones, flips about half its bits.</div>
       <div class="cx-callout">
         <strong>Beyond avalanche.</strong> A single flipped bit changing ~50% of the output is
         necessary but not sufficient — plenty of broken hashes pass that check too. The test suite
@@ -814,20 +819,27 @@ const hexBlock = (label, u8, extra) =>
     renderSecurityRows(hashTiers, kemPkBytes, dsaPkBytes);
   }
 
-  // ── φHash ──
+  // ── φHash (side by side with the SHA3-256 reference) ──
   let lastHash = null;
   function runHash() {
     const text = $('hashInput').value;
     const chandas = parseInt($('hashChandas').value, 10);
     const digest = PhiHash.hash(text, chandas);
-    $('hashOut').innerHTML = hexBlock('Digest', digest);
+    const sha3 = PhiHash.sha3_256(text);
+    $('hashOut').innerHTML = hexBlock('φHash digest', digest);
+    $('hashSha3Out').innerHTML = hexBlock('SHA3-256 (NIST reference)', sha3);
     if (lastHash && lastHash.chandas === chandas) {
       const diffBits = [...digest].reduce((acc, v, i) => acc + popcount(v ^ (lastHash.digest[i] ?? 0)), 0);
       const pct = ((diffBits / (digest.length * 8)) * 100).toFixed(1);
-      $('hashAvalanche').innerHTML = '<strong>' + diffBits + ' / ' + (digest.length * 8) +
-        ' bits (' + pct + '%)</strong> changed from the previous digest — this is the avalanche property: a small input change should flip roughly half the output bits.';
+      const sDiff = [...sha3].reduce((acc, v, i) => acc + popcount(v ^ (lastHash.sha3[i] ?? 0)), 0);
+      const sPct = ((sDiff / (sha3.length * 8)) * 100).toFixed(1);
+      $('hashAvalanche').innerHTML = 'φHash: <strong>' + diffBits + ' / ' + (digest.length * 8) +
+        ' bits (' + pct + '%)</strong> flipped · SHA3-256: <strong>' + sDiff + ' / ' +
+        (sha3.length * 8) + ' bits (' + sPct + '%)</strong> flipped from the previous input. ' +
+        'Both should hover near 50% — statistically indistinguishable diffusion beside the NIST ' +
+        'reference is the point of running them together.';
     }
-    lastHash = { chandas, digest };
+    lastHash = { chandas, digest, sha3 };
   }
   function popcount(x) { let c = 0; while (x) { c += x & 1; x >>= 1; } return c; }
   $('hashInput').addEventListener('input', runHash);
