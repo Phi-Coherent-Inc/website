@@ -194,9 +194,14 @@
       <div class="sub">
         GF(2⁸) wide-trail SPN, encrypt-then-MAC. The passphrase is <strong>not</strong> hashed
         directly — a bare hash, however good, is GPU/ASIC-parallelizable against a human-chosen
-        passphrase. The key comes from φ-ROMix v2, a scrypt-style memory-hard KDF (φ-ChaCha14
-        fill/mix over a random-access buffer, φHash only at the final extraction step) salted per
-        session below.
+        passphrase. The key comes from φ-ROMix v2 (default cost here): a 7.5 MB fill buffer, 121,393
+        randomly-addressed mixing rounds, φHash only at the final extraction step — a real,
+        non-trivial memory cost, though modest next to Argon2id's typical recommended range
+        (64 MB-1 GB); ≈46 ms per derivation in this single-threaded WASM build. The fill/mix core
+        is φ-ChaCha14: <em>standard, unmodified</em> ChaCha quarter-round rotations (Fibonacci
+        rotation amounts were tried and rejected — they halved AVX2 throughput with no security
+        gain), but a non-standard round count (14, vs. IETF's 8/12/20) and φ-Weyl state constants
+        in place of ChaCha's "expand 32-byte k". Salted per session below.
       </div>
       <div class="cx-out" id="cipherSalt" style="margin-bottom:14px"></div>
       <div class="cx-field"><label>Message</label><input type="text" id="cipherMsg" value="the quick brown fox"></div>
@@ -301,10 +306,10 @@
       <span class="tag">bit strength · hardness assumptions</span>
       <h2>Security details</h2>
       <div class="sub">
-        Two independent hardness assumptions — but read "Independence, precisely" below before
-        taking that at face value. φSign's security rests only on φHash preimage/collision
-        resistance (no elliptic curves, no algebraic hardness); φDSA's rests on Module-LWE/SIS, a
-        wholly separate problem; φKEM's is Module-LWE too, judged by a modeled core-SVP/BKZ
+        Two independent hardness assumptions — read "Independence, precisely" below for exactly
+        what depends on what. φSign's security rests only on φHash preimage/collision resistance
+        (no elliptic curves, no algebraic hardness); φDSA's rests on Module-LWE/SIS, a wholly
+        separate problem; φKEM's is Module-LWE too, judged by a modeled core-SVP/BKZ
         lattice-reduction estimate, not test vectors or third-party audit.
       </div>
       <div class="cx-table-scroll">
@@ -322,20 +327,51 @@
         but the memory-hard KDF's own last step is still one φHash call. φKEM here is instantiated
         with φHash as its extendable-output function (the suite's own choice; SHAKE-256 would work
         identically against the same Module-LWE assumption), so its key-establishment path also
-        depends on φHash behaving as a random oracle, not only on Module-LWE. The one primitive on
-        this page with <em>zero</em> φHash dependency, assumption or implementation, is φDSA — it
-        uses SHAKE-256 throughout, precisely because φHash's output isn't uniform enough for its
-        rejection sampling (see the φDSA callout below). Read plainly: φHash is a shared component
-        with suite-wide blast radius, not a firewall between the two legs.
+        depends on φHash <em>behaving as a random oracle</em>, not only on Module-LWE — a stronger
+        ask than "produces good avalanche," and the gap between those two turned out to matter (see
+        below). The one primitive on this page with <em>zero</em> φHash dependency, assumption or
+        implementation, is φDSA — it uses SHAKE-256 throughout. Read plainly: φHash is a shared
+        component with suite-wide blast radius, not a firewall between the two legs.
+      </div>
+      <div class="cx-callout">
+        <strong>The φHash-XOF finding, and the fix.</strong> External review pushed on the φDSA
+        callout's own admission — φHash pegs ~6% of ExpandMask's coefficients at the boundary vs.
+        ~0.02% expected — and asked the right question: is that a routing decision, or a fact about
+        φHash? It's the latter, and it doesn't touch φHash's core diffusion. Past ~196 bytes, φHash
+        falls back to a "chain extension" step that applies only the linear Triveni lift/unlift —
+        no S-box, no phyllotaxis mixing, no round constants — repeatedly, self-referentially. In
+        this suite's own eigenvalue-classification framework
+        (<code>phi_types/identity_classification.hpp</code>): a Fibonacci-weighted lifting
+        predictor is built to be near-identity — its natural home is the marginal Floor gate (γ,
+        λ≈+1), not the contracting Entropy gate (e, |λ|&lt;1) a mixing function needs. Iterating a
+        Floor-class map where an Entropy-class one belongs doesn't erase structure; it preserves
+        it. Measured directly: at chandas=8 (φKEM's XOF request size, chosen to amortize φHash's
+        per-call cost), the first 196 bytes are statistically clean — mean 127.59, variance 5459.8
+        against an ideal 127.5 / 5461.25 — and the remaining bytes show a byte position frozen
+        constant across 4,000 independent seeds. <strong>Fix:</strong> capped the XOF's request
+        size at chandas=3 (123 bytes) — the largest chandas that provably never reaches the
+        extension path for any input, since one block's full pipeline always yields exactly 196
+        detail bytes regardless of message length. Costs ~11× more φHash calls per XOF request;
+        correctness over a microbenchmark. Re-measured clean at the new tier (mean 127.60, variance
+        5458.6, saturation back to the expected 6.23%), and verified across phi-lattice-cpp's full
+        test suite (KAT anchors re-pinned, decode-failure bound unchanged at δ=2⁻²⁸⁴·⁷) and
+        phi-crypt-cpp's φPQC/adversarial/AKE suites — all green. φHash's core algorithm is
+        unmodified; every chandas 0-2 consumer (φSign, φCipher, φDSA's internals,
+        addresses/commitments) and phi-currency's independent mining-difficulty use of chandas were
+        both out of scope and are both untouched.
       </div>
       <div class="cx-callout">
         <strong>Reading the hash-based rows.</strong> φHash's output width sets the classical
         search space directly; the post-Grover (quantum) figure is half the classical bit count
         — the standard quadratic Grover speedup, computed live from the actual digest length
-        above, not a hardcoded table. φCipher's key and φSign's public-key commitment are the
-        same φHash output at the same tier, so they inherit the identical bit strength. Tier 0
-        (116-bit quantum) is NIST Category 3; tier 2 (304-bit quantum) exceeds NIST Category 5,
-        whose quantum floor is 232 bits.
+        above, not a hardcoded table. <strong>That's the preimage figure.</strong> Collision
+        resistance is half the output width classically (birthday bound) — tier 0's 232-bit output
+        gives 232-bit preimage strength but 116-bit collision strength, not 232 read as one number;
+        φSign's security specifically needs both (its hypertree commitments lean on preimage
+        resistance, its Merkle authentication paths on collision resistance). φCipher's key and
+        φSign's public-key commitment are the same φHash output at the same tier, so they inherit
+        the identical bit strength. Tier 0 (116-bit quantum preimage) is NIST Category 3; tier 2
+        (304-bit quantum preimage) exceeds NIST Category 5, whose quantum floor is 232 bits.
       </div>
       <div class="cx-callout">
         <strong>φKEM (φ-KEM-304).</strong> Module-LWE, ring degree n=512, module rank k=3, q=3329,
@@ -355,9 +391,16 @@
         <strong>On the Reed–Muller reconciliation:</strong> RM(1,3) is the one φ-native load-bearing
         element inside encode/decode, and changing it changes more than hardness — it changes the
         decryption failure rate (DFR) that the FO transform's CCA2 argument depends on directly.
-        The spec's own bound is δ ≤ 2⁻¹²⁸; RM(1,3) is computed exactly (not sampled) at δ = 2⁻²⁸⁵,
-        against a no-reconciliation baseline of δ = 2⁻⁶⁹ that fails the bound outright — the code
-        is load-bearing for CCA2 soundness, not merely a rate optimization, and this is exactly
+        The spec's own bound is δ ≤ 2⁻¹²⁸; RM(1,3) computes to δ = 2⁻²⁸⁵ against a
+        no-reconciliation baseline of δ = 2⁻⁶⁹ that fails the bound outright — "computes to" and
+        not "measures to": this is a closed-form convolution of per-coefficient error
+        distributions, exact <em>under that model</em>, not sampled. The team's own review notes
+        list the open question plainly: "is δ ≤ 2⁻¹²⁸ correct under a worst-case, not average-case,
+        noise model?" — unresolved, not glossed over. The CCA2-relevant cost is also finding one
+        failing ciphertext by directed search, not the bulk failure probability (failure
+        boosting); with a 157-bit margin over the 2⁻¹²⁸ bound that's very likely still fine, but it
+        hasn't been separately analyzed here. The code is load-bearing for CCA2 soundness, not
+        merely a rate optimization, and this is exactly
         where a Kyber-derived scheme stops being Kyber.
       </div>
       <div class="cx-callout">
@@ -366,8 +409,11 @@
         proof system and the signature, so signatures can be verified inside recursive proofs
         natively. This uses SHAKE-256 throughout, not φHash — φHash's output isn't uniform enough
         for the rejection-sampling step (measured: ~6% of mask coefficients pegged at the bound vs.
-        ~0.02% expected under a uniform XOF), so φDSA's hardness has zero φHash dependency, unlike
-        every other primitive on this page. The parameter set is derived from first principles and
+        ~0.02% expected under a uniform XOF; see "The φHash-XOF finding, and the fix" above — the
+        same defect, now fixed for φKEM's own use of φHash, but φDSA's rejection sampling has zero
+        tolerance for any bias, so SHAKE-256 remains the correct choice regardless), so φDSA's
+        hardness has zero φHash dependency, unlike every other primitive on this page. The
+        parameter set is derived from first principles and
         modeled, under the same conservative estimator, to dominate ML-DSA-87 — NIST FIPS-204's own
         Category 5 set — on every axis (an estimated ≈255-bit quantum forgery floor, clearing
         Category 5's 232-bit bar), with that estimate in the regime where the conservative bound is
