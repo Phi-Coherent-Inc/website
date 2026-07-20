@@ -144,10 +144,12 @@
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
+  <!-- φAGI demo temporarily hidden — re-enable by uncommenting.
   <url>
     <loc>https://phicoherent.com/demos/agi-chat.html</loc>
     <lastmod>2026-07-06</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
+  -->
 </urlset>

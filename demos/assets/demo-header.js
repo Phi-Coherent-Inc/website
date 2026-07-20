@@ -51,7 +51,7 @@
     { id: 'pyramid-energy',         file: 'pyramid-energy.html',         name: 'Pyramid Energy Device' },
     { id: 'telluric-mhd-designer', file: 'telluric-mhd-designer.html', name: 'Telluric-Resonant MHD Designer' },
     // ── Artificial General Intelligence (Pillar IV) ──
-    { id: 'agi-chat',             file: 'agi-chat.html',             name: 'Talk to the φAGI' },
+    // { id: 'agi-chat', file: 'agi-chat.html', name: 'Talk to the φAGI' },  // temporarily hidden
   ];
 
   // ── PhiTheme: palette + change subscription ────────────────────────────────
