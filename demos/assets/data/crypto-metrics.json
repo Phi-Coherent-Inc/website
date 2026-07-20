@@ -1,0 +1,57 @@
+{
+  "generated": "2026-07-20",
+  "host": "AMD Ryzen 7 3800X, single core, native -O2",
+  "note": "All timings measured on the host above with the production libraries. Standards sizes are the published FIPS 203/204/205 parameter-set figures for comparison.",
+  "hash_cost": {
+    "input_bytes": 176,
+    "phi_hash_us": 61.3,
+    "phi_hash_us_per_byte": 0.348,
+    "shake256_us": 1.63,
+    "shake256_us_per_byte": 0.0093,
+    "ratio": 37.6
+  },
+  "kem_xof_head_to_head_us": {
+    "note": "Same Module-LWE core, only the XOF differs; isolates the hash cost on the real task.",
+    "phi_hash": { "keygen": 3992, "encaps": 2468, "decaps": 1997 },
+    "shake256": { "keygen": 356, "encaps": 401, "decaps": 479 }
+  },
+  "sizes": {
+    "phikem_304": { "pk": 3148, "sk": 3072, "ct": 4096, "shared_secret": 32, "seed": 76 },
+    "phidsa": { "pk": 4352, "sig": 6206 },
+    "phisign": { "sig_t0": 11625, "sig_t1": 25395, "sig_t2": 58640, "pk": "29/47/76 by tier" },
+    "mlkem_1024": { "pk": 1568, "sk": 3168, "ct": 1568, "shared_secret": 32 },
+    "mldsa_87": { "pk": 2592, "sig": 4627 },
+    "slhdsa_sha2_256s": { "pk": 64, "sig": 29792 },
+    "slhdsa_sha2_256f": { "pk": 64, "sig": 49856 }
+  },
+  "security_estimates": {
+    "note": "Computed core-SVP/BKZ estimates from the in-repo estimator; conservative lower-bound model, not a gate-count cost model. External cryptanalysis review in progress.",
+    "phikem_304": { "beta": 1462, "classical_bits": 427, "quantum_bits": 387 },
+    "phidsa": { "classical_bits": 280.6, "quantum_bits": 254.7 },
+    "phikem_dfr": { "rm13_log2": -284.7, "nocode_log2": -68.9, "fo_bar_log2": -128 }
+  },
+  "phisign_end_to_end_native_ms": [
+    { "q": 0, "keygen": 459, "sign": 1439, "verify": 68, "sig_bytes": 11625 },
+    { "q": 1, "keygen": 731, "sign": 2481, "verify": 111, "sig_bytes": 25395 },
+    { "q": 2, "keygen": 2288, "sign": 6943, "verify": 354, "sig_bytes": 58640 }
+  ],
+  "w_sweep": {
+    "note": "WOTS chain-width sweep with the real hash at each tier. digit_space sets security; equal digit space compares on cost alone. The production configuration (w=13, 3-bit digits) is dominated: w=8 matches its security and signature size with ~38% fewer hash calls at tier 2.",
+    "rows": [
+      { "q": 0, "config": "w8-slice3", "w": 8, "digit_space": 8, "total_chains": 83, "sig_chain_bytes": 2407, "keygen_hash_calls": 665, "sign_hash_calls": 371, "verify_hash_calls": 293 },
+      { "q": 0, "config": "w13-slice3 (production)", "w": 13, "digit_space": 8, "total_chains": 82, "sig_chain_bytes": 2378, "keygen_hash_calls": 1067, "sign_hash_calls": 382, "verify_hash_calls": 685 },
+      { "q": 0, "config": "w13-radix", "w": 13, "digit_space": 13, "total_chains": 67, "sig_chain_bytes": 1943, "keygen_hash_calls": 872, "sign_hash_calls": 466, "verify_hash_calls": 406 },
+      { "q": 0, "config": "w16-slice4", "w": 16, "digit_space": 16, "total_chains": 62, "sig_chain_bytes": 1798, "keygen_hash_calls": 993, "sign_hash_calls": 528, "verify_hash_calls": 464 },
+      { "q": 2, "config": "w8-slice3", "w": 8, "digit_space": 8, "total_chains": 208, "sig_chain_bytes": 15808, "keygen_hash_calls": 1665, "sign_hash_calls": 920, "verify_hash_calls": 744 },
+      { "q": 2, "config": "w13-slice3 (production)", "w": 13, "digit_space": 8, "total_chains": 208, "sig_chain_bytes": 15808, "keygen_hash_calls": 2705, "sign_hash_calls": 931, "verify_hash_calls": 1774 },
+      { "q": 2, "config": "w13-radix", "w": 13, "digit_space": 13, "total_chains": 169, "sig_chain_bytes": 12844, "keygen_hash_calls": 2198, "sign_hash_calls": 1183, "verify_hash_calls": 1015 },
+      { "q": 2, "config": "w16-slice4", "w": 16, "digit_space": 16, "total_chains": 156, "sig_chain_bytes": 11856, "keygen_hash_calls": 2497, "sign_hash_calls": 1305, "verify_hash_calls": 1191 }
+    ]
+  },
+  "wasm": {
+    "note": "SHA-256 of the deployed modules; republished with every redeploy.",
+    "phi_crypt_wasm_sha256": null,
+    "phi_verifier_wasm_sha256": null,
+    "emsdk_version": null
+  }
+}
