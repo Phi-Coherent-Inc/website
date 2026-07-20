@@ -28,6 +28,17 @@
     color: var(--text-muted); max-width: 780px; margin-bottom: 14px;
   }
   .cx-status { font-size: 13px; color: var(--text-dim); margin-bottom: 30px; }
+  .cx-tabbar { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 6px; }
+  .cx-tabbar .cx-tab {
+    font-family: inherit; font-size: 13px; letter-spacing: .02em; cursor: pointer;
+    padding: 8px 16px; border-radius: 999px; border: 1px solid var(--gold-border);
+    background: transparent; color: var(--text-muted); transition: all .15s ease;
+  }
+  .cx-tabbar .cx-tab:hover { color: var(--gold); border-color: var(--gold); }
+  .cx-tabbar .cx-tab.active { background: var(--gold); color: var(--bg); border-color: var(--gold); font-weight: 600; }
+  .cx-tabbar .cx-tab:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .cx-tab-intro { font-size: 13.5px; line-height: 1.65; color: var(--text-dim); max-width: 880px; margin: 0 0 22px; }
+  .cx-tabpanel[hidden] { display: none; }
   .cx-status.err { color: var(--demo-red); }
   .cx-grid { display: grid; grid-template-columns: 1fr; gap: 22px; }
   .cx-panel {
@@ -128,14 +139,16 @@
 
 <main class="cx-main">
   <p class="cx-lead">
-    The φCrypt suite's cryptographic primitives, computed live in your browser from the real
-    <em>phi-crypt-cpp</em> and <em>phi-lattice-cpp</em> libraries via WebAssembly — no server, no
-    pre-baked numbers. Two independent hardness assumptions: φSign's and φKEM's root in φHash
-    (preimage/collision resistance); φDSA's is Module-LWE/SIS, a wholly separate problem (φ-KEM-304
-    and φDSA's own shared-field parameters — the suite's tiers, not NIST's — are estimated well
-    past the NIST Category 5 floor). That independence is at the <em>assumption</em> level, not the
-    implementation: φHash is a shared component here, not a firewall. See "Independence, precisely"
-    under Security details below for the exact dependency map.
+    The φCrypt suite, computed live in your browser via WebAssembly — no server, no pre-baked
+    numbers. The suite is built around one design decision: the signature, the proof system, and
+    the recursion all share a single prime field, so a signature's verification arithmetic is
+    native to the circuits that prove statements about it. That is what the first tab shows — a
+    zero-knowledge proof system checking signature verification work, verified live on this page.
+    Around that core sit two independent hardness assumptions: hash-based (φHash: φSign, φCipher)
+    and lattice-based (Module-LWE/SIS: φKEM, φDSA). The independence is at the <em>assumption</em>
+    level, not the implementation — φHash is a shared component across the hash leg and φKEM's
+    instantiation, not a firewall; φDSA alone has zero φHash dependency. The Security model tab
+    carries the exact dependency map, the measured costs, and every caveat.
   </p>
   <div class="cx-callout" style="margin-bottom:22px;">
     <strong>Pre-production.</strong> These primitives already run in shipped internal infrastructure
@@ -157,7 +170,64 @@
     </div>
   </noscript>
 
-  <div class="cx-grid" id="grid" style="display:none">
+  <div id="grid" style="display:none">
+
+    <div class="cx-tabbar" id="cxTabbar" role="tablist" aria-label="Cryptography demo sections">
+      <button class="cx-tab active" role="tab" aria-selected="true" data-tab="proof">Verified in proof</button>
+      <button class="cx-tab" role="tab" aria-selected="false" data-tab="hash">Hash</button>
+      <button class="cx-tab" role="tab" aria-selected="false" data-tab="sign">Signatures</button>
+      <button class="cx-tab" role="tab" aria-selected="false" data-tab="encrypt">Encrypt &amp; key exchange</button>
+      <button class="cx-tab" role="tab" aria-selected="false" data-tab="security">Security model</button>
+    </div>
+    <p class="cx-tab-intro" id="cxTabIntro"></p>
+
+    <!-- ── Tab: Verified in proof ── -->
+    <div class="cx-grid cx-tabpanel" id="tab-proof" role="tabpanel">
+
+    <section class="cx-panel span2">
+      <span class="tag">one shared field · signature × proof system</span>
+      <h2>A signature verification, verified in proof</h2>
+      <div class="sub">
+        φDSA lives on the same prime field as the suite's proof system and recursion
+        (Q=1342832641), so signature-verification arithmetic runs natively inside the circuits —
+        nothing is emulated in a foreign field. Below, your browser verifies real proofs produced
+        by that machinery: the heavy legs of a signature verification — the lattice relation
+        A·z − c·t = w checked pointwise across all 256 evaluation points, and the response-norm
+        bound — each carried by a recursive proof whose every input cell is pinned to the public
+        signature. Flip a byte and watch it reject.
+      </div>
+      <div class="cx-callout">
+        <strong>Exactly what is and is not proven here.</strong>
+        First: the proofs verify a φDSA <em>transcript variant</em> (φDSA-algfs): the Fiat–Shamir
+        challenge is derived with the suite's field-native algebraic sponge instead of SHAKE-256,
+        because SHAKE is not arithmetizable at any size. Production φDSA keeps SHAKE-256 end to
+        end; the variant changes the challenge derivation only, and its Fiat–Shamir soundness
+        rests on the algebraic hash, which is experimental. The demo variant is also hint-free
+        (the commitment w travels uncompressed), placing its forgery bound in the norm-below-q
+        SIS regime the parameter derivation certifies.
+        Second: the lattice relation and the norm bound are proof-carried; the challenge equality
+        and the NTT consistency of the public signature are recomputed natively by the verifier
+        from public data — the field-native challenge sponge is built and measured
+        (about 1,279 permutations) but not yet folded through the recursive wheel.
+        Third: this statement attests a <em>public</em> signature's verification; it does not hide
+        the signature. The hidden-authorization statement that ships today is the hash-leg
+        one-time-signature proof, verified beside it below.
+        Fourth: the proofs were generated natively (the prover is multi-threaded; this host cannot
+        serve the COOP/COEP headers browser threads require). Verification runs live here in the
+        thread-free verifier module.
+      </div>
+      <div class="cx-status" id="zkStatus">Loading verifier module…</div>
+      <div class="cx-row">
+        <button class="cx-run" id="zkVerifyK10Btn" disabled>Verify: signature relation + norm (Kind 10)</button>
+        <button class="cx-run secondary" id="zkVerifyK9Btn" disabled>Verify: hidden hash-leg authorization (Kind 9)</button>
+        <button class="cx-run secondary" id="zkTamperBtn" disabled>Flip one byte &amp; verify</button>
+      </div>
+      <div class="cx-out" id="zkOut" style="display:none"></div>
+    </section>
+    </div>
+
+    <!-- ── Tab: Hash ── -->
+    <div class="cx-grid cx-tabpanel" id="tab-hash" role="tabpanel" hidden>
 
     <!-- φHash -->
     <section class="cx-panel">
@@ -189,6 +259,10 @@
         <code>tests/test_adversarial_hash.cpp</code>.
       </div>
     </section>
+    </div>
+
+    <!-- ── Tab: Encrypt & key exchange ── -->
+    <div class="cx-grid cx-tabpanel" id="tab-encrypt" role="tabpanel" hidden>
 
     <!-- φCipher -->
     <section class="cx-panel">
@@ -216,6 +290,37 @@
       </div>
       <div class="cx-out" id="cipherOut">—</div>
     </section>
+
+    <!-- φKEM -->
+    <section class="cx-panel span2">
+      <span class="tag">phi::pqc / phi-lattice · φ-KEM-304 · Module-LWE, FO-CCA2</span>
+      <h2>φKEM — key encapsulation (two-party)</h2>
+      <div class="sub">
+        Alice publishes a key. Bob encapsulates a fresh shared secret to it — and, separately,
+        encrypts a message directly to it (φKEM + φHash-derived DEM key + φCipher AEAD). Alice
+        recovers both. All keygen/encaps/decaps calls are millisecond-scale.
+      </div>
+      <div class="cx-row">
+        <button class="cx-run" id="kemAliceBtn">Alice: generate keypair</button>
+      </div>
+      <div class="cx-out" id="kemAlicePk" style="display:none"></div>
+
+      <div class="cx-field" style="margin-top:14px"><label>Bob's message (public-key encryption to Alice)</label><input type="text" id="kemMsg" value="a secret message to Alice"></div>
+      <div class="cx-row">
+        <button class="cx-run secondary" id="kemBobEncapsBtn" disabled>Bob: encapsulate shared secret</button>
+        <button class="cx-run secondary" id="kemBobEncryptBtn" disabled>Bob: encrypt message to Alice's key</button>
+      </div>
+      <div class="cx-out" id="kemBobOut" style="display:none"></div>
+
+      <div class="cx-row" style="margin-top:10px">
+        <button class="cx-run secondary" id="kemAliceRecoverBtn" disabled>Alice: decapsulate / decrypt</button>
+      </div>
+      <div class="cx-out" id="kemAliceOut" style="display:none"></div>
+    </section>
+    </div>
+
+    <!-- ── Tab: Signatures ── -->
+    <div class="cx-grid cx-tabpanel" id="tab-sign" role="tabpanel" hidden>
 
     <!-- φSign -->
     <section class="cx-panel span2">
@@ -256,33 +361,6 @@
       <div class="cx-stats"><div class="cx-stat"><div class="k">One-time signatures used</div><div class="v" id="signSigCount">0</div></div></div>
     </section>
 
-    <!-- φKEM -->
-    <section class="cx-panel span2">
-      <span class="tag">phi::pqc / phi-lattice · φ-KEM-304 · Module-LWE, FO-CCA2</span>
-      <h2>φKEM — key encapsulation (two-party)</h2>
-      <div class="sub">
-        Alice publishes a key. Bob encapsulates a fresh shared secret to it — and, separately,
-        encrypts a message directly to it (φKEM + φHash-derived DEM key + φCipher AEAD). Alice
-        recovers both. All keygen/encaps/decaps calls are millisecond-scale.
-      </div>
-      <div class="cx-row">
-        <button class="cx-run" id="kemAliceBtn">Alice: generate keypair</button>
-      </div>
-      <div class="cx-out" id="kemAlicePk" style="display:none"></div>
-
-      <div class="cx-field" style="margin-top:14px"><label>Bob's message (public-key encryption to Alice)</label><input type="text" id="kemMsg" value="a secret message to Alice"></div>
-      <div class="cx-row">
-        <button class="cx-run secondary" id="kemBobEncapsBtn" disabled>Bob: encapsulate shared secret</button>
-        <button class="cx-run secondary" id="kemBobEncryptBtn" disabled>Bob: encrypt message to Alice's key</button>
-      </div>
-      <div class="cx-out" id="kemBobOut" style="display:none"></div>
-
-      <div class="cx-row" style="margin-top:10px">
-        <button class="cx-run secondary" id="kemAliceRecoverBtn" disabled>Alice: decapsulate / decrypt</button>
-      </div>
-      <div class="cx-out" id="kemAliceOut" style="display:none"></div>
-    </section>
-
     <!-- φDSA -->
     <section class="cx-panel span2">
       <span class="tag">phi::pqc / phi-lattice · φDSA · Module-LWE/SIS, stateless, shared-field</span>
@@ -303,6 +381,11 @@
       </div>
       <div class="cx-out" id="dsaOut" style="display:none"></div>
     </section>
+
+    </div>
+
+    <!-- ── Tab: Security model ── -->
+    <div class="cx-grid cx-tabpanel" id="tab-security" role="tabpanel" hidden>
 
     <!-- Security Details -->
     <section class="cx-panel span2">
@@ -442,19 +525,12 @@
         suite's own.
       </div>
       <div class="cx-callout">
-        <strong>Verify-in-proof (in-circuit authorization).</strong> Because φDSA now lives on the
-        suite's shared proof-system field, a signature can be verified <em>inside</em> a recursive
-        zero-knowledge proof — a proof can carry an authorization it never reveals ("this
-        transaction was authorised by the key holder," provable without disclosing the signature or
-        the key). Two routes are built and tested. The hash leg (φAuth) is a one-time signature over
-        the field-native algebraic hash, folded through the recursive wheel as a first-class
-        statement. The lattice leg arithmetizes φDSA's own verify — the Fiat–Shamir challenge (via
-        the algebraic hash), the ring relation A·z = w + c·t (pointwise in the evaluation domain, so
-        it fits the circuit where the coefficient-domain form would need eight times the width), and
-        the response-norm bound — each checked in-circuit. The naïve "just run the verifier in a
-        circuit" approach was measured and rejected: SHAKE-based Fiat–Shamir is not arithmetizable at
-        any size, which is why the challenge hash moves to the algebraic one for the in-circuit path
-        while ordinary signing keeps SHAKE-256.
+        <strong>Verify-in-proof.</strong> The shared field lets signature verification run inside
+        recursive proofs — that is this page's first tab, where the proofs are verified live. The
+        design detail worth keeping in the security picture: the naïve "run the verifier in a
+        circuit" approach was measured and rejected (SHAKE-based Fiat–Shamir is not arithmetizable
+        at any size), so the in-circuit path derives its challenge with the field-native algebraic
+        hash while ordinary signing keeps SHAKE-256.
       </div>
     </section>
 
@@ -489,6 +565,7 @@
         from the monorepo directly.
       </div>
     </section>
+    </div>
 
   </div>
 
@@ -520,6 +597,82 @@ const hexBlock = (label, u8, extra) =>
   $('grid').style.display = '';
   const info = licenseInfo();
   $('footerNote').textContent = info.license;
+
+  // ── tabs ──
+  const TAB_INTROS = {
+    proof: 'The suite’s core claim, running: recursive proofs carrying signature-verification work, checked live in a thread-free verifier module. Every proof byte here was produced by the same machinery the currency stack ships.',
+    hash: 'φHash, computed live at all three output tiers. The avalanche view is a sanity check, not evidence — the real batteries (SAC, BIC, S-box uniformity) are described below it.',
+    sign: 'Two signatures on independent assumptions: φSign (hash-based, stateful, slow here because this build is single-threaded) and φDSA (lattice, stateless, on the shared proof-system field). The hybrid binds both.',
+    encrypt: 'φCipher (AEAD keyed through a memory-hard KDF, never a bare hash) and φKEM (Module-LWE key encapsulation with FO-CCA2), including a full two-party exchange.',
+    security: 'The dependency map, the bit-strength table with its model caveats stated plainly, measured costs, and where these primitives already run.'
+  };
+  function showTab(name, push) {
+    document.querySelectorAll('#cxTabbar .cx-tab').forEach((b) => {
+      const on = b.dataset.tab === name;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    ['proof', 'hash', 'sign', 'encrypt', 'security'].forEach((t) => {
+      const p = $('tab-' + t);
+      if (p) p.hidden = (t !== name);
+    });
+    $('cxTabIntro').textContent = TAB_INTROS[name] || '';
+    if (push) history.replaceState(null, '', '#' + name);
+  }
+  document.querySelectorAll('#cxTabbar .cx-tab').forEach((b) =>
+    b.addEventListener('click', () => showTab(b.dataset.tab, true)));
+  const initialTab = location.hash.replace('#', '');
+  showTab(TAB_INTROS[initialTab] ? initialTab : 'proof', false);
+
+  // ── verified-in-proof demo (separate module: thread-free phi_verifier) ──
+  (async () => {
+    const zk = { api: null, k10: null, k9: null };
+    const zkStatus = $('zkStatus');
+    try {
+      const [modReady, k10Res, k9Res] = await Promise.all([
+        import('./assets/wasm/phi_verifier.js?v=20260720').then((m) => m.default()),
+        fetch('assets/data/zk/phidsa_verify.k10.bin'),
+        fetch('assets/data/zk/phiauth_chain.k9.bin'),
+      ]);
+      if (!k10Res.ok || !k9Res.ok) throw new Error('proof assets not found');
+      zk.api = modReady;
+      zk.k10 = new Uint8Array(await k10Res.arrayBuffer());
+      zk.k9 = new Uint8Array(await k9Res.arrayBuffer());
+      zkStatus.textContent = 'Verifier ready. Kind-10 proof: ' + (zk.k10.length / 1024).toFixed(1) +
+        ' KB · Kind-9 proof: ' + (zk.k9.length / 1024).toFixed(1) + ' KB, generated natively, verified here.';
+      $('zkVerifyK10Btn').disabled = false;
+      $('zkVerifyK9Btn').disabled = false;
+      $('zkTamperBtn').disabled = false;
+    } catch (e) {
+      zkStatus.className = 'cx-status err';
+      zkStatus.textContent = 'Proof verifier unavailable (' + (e.message || e) +
+        '). The rest of the page is unaffected.';
+      return;
+    }
+    async function runVerify(bytes, label) {
+      const out = $('zkOut');
+      out.style.display = '';
+      out.className = 'cx-out';
+      out.innerHTML = '<span class="cx-spin"></span> Verifying ' + label + '…';
+      await new Promise((r) => setTimeout(r, 30));   // let the spinner paint
+      const t0 = performance.now();
+      let res;
+      try { res = zk.api.verifyStatement(bytes); }
+      catch (e) { res = { valid: false, kindName: label, error: String(e.message || e) }; }
+      const ms = Math.round(performance.now() - t0);
+      out.innerHTML = (res.valid
+        ? '<span class="cx-badge pass">Proof verified</span>'
+        : '<span class="cx-badge fail">Rejected</span>' + (res.error ? ' — ' + res.error : '')) +
+        ' <span class="k">' + (res.kindName || label) + ' · ' + bytes.length + ' bytes · ' + ms + ' ms in-browser</span>';
+    }
+    $('zkVerifyK10Btn').addEventListener('click', () => runVerify(zk.k10, 'Kind 10 (signature relation + norm)'));
+    $('zkVerifyK9Btn').addEventListener('click', () => runVerify(zk.k9, 'Kind 9 (hash-leg authorization)'));
+    $('zkTamperBtn').addEventListener('click', () => {
+      const t = zk.k10.slice();
+      t[(t.length / 2) | 0] ^= 0x01;
+      runVerify(t, 'Kind 10, one byte flipped');
+    });
+  })();
 
   // ── Security details (hash-leg rows computed live; lattice-leg rows are
   //    the suite's fixed design parameters, not user-selectable) ──
