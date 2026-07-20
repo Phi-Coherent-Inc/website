@@ -167,7 +167,7 @@
       Module-LWE parameters are estimated at ≈387-bit post-quantum; φDSA's shared-field parameters
       are estimated at ≈255-bit post-quantum, both figures from this team's own core-SVP model.
       Wire sizes: φKEM pk 3,148 B / ct 4,096 B (ML-KEM-1024: 1,568/1,568); φDSA pk 4,352 B /
-      sig 6,206 B (ML-DSA-87: 2,592/4,627); φSign signatures 11,625/25,395/58,640 B by tier
+      sig 6,206 B (ML-DSA-87: 2,592/4,627); φSign signatures 11,718/25,542/58,640 B by tier
       (SLH-DSA-256s: 29,792). External cryptanalysis review is in progress and has not yet
       reported.
     </div>
@@ -339,13 +339,13 @@
         Security rests only on φHash preimage/collision resistance — no elliptic curves, no
         algebraic hardness. <strong>Genuinely slow here</strong>: this build is single-threaded
         (GitHub Pages can't serve the COOP/COEP headers multi-threaded WASM needs), so the
-        hypertree's one-time-key fan-out runs serially — keygen ≈20s, sign ≈60s. A
+        hypertree's one-time-key fan-out runs serially — keygen ≈13s, sign ≈40s. A
         Service-Worker shim to inject those headers client-side was tried and reverted: Chromium
         doesn't reliably route Emscripten's own pthread-worker bootstrap fetch through it, so the
         module fails to load ("SharedArrayBuffer is not defined") rather than just staying slow —
         see phi-crypt-cpp/web/CMakeLists.txt for the traced failure. Both slow steps run in a
-        Worker so the page stays responsive; verify is fast (≈0.3s). Native single-core, the same
-        operations measure keygen ≈2.3s, sign ≈6.9s, verify ≈0.35s at this tier — the gap between
+        Worker so the page stays responsive; verify is fast (≈0.16s). Native single-core, the same
+        operations measure keygen ≈1.4s, sign ≈4.3s, verify ≈0.18s at this tier — the gap between
         those numbers and the browser ones is the single-threaded WASM tax; the gap between those
         numbers and SHAKE-based schemes is φHash's own cost, measured plainly in the Security
         model tab. <strong>On state:</strong> the identity here is ephemeral by design — the demo
@@ -355,14 +355,14 @@
         signature exists.
       </div>
       <div class="cx-row">
-        <button class="cx-run" id="signKeygenBtn">Generate φSign identity (≈20s)</button>
+        <button class="cx-run" id="signKeygenBtn">Generate φSign identity (≈13s)</button>
       </div>
       <div class="cx-progress" id="signKeygenProgress"></div>
       <div class="cx-out" id="signPk" style="display:none"></div>
 
       <div class="cx-field" style="margin-top:16px"><label>Message to sign</label><input type="text" id="signMsg" value="sign this message"></div>
       <div class="cx-row">
-        <button class="cx-run" id="signSignBtn" disabled>Sign (≈60s)</button>
+        <button class="cx-run" id="signSignBtn" disabled>Sign (≈40s)</button>
       </div>
       <div class="cx-progress" id="signSignProgress"></div>
       <div class="cx-out" id="signSigOut" style="display:none"></div>
@@ -573,15 +573,17 @@
         </table>
       </div>
       <div class="cx-callout">
-        <strong>The WOTS width, measured against itself.</strong> φSign's chain width is set at 13
-        while its digit extractor produces 3-bit digits, so the live configuration provides an
-        8-value digit space at a 13-value chain cost. The width sweep
-        (w ∈ {8, 13, 16}, real hash, self-checked against the production parameter and size
-        formulas) measures at the top tier: <strong>w=8 matches the current configuration's
-        security and signature size exactly with 38% fewer hash calls</strong> (1,665 vs 2,705 per
-        WOTS keygen); w=16 trades 25% smaller chain payloads for slightly fewer calls. The
-        measurement is published as-is; revising the parameter is an open decision recorded in the
-        spec, since it re-pins the wire format and test vectors.
+        <strong>The WOTS width, measured against itself and revised.</strong> φSign's chain width
+        formerly stood at 13 while its digit extractor produces 3-bit digits, which meant an
+        8-value digit space at a 13-value chain cost. The width sweep (w ∈ {8, 13, 16}, real
+        hash, self-checked against the production parameter and size formulas) measured at the
+        top tier that <strong>w=8 matches that configuration's security and signature size
+        exactly with 38% fewer hash calls</strong> (1,665 vs 2,705 per WOTS keygen). The
+        parameter has been revised to w=8 accordingly, and every timing and size on this page
+        reflects the revised width; the refuted configuration stays in the published table for
+        the record. This is the suite's standing discipline: structural choices are measured,
+        and when a measurement refutes one, the parameter moves and the refutation is kept
+        public.
       </div>
     </section>
 
@@ -669,7 +671,7 @@ const hexBlock = (label, u8, extra) =>
         ['ML-KEM-1024 (FIPS 203)', '1,568 B', 'ct 1,568 B', 'published parameter set, for size comparison'],
         ['φDSA', '4,352 B', 'sig 6,206 B', 'sign/verify ≈3-4 ms in the browser demo'],
         ['ML-DSA-87 (FIPS 204)', '2,592 B', 'sig 4,627 B', 'published parameter set, for size comparison'],
-        ['φSign (tier 0/1/2)', '29/47/76 B', 'sig 11,625 / 25,395 / 58,640 B', 'tier 2: keygen 2.3 s · sign 6.9 s · verify 0.35 s'],
+        ['φSign (tier 0/1/2)', '29/47/76 B', 'sig 11,718 / 25,542 / 58,640 B', 'tier 2: keygen 1.4 s · sign 4.3 s · verify 0.18 s'],
         ['SLH-DSA-256s (FIPS 205)', '64 B', 'sig 29,792 B', 'published parameter set, for size comparison'],
       ],
     },
@@ -921,7 +923,7 @@ const hexBlock = (label, u8, extra) =>
   let signPk = null, signLastMsg = null, signLastSig = null;
   $('signKeygenBtn').addEventListener('click', async () => {
     $('signKeygenBtn').disabled = true;
-    $('signKeygenProgress').innerHTML = '<span class="cx-spin"></span>Building the hypertree (single-threaded WASM, ≈20s)…';
+    $('signKeygenProgress').innerHTML = '<span class="cx-spin"></span>Building the hypertree (single-threaded WASM, ≈13s)…';
     try {
       const { publicKey, sigCount } = await PhiSign.newIdentity(2);
       signPk = publicKey;
@@ -934,11 +936,11 @@ const hexBlock = (label, u8, extra) =>
       $('signKeygenProgress').textContent = 'Failed: ' + e.message;
     }
     $('signKeygenBtn').disabled = false;
-    $('signKeygenBtn').textContent = 'Regenerate identity (≈20s)';
+    $('signKeygenBtn').textContent = 'Regenerate identity (≈13s)';
   });
   $('signSignBtn').addEventListener('click', async () => {
     $('signSignBtn').disabled = true;
-    $('signSignProgress').innerHTML = '<span class="cx-spin"></span>Signing (single-threaded WASM, ≈60s)…';
+    $('signSignProgress').innerHTML = '<span class="cx-spin"></span>Signing (single-threaded WASM, ≈40s)…';
     try {
       signLastMsg = $('signMsg').value;
       const { signature, sigCount } = await PhiSign.sign(signLastMsg);
