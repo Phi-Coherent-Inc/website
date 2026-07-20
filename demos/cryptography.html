@@ -377,6 +377,21 @@
         validation) — the estimated margin is above the standards one; the wire format is the
         suite's own.
       </div>
+      <div class="cx-callout">
+        <strong>Verify-in-proof (in-circuit authorization).</strong> Because φDSA now lives on the
+        suite's shared proof-system field, a signature can be verified <em>inside</em> a recursive
+        zero-knowledge proof — a proof can carry an authorization it never reveals ("this
+        transaction was authorised by the key holder," provable without disclosing the signature or
+        the key). Two routes are built and tested. The hash leg (φAuth) is a one-time signature over
+        the field-native algebraic hash, folded through the recursive wheel as a first-class
+        statement. The lattice leg arithmetizes φDSA's own verify — the Fiat–Shamir challenge (via
+        the algebraic hash), the ring relation A·z = w + c·t (pointwise in the evaluation domain, so
+        it fits the circuit where the coefficient-domain form would need eight times the width), and
+        the response-norm bound — each checked in-circuit. The naïve "just run the verifier in a
+        circuit" approach was measured and rejected: SHAKE-based Fiat–Shamir is not arithmetizable at
+        any size, which is why the challenge hash moves to the algebraic one for the in-circuit path
+        while ordinary signing keeps SHAKE-256.
+      </div>
     </section>
 
     <!-- Related Packages -->

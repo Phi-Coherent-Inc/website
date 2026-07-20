@@ -1188,6 +1188,11 @@ footer {
           <div class="stat-title">Independently certified lattice arm</div>
           <div class="stat-body">A Module-LWE KEM (φKEM) and a Module-LWE/SIS signature (φDSA), both over the suite's own parameters — judged by a <em>computed</em> lattice-reduction estimate, not test vectors. φ-KEM-304 reaches a quantum core-SVP cost of about 387. φDSA's shared-field rebase (one field across the proof system and the signature) derived a parameter set certified, under the same estimator, to clear ML-DSA-87's own published SIS band on every axis: a ≈255-bit quantum forgery floor. Both well beyond NIST Category 5's 232-bit quantum floor.</div>
         </div>
+        <div class="stat-card reveal reveal-delay-4" style="grid-column: 1 / -1;">
+          <div class="stat-num" style="font-size:1.2rem; letter-spacing:.04em;">Verify-in-proof</div>
+          <div class="stat-title">A signature checked <em>inside</em> a zero-knowledge proof</div>
+          <div class="stat-body">Putting φDSA on the suite's shared proof-system field was not cosmetic: it lets a signature be verified <em>inside</em> a recursive zero-knowledge proof, so a proof can carry an authorization it never reveals — "this transaction was authorised by the key holder," provable without disclosing the signature or the key. Two routes, both built and tested: a hash-leg one-time-signature authorization folded through the recursive wheel as a first-class statement, and the lattice signature's own verify relation arithmetized in the shared field (challenge, ring relation, and norm bound each checked in-circuit). The move that makes it fit: the ring equation, taken to the evaluation domain, becomes a handful of pointwise checks where the naïve form would need eight times the circuit width.</div>
+        </div>
         <div class="stat-card reveal reveal-delay-4">
           <div class="stat-num" style="font-size:1.4rem;">2<sup>−285</sup></div>
           <div class="stat-title">Reed–Muller reconciliation that earns its place</div>

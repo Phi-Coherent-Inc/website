@@ -268,9 +268,9 @@
 
     <!-- Panel 4: Post-Quantum KEM + Signature (lattice) -->
     <section class="qc-panel span2">
-      <span class="tag">phi-lattice · φ-KEM-304 + φDSA (ML-DSA-87)</span>
+      <span class="tag">phi-lattice · φ-KEM-304 + φDSA (shared-field ML-DSA algorithm)</span>
       <h2>Post-Quantum KEM &amp; Signature: live roundtrip</h2>
-      <div class="sub">Not an audit table; the actual primitives. A φ-KEM-304 FO-CCA module-LWE key encapsulation (keygen → encaps → decaps) and a φDSA (ML-DSA-87) signature (keygen → sign → verify), both SHAKE-driven, run end-to-end in WebAssembly. Verified: shared-secret agreement, CCA tamper rejection, signature verification, and forgery rejection.</div>
+      <div class="sub">Not an audit table; the actual primitives. A φ-KEM-304 FO-CCA module-LWE key encapsulation (keygen → encaps → decaps) and a φDSA signature (keygen → sign → verify), both SHAKE-driven, run end-to-end in WebAssembly. φDSA runs the ML-DSA algorithm over the suite's shared proof-system field (q=1342832641, k=l=9, η=7), a first-principles-derived parameter set certified to dominate ML-DSA-87 on every axis — so a signature can be verified inside a recursive proof natively. Verified here: shared-secret agreement, CCA tamper rejection, signature verification, and forgery rejection.</div>
       <div class="qc-controls">
         <button class="qc-run" id="pqcRun" disabled>Run roundtrip</button>
       </div>
@@ -281,7 +281,7 @@
           <div class="u" id="kemSub">&nbsp;</div>
         </div>
         <div class="qc-stat">
-          <div class="k" id="dsaName">φDSA / ML-DSA-87 · signature</div>
+          <div class="k" id="dsaName">φDSA · shared-field lattice signature</div>
           <div class="v" id="dsaVerdict" style="font-size:15px">…</div>
           <div class="u" id="dsaSub">&nbsp;</div>
         </div>
@@ -296,7 +296,7 @@
 
 <script src="assets/demo-header.js?v=20260622"></script>
 <script type="module">
-import { ready, PhiCrypto } from './assets/js/phi-quantum.js?v=20260622';
+import { ready, PhiCrypto } from './assets/js/phi-quantum.js?v=20260720';
 
 const $ = (id) => document.getElementById(id);
 const fmtQubits = (q) => q >= 1e6 ? (q / 1e6).toFixed(2) + 'M' : Math.round(q).toLocaleString();
