@@ -293,11 +293,15 @@
         (RM(1,3)) inside encode/decode — the hardness itself is plain Module-LWE.
       </div>
       <div class="cx-callout">
-        <strong>φDSA.</strong> Fiat–Shamir with aborts at ML-DSA-87-class parameters (N=256,
-        Q=8380417, k=8, l=7, η=2, τ=60) — it shares ML-DSA-87's algorithm and hardness, and
-        ML-DSA-87 is NIST FIPS-204's own Category 5 parameter set. Not byte-conformant FIPS-204
-        (φ-native encodings, validated against its own KATs, not ACVP) — the security margin is
-        the standards one; the wire format is the suite's own.
+        <strong>φDSA.</strong> Fiat–Shamir with aborts (the ML-DSA algorithm) over the suite's
+        shared proof-system field (N=256, Q=1342832641, k=l=9, η=7, τ=60) — one field across the
+        proof system and the signature, so signatures can be verified inside recursive proofs
+        natively. The parameter set is derived from first principles and certified to dominate
+        ML-DSA-87 — NIST FIPS-204's own Category 5 set — on every axis under the same estimator
+        model (certified ≈255-bit quantum forgery floor, clearing Category 5's 232-bit bar), with
+        the certification in the regime where the conservative bound is provable. Not
+        byte-conformant FIPS-204 (own encodings, validated against its own KATs, not ACVP) — the
+        security margin is certified above the standards one; the wire format is the suite's own.
       </div>
     </section>
 
