@@ -45,6 +45,8 @@
     { id: 'tee-signature',        file: 'tee-signature.html',        name: 'Topological Entropy γ' },
     { id: 'vqe-landscape',        file: 'vqe-landscape.html',        name: 'VQE Landscape' },
     { id: 'tunneling',            file: 'tunneling.html',            name: 'Tunneling' },
+    // ── Cryptography (φCrypt suite) ──
+    { id: 'cryptography',         file: 'cryptography.html',         name: 'Cryptography: φHash, φSign, φKEM, φDSA' },
     { id: 'quantum-cryptography', file: 'quantum-cryptography.html', name: 'Quantum Cryptography' },
     { id: 'pyramid-energy',         file: 'pyramid-energy.html',         name: 'Pyramid Energy Device' },
     { id: 'telluric-mhd-designer', file: 'telluric-mhd-designer.html', name: 'Telluric-Resonant MHD Designer' },

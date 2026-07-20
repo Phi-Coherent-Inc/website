@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>φCoherent · Cryptography Demo</title>
+<meta name="description" content="Interactive demo: φHash, φCipher, φSign (hash-based signatures), φKEM and φDSA (Module-LWE, post-quantum), computed live in your browser from phi-crypt-cpp and phi-lattice-cpp via WebAssembly.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://phicoherent.com/demos/cryptography.html">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#C9A830">
+<script>try{if(localStorage.getItem('phi-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/demo.css?v=20260720">
+<style>
+  .cx-main {
+    max-width: 1180px; margin: 0 auto;
+    padding: calc(var(--demo-header-h, 56px) + 32px) 24px 80px;
+  }
+  .cx-lead {
+    font-size: 15px; font-weight: 300; line-height: 1.72;
+    color: var(--text-muted); max-width: 780px; margin-bottom: 14px;
+  }
+  .cx-status { font-size: 13px; color: var(--text-dim); margin-bottom: 30px; }
+  .cx-status.err { color: var(--demo-red); }
+  .cx-grid { display: grid; grid-template-columns: 1fr; gap: 22px; }
+  .cx-panel {
+    background: var(--surface); border: 1px solid var(--gold-border);
+    border-radius: 12px; padding: 24px 26px; min-width: 0;
+  }
+  .cx-panel h2 {
+    font-family: 'Newsreader', serif; font-weight: 400;
+    font-size: 22px; color: var(--text); margin: 0 0 4px;
+  }
+  .cx-panel .sub { font-size: 13px; color: var(--text-dim); margin-bottom: 20px; line-height: 1.55; }
+  .cx-panel .tag {
+    float: right; font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--gold-dim); font-weight: 500; margin-top: 6px;
+  }
+  @media (min-width: 980px) { .cx-grid { grid-template-columns: 1fr 1fr; } .cx-panel.span2 { grid-column: 1 / -1; } }
+
+  .cx-field { margin-bottom: 14px; }
+  .cx-field label { display: block; font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--text-dim); font-weight: 600; margin-bottom: 7px; }
+  .cx-field input[type=text], .cx-field input[type=password], .cx-field select {
+    width: 100%; box-sizing: border-box; font-family: 'Inter', sans-serif; font-size: 14px;
+    color: var(--text); background: var(--card); border: 1px solid var(--row-border);
+    border-radius: 7px; padding: 9px 11px;
+  }
+  .cx-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; align-items: center; }
+  button.cx-run {
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; letter-spacing: .04em;
+    color: var(--bg); background: var(--gold); border: none; border-radius: 8px;
+    padding: 10px 18px; cursor: pointer; transition: opacity .15s;
+  }
+  button.cx-run:hover { opacity: .88; }
+  button.cx-run:disabled { opacity: .5; cursor: default; }
+  button.cx-run.secondary { background: var(--card-hover); color: var(--text); }
+  .cx-spin {
+    display: inline-block; width: 13px; height: 13px; border-radius: 50%;
+    border: 2px solid var(--text-dim); border-top-color: var(--gold); vertical-align: -2px;
+    animation: cx-spin .8s linear infinite; margin-right: 7px;
+  }
+  @keyframes cx-spin { to { transform: rotate(360deg); } }
+  .cx-progress { font-size: 13px; color: var(--text-muted); margin: 8px 0; }
+
+  .cx-out {
+    margin-top: 10px; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 12.5px;
+    line-height: 1.7; word-break: break-all; color: var(--demo-cyan, #4aa);
+    background: var(--card); border: 1px solid var(--row-border);
+    border-radius: 8px; padding: 12px 14px;
+  }
+  .cx-out.plain { color: var(--text); }
+  .cx-out.bad { color: var(--demo-red); }
+  .cx-out .k { display: block; font-family: 'Inter', sans-serif; font-size: 10.5px; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--text-dim); margin: 8px 0 3px; }
+  .cx-out .k:first-child { margin-top: 0; }
+
+  .cx-badge { display: inline-block; padding: 3px 11px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .cx-badge.pass { color: var(--demo-green); background: var(--demo-green-bg); }
+  .cx-badge.fail { color: var(--demo-red); background: var(--demo-red-bg); }
+
+  .cx-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-top: 14px; }
+  .cx-stat { background: var(--card); border: 1px solid var(--row-border); border-radius: 9px; padding: 11px 13px; }
+  .cx-stat .k { font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-dim); font-weight: 600; margin-bottom: 5px; }
+  .cx-stat .v { font-size: 16px; color: var(--text); font-variant-numeric: tabular-nums; }
+
+  .cx-callout {
+    margin-top: 16px; padding: 12px 15px; border-radius: 9px; font-size: 13px;
+    line-height: 1.6; color: var(--text-muted);
+    background: rgba(200,160,40,.10); border: 1px solid rgba(200,160,40,.30);
+  }
+  .cx-callout strong { color: var(--text); }
+  .cx-footer-note { margin-top: 26px; font-size: 11.5px; color: var(--text-dim); line-height: 1.6; }
+
+  @media (max-width: 620px) {
+    .cx-main { padding: calc(var(--demo-header-h, 56px) + 20px) 14px 60px; }
+    .cx-panel { padding: 20px 16px; border-radius: 10px; }
+    .cx-panel h2 { font-size: 20px; }
+    .cx-panel .tag { float: none; display: block; margin: 0 0 10px; }
+    .cx-run { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header class="demo-header" data-demo="cryptography"
+        data-title="Cryptography · φHash, φCipher, φSign, φKEM, φDSA"></header>
+
+<main class="cx-main">
+  <p class="cx-lead">
+    The φCrypt suite's cryptographic primitives, computed live in your browser from the real
+    <em>phi-crypt-cpp</em> and <em>phi-lattice-cpp</em> libraries via WebAssembly — no server, no
+    pre-baked numbers. Two independent post-quantum legs: φSign's hash preimage/collision
+    resistance, and φKEM/φDSA's Module-LWE hardness (φ-KEM-304, the suite's own tier — its
+    measured quantum core-SVP exceeds the NIST Category 5 floor). A break in one leg does not
+    break the other.
+  </p>
+  <div class="cx-status" id="status">Loading WebAssembly module…</div>
+
+  <div class="cx-grid" id="grid" style="display:none">
+
+    <!-- φHash -->
+    <section class="cx-panel">
+      <span class="tag">phi_hash</span>
+      <h2>φHash</h2>
+      <div class="sub">Zeckendorf → S-Box → Triveni → phyllotaxis spiral → Lucas bracketing chain. Deterministic, ~50% avalanche.</div>
+      <div class="cx-field">
+        <label>Message</label>
+        <input type="text" id="hashInput" value="phi-coherent">
+      </div>
+      <div class="cx-field">
+        <label>Tier (chandas)</label>
+        <select id="hashChandas">
+          <option value="0">0 · 29 bytes</option>
+          <option value="1">1 · 47 bytes</option>
+          <option value="2">2 · 76 bytes</option>
+        </select>
+      </div>
+      <div class="cx-out" id="hashOut">—</div>
+      <div class="cx-callout" id="hashAvalanche">Flip one character above to see the avalanche.</div>
+    </section>
+
+    <!-- φCipher -->
+    <section class="cx-panel">
+      <span class="tag">phi_cipher · AEAD</span>
+      <h2>φCipher</h2>
+      <div class="sub">GF(2⁸) wide-trail SPN, encrypt-then-MAC. The passphrase is run through φHash to derive an exact-length key.</div>
+      <div class="cx-field"><label>Message</label><input type="text" id="cipherMsg" value="the quick brown fox"></div>
+      <div class="cx-field"><label>Passphrase</label><input type="text" id="cipherPass" value="correct horse battery staple"></div>
+      <div class="cx-row">
+        <button class="cx-run" id="cipherEncryptBtn">Encrypt</button>
+        <button class="cx-run secondary" id="cipherDecryptBtn" disabled>Decrypt</button>
+        <button class="cx-run secondary" id="cipherTamperBtn" disabled>Tamper &amp; decrypt</button>
+      </div>
+      <div class="cx-out" id="cipherOut">—</div>
+    </section>
+
+    <!-- φSign -->
+    <section class="cx-panel span2">
+      <span class="tag">phi::sign · SLH-DSA/XMSS family · stateful</span>
+      <h2>φSign — hash-based signature</h2>
+      <div class="sub">
+        Hypertree of L(2)=3 layers × height L(4)=7, WOTS width F(7)=13, FORS F(7)=13 trees.
+        Security rests only on φHash preimage/collision resistance — no elliptic curves, no
+        algebraic hardness. <strong>Genuinely slow here</strong>: this build is single-threaded
+        (GitHub Pages can't serve the COOP/COEP headers multi-threaded WASM needs), so the
+        hypertree's one-time-key fan-out runs serially — keygen ≈20s, sign ≈60s. Both run in a
+        Worker so the page stays responsive; verify is fast (≈0.3s).
+      </div>
+      <div class="cx-row">
+        <button class="cx-run" id="signKeygenBtn">Generate φSign identity (≈20s)</button>
+      </div>
+      <div class="cx-progress" id="signKeygenProgress"></div>
+      <div class="cx-out" id="signPk" style="display:none"></div>
+
+      <div class="cx-field" style="margin-top:16px"><label>Message to sign</label><input type="text" id="signMsg" value="sign this message"></div>
+      <div class="cx-row">
+        <button class="cx-run" id="signSignBtn" disabled>Sign (≈60s)</button>
+      </div>
+      <div class="cx-progress" id="signSignProgress"></div>
+      <div class="cx-out" id="signSigOut" style="display:none"></div>
+
+      <div class="cx-row" style="margin-top:6px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);cursor:pointer">
+          <input type="checkbox" id="signTamperToggle" style="margin:0"> tamper the message before verifying
+        </label>
+        <button class="cx-run secondary" id="signVerifyBtn" disabled>Verify</button>
+      </div>
+      <div class="cx-out" id="signVerifyOut" style="display:none"></div>
+      <div class="cx-stats"><div class="cx-stat"><div class="k">One-time signatures used</div><div class="v" id="signSigCount">0</div></div></div>
+    </section>
+
+    <!-- φKEM -->
+    <section class="cx-panel span2">
+      <span class="tag">phi::pqc / phi-lattice · φ-KEM-304 · Module-LWE, FO-CCA2</span>
+      <h2>φKEM — key encapsulation (two-party)</h2>
+      <div class="sub">
+        Alice publishes a key. Bob encapsulates a fresh shared secret to it — and, separately,
+        encrypts a message directly to it (φKEM + φHash-derived DEM key + φCipher AEAD). Alice
+        recovers both. All keygen/encaps/decaps calls are millisecond-scale.
+      </div>
+      <div class="cx-row">
+        <button class="cx-run" id="kemAliceBtn">Alice: generate keypair</button>
+      </div>
+      <div class="cx-out" id="kemAlicePk" style="display:none"></div>
+
+      <div class="cx-field" style="margin-top:14px"><label>Bob's message (public-key encryption to Alice)</label><input type="text" id="kemMsg" value="a secret message to Alice"></div>
+      <div class="cx-row">
+        <button class="cx-run secondary" id="kemBobEncapsBtn" disabled>Bob: encapsulate shared secret</button>
+        <button class="cx-run secondary" id="kemBobEncryptBtn" disabled>Bob: encrypt message to Alice's key</button>
+      </div>
+      <div class="cx-out" id="kemBobOut" style="display:none"></div>
+
+      <div class="cx-row" style="margin-top:10px">
+        <button class="cx-run secondary" id="kemAliceRecoverBtn" disabled>Alice: decapsulate / decrypt</button>
+      </div>
+      <div class="cx-out" id="kemAliceOut" style="display:none"></div>
+    </section>
+
+    <!-- φDSA -->
+    <section class="cx-panel span2">
+      <span class="tag">phi::pqc / phi-lattice · φDSA (ML-DSA-87 class) · Module-LWE/SIS, stateless</span>
+      <h2>φDSA — lattice signature</h2>
+      <div class="sub">
+        Fiat–Shamir with aborts, stateless — no counter to persist, the stateless complement to
+        φSign. Independent assumption from φSign (lattices, not hashes); the hybrid signature
+        (not exposed in this demo) binds both.
+      </div>
+      <div class="cx-row"><button class="cx-run" id="dsaKeygenBtn">Generate φDSA keypair</button></div>
+      <div class="cx-out" id="dsaPk" style="display:none"></div>
+      <div class="cx-field" style="margin-top:14px"><label>Message to sign</label><input type="text" id="dsaMsg" value="a stateless lattice signature"></div>
+      <div class="cx-row">
+        <button class="cx-run secondary" id="dsaSignBtn" disabled>Sign</button>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);cursor:pointer">
+          <input type="checkbox" id="dsaTamperToggle" style="margin:0"> tamper the message before verifying
+        </label>
+      </div>
+      <div class="cx-out" id="dsaOut" style="display:none"></div>
+    </section>
+
+  </div>
+
+  <div class="cx-footer-note" id="footerNote"></div>
+</main>
+
+<script src="assets/demo-header.js?v=20260720"></script>
+<script type="module">
+import { ready, toHex, PhiHash, PhiCipher, PhiSign, PhiKem, PhiDsa, licenseInfo, expiresOn }
+  from './assets/js/phi-crypt.js?v=20260720';
+
+const $ = (id) => document.getElementById(id);
+const enc = (s) => new TextEncoder().encode(s);
+const dec = (b) => new TextDecoder().decode(b);
+const hexBlock = (label, u8, extra) =>
+  '<span class="k">' + label + ' (' + u8.length + ' B)</span>' + toHex(u8).slice(0, 400) +
+  (toHex(u8).length > 400 ? '…' : '') + (extra || '');
+
+(async () => {
+  let api;
+  try {
+    api = await ready();
+  } catch (e) {
+    $('status').textContent = String(e.message || e);
+    $('status').className = 'cx-status err';
+    return;
+  }
+  $('status').textContent = 'Live: computed from phi-crypt-cpp + phi-lattice-cpp (WebAssembly). Demo build expires ' + expiresOn() + '.';
+  $('grid').style.display = '';
+  const info = licenseInfo();
+  $('footerNote').textContent = info.license;
+
+  // ── φHash ──
+  let lastHash = null;
+  function runHash() {
+    const text = $('hashInput').value;
+    const chandas = parseInt($('hashChandas').value, 10);
+    const digest = PhiHash.hash(text, chandas);
+    $('hashOut').innerHTML = hexBlock('Digest', digest);
+    if (lastHash && lastHash.chandas === chandas) {
+      const diffBits = [...digest].reduce((acc, v, i) => acc + popcount(v ^ (lastHash.digest[i] ?? 0)), 0);
+      const pct = ((diffBits / (digest.length * 8)) * 100).toFixed(1);
+      $('hashAvalanche').innerHTML = '<strong>' + diffBits + ' / ' + (digest.length * 8) +
+        ' bits (' + pct + '%)</strong> changed from the previous digest — this is the avalanche property: a small input change should flip roughly half the output bits.';
+    }
+    lastHash = { chandas, digest };
+  }
+  function popcount(x) { let c = 0; while (x) { c += x & 1; x >>= 1; } return c; }
+  $('hashInput').addEventListener('input', runHash);
+  $('hashChandas').addEventListener('change', runHash);
+  runHash();
+
+  // ── φCipher ──
+  let lastCt = null;
+  $('cipherEncryptBtn').addEventListener('click', () => {
+    lastCt = PhiCipher.encrypt($('cipherMsg').value, $('cipherPass').value, 0);
+    $('cipherOut').className = 'cx-out';
+    $('cipherOut').innerHTML = hexBlock('Ciphertext', lastCt);
+    $('cipherDecryptBtn').disabled = false;
+    $('cipherTamperBtn').disabled = false;
+  });
+  $('cipherDecryptBtn').addEventListener('click', () => {
+    try {
+      const pt = PhiCipher.decrypt(lastCt, $('cipherPass').value, 0);
+      $('cipherOut').className = 'cx-out plain';
+      $('cipherOut').innerHTML = '<span class="k">Decrypted</span>' + pt +
+        ' <span class="cx-badge pass">authenticated</span>';
+    } catch (e) {
+      $('cipherOut').className = 'cx-out bad';
+      $('cipherOut').textContent = 'Rejected: ' + e.message;
+    }
+  });
+  $('cipherTamperBtn').addEventListener('click', () => {
+    const tampered = lastCt.slice();
+    tampered[tampered.length - 1] ^= 0x01;
+    try {
+      PhiCipher.decrypt(tampered, $('cipherPass').value, 0);
+      $('cipherOut').className = 'cx-out bad';
+      $('cipherOut').textContent = 'Unexpected: tampered ciphertext was accepted.';
+    } catch (e) {
+      $('cipherOut').className = 'cx-out';
+      $('cipherOut').innerHTML = '<span class="cx-badge pass">Tamper rejected</span> — one flipped byte, AEAD MAC check failed before any plaintext was produced.';
+    }
+  });
+
+  // ── φSign ──
+  let signPk = null, signLastMsg = null, signLastSig = null;
+  $('signKeygenBtn').addEventListener('click', async () => {
+    $('signKeygenBtn').disabled = true;
+    $('signKeygenProgress').innerHTML = '<span class="cx-spin"></span>Building the hypertree (single-threaded WASM, ≈20s)…';
+    try {
+      const { publicKey, sigCount } = await PhiSign.newIdentity(2);
+      signPk = publicKey;
+      $('signKeygenProgress').textContent = 'Identity generated.';
+      $('signPk').style.display = '';
+      $('signPk').innerHTML = hexBlock('Public key', signPk);
+      $('signSigCount').textContent = sigCount;
+      $('signSignBtn').disabled = false;
+    } catch (e) {
+      $('signKeygenProgress').textContent = 'Failed: ' + e.message;
+    }
+    $('signKeygenBtn').disabled = false;
+    $('signKeygenBtn').textContent = 'Regenerate identity (≈20s)';
+  });
+  $('signSignBtn').addEventListener('click', async () => {
+    $('signSignBtn').disabled = true;
+    $('signSignProgress').innerHTML = '<span class="cx-spin"></span>Signing (single-threaded WASM, ≈60s)…';
+    try {
+      signLastMsg = $('signMsg').value;
+      const { signature, sigCount } = await PhiSign.sign(signLastMsg);
+      signLastSig = signature;
+      $('signSignProgress').textContent = 'Signed.';
+      $('signSigOut').style.display = '';
+      $('signSigOut').innerHTML = hexBlock('Signature', signature);
+      $('signSigCount').textContent = sigCount;
+      $('signVerifyBtn').disabled = false;
+    } catch (e) {
+      $('signSignProgress').textContent = 'Failed: ' + e.message;
+    }
+    $('signSignBtn').disabled = false;
+  });
+  $('signVerifyBtn').addEventListener('click', () => {
+    const msg = $('signTamperToggle').checked ? signLastMsg + ' (tampered)' : signLastMsg;
+    const ok = PhiSign.verify(msg, signLastSig, signPk, 2);
+    $('signVerifyOut').style.display = '';
+    $('signVerifyOut').className = 'cx-out';
+    $('signVerifyOut').innerHTML = ok
+      ? '<span class="cx-badge pass">Valid signature</span>'
+      : '<span class="cx-badge fail">Rejected</span> (' + (msg !== signLastMsg ? 'tampered message' : 'unexpected') + ')';
+  });
+
+  // ── φKEM ──
+  let alice = null, bobEncaps = null, bobPke = null;
+  $('kemAliceBtn').addEventListener('click', () => {
+    if (alice) alice.destroy();
+    alice = PhiKem.generateKeypair();
+    $('kemAlicePk').style.display = '';
+    $('kemAlicePk').innerHTML = hexBlock('Alice public key', alice.publicKey);
+    $('kemBobEncapsBtn').disabled = false;
+    $('kemBobEncryptBtn').disabled = false;
+    $('kemAliceRecoverBtn').disabled = true;
+    $('kemAliceOut').style.display = 'none';
+    bobEncaps = null; bobPke = null;
+  });
+  $('kemBobEncapsBtn').addEventListener('click', () => {
+    bobEncaps = PhiKem.encaps(alice.publicKey);
+    bobPke = null;
+    $('kemBobOut').style.display = '';
+    $('kemBobOut').innerHTML = hexBlock('Ciphertext', bobEncaps.ct) + hexBlock('Bob\'s shared secret', bobEncaps.k);
+    $('kemAliceRecoverBtn').disabled = false;
+  });
+  $('kemBobEncryptBtn').addEventListener('click', () => {
+    bobPke = PhiKem.pkeEncrypt(alice.publicKey, $('kemMsg').value);
+    bobEncaps = null;
+    $('kemBobOut').style.display = '';
+    $('kemBobOut').innerHTML = hexBlock('KEM ciphertext', bobPke.kemCt) + hexBlock('DEM ciphertext', bobPke.dem);
+    $('kemAliceRecoverBtn').disabled = false;
+  });
+  $('kemAliceRecoverBtn').addEventListener('click', () => {
+    $('kemAliceOut').style.display = '';
+    if (bobEncaps) {
+      const kAlice = alice.decaps(bobEncaps.ct);
+      const agree = kAlice.length === bobEncaps.k.length && kAlice.every((v, i) => v === bobEncaps.k[i]);
+      $('kemAliceOut').className = 'cx-out';
+      $('kemAliceOut').innerHTML = hexBlock('Alice\'s recovered secret', kAlice) +
+        (agree ? '<span class="cx-badge pass">Matches Bob\'s secret</span>' : '<span class="cx-badge fail">Mismatch</span>');
+    } else if (bobPke) {
+      try {
+        const pt = alice.pkeDecrypt(bobPke.kemCt, bobPke.dem);
+        $('kemAliceOut').className = 'cx-out plain';
+        $('kemAliceOut').innerHTML = '<span class="k">Alice decrypts</span>' + pt + ' <span class="cx-badge pass">authenticated</span>';
+      } catch (e) {
+        $('kemAliceOut').className = 'cx-out bad';
+        $('kemAliceOut').textContent = 'Rejected: ' + e.message;
+      }
+    }
+  });
+
+  // ── φDSA ──
+  let dsa = null, dsaLastMsg = null, dsaLastSig = null;
+  $('dsaKeygenBtn').addEventListener('click', () => {
+    if (dsa) dsa.destroy();
+    dsa = PhiDsa.generateKeypair();
+    $('dsaPk').style.display = '';
+    $('dsaPk').innerHTML = hexBlock('Public key', dsa.publicKey);
+    $('dsaSignBtn').disabled = false;
+    $('dsaOut').style.display = 'none';
+  });
+  $('dsaSignBtn').addEventListener('click', () => {
+    dsaLastMsg = $('dsaMsg').value;
+    dsaLastSig = dsa.sign(dsaLastMsg);
+    const msg = $('dsaTamperToggle').checked ? dsaLastMsg + ' (tampered)' : dsaLastMsg;
+    const ok = PhiDsa.verify(msg, dsaLastSig, dsa.publicKey);
+    $('dsaOut').style.display = '';
+    $('dsaOut').className = 'cx-out';
+    $('dsaOut').innerHTML = hexBlock('Signature', dsaLastSig) +
+      (ok ? '<span class="cx-badge pass">Valid signature</span>'
+          : '<span class="cx-badge fail">Rejected</span> (' + (msg !== dsaLastMsg ? 'tampered message' : 'unexpected') + ')');
+  });
+})();
+</script>
+</body>
+</html>
