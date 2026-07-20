@@ -797,7 +797,8 @@ const hexBlock = (label, u8, extra) =>
       zk.k10 = new Uint8Array(await k10Res.arrayBuffer());
       zk.k9 = new Uint8Array(await k9Res.arrayBuffer());
       zkStatus.textContent = 'Verifier ready. Kind-10 proof: ' + (zk.k10.length / 1024).toFixed(1) +
-        ' KB · Kind-9 proof: ' + (zk.k9.length / 1024).toFixed(1) + ' KB, generated natively, verified here.';
+        ' KB · Kind-9 proof: ' + (zk.k9.length / 1024).toFixed(1) + ' KB, generated natively, verified here. ' +
+        'Expect roughly 13 s for the Kind-10 verification and 3 s for Kind-9 in this single-threaded module.';
       $('zkVerifyK10Btn').disabled = false;
       $('zkVerifyK9Btn').disabled = false;
       $('zkTamperBtn').disabled = false;
