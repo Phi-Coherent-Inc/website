@@ -1185,8 +1185,8 @@ footer {
         </div>
         <div class="stat-card reveal reveal-delay-3">
           <div class="stat-num">φKEM·φDSA</div>
-          <div class="stat-title">NIST-aligned lattice arm</div>
-          <div class="stat-body">A Module-LWE KEM (φKEM) and an ML-DSA-87 signature (φDSA). Security rests on a <em>computed</em> lattice-reduction estimate, not on test vectors. φ-KEM-304 reaches a quantum core-SVP cost of about 387, well beyond NIST Category 5's 232.</div>
+          <div class="stat-title">Independently certified lattice arm</div>
+          <div class="stat-body">A Module-LWE KEM (φKEM) and a Module-LWE/SIS signature (φDSA), both over the suite's own parameters — judged by a <em>computed</em> lattice-reduction estimate, not test vectors. φ-KEM-304 reaches a quantum core-SVP cost of about 387. φDSA's shared-field rebase (one field across the proof system and the signature) derived a parameter set certified, under the same estimator, to clear ML-DSA-87's own published SIS band on every axis: a ≈255-bit quantum forgery floor. Both well beyond NIST Category 5's 232-bit quantum floor.</div>
         </div>
         <div class="stat-card reveal reveal-delay-4">
           <div class="stat-num" style="font-size:1.4rem;">2<sup>−285</sup></div>
@@ -1225,7 +1225,7 @@ footer {
       <div class="tags reveal">
         <span class="tag">Two independent PQ assumptions</span>
         <span class="tag">φKEM (Module-LWE KEM)</span>
-        <span class="tag">φDSA (ML-DSA-87)</span>
+        <span class="tag">φDSA (Module-LWE/SIS, shared-field)</span>
         <span class="tag">φAKE handshake · forward secrecy</span>
         <span class="tag">Hybrid KEM + hybrid signature</span>
         <span class="tag">Hash-based signatures (φSign)</span>

@@ -239,7 +239,7 @@
 
     <!-- φDSA -->
     <section class="cx-panel span2">
-      <span class="tag">phi::pqc / phi-lattice · φDSA (ML-DSA-87 class) · Module-LWE/SIS, stateless</span>
+      <span class="tag">phi::pqc / phi-lattice · φDSA · Module-LWE/SIS, stateless, shared-field</span>
       <h2>φDSA — lattice signature</h2>
       <div class="sub">
         Fiat–Shamir with aborts, stateless — no counter to persist, the stateless complement to
@@ -357,8 +357,8 @@ const hexBlock = (label, u8, extra) =>
     dsaProbe.destroy();
     rows.push({ name: 'φKEM (φ-KEM-304)', param: 'Module-LWE, n=512 k=3 q=3329',
                 bytes: kemPkBytes, classicalBits: '~427 (core-SVP est.)', quantumBits: '~387 (core-SVP est.)' });
-    rows.push({ name: 'φDSA', param: 'ML-DSA-87-class, N=256 Q=8380417',
-                bytes: dsaPkBytes, classicalBits: 'NIST Cat. 5 class', quantumBits: 'NIST Cat. 5 class' });
+    rows.push({ name: 'φDSA', param: 'shared-field q=1342832641, k=l=9 η=7',
+                bytes: dsaPkBytes, classicalBits: '≈280.6 (SIS floor)', quantumBits: '≈255 (SIS floor)' });
     $('secBody').innerHTML = rows.map((r) =>
       '<tr><td>' + r.name + '</td><td class="num">' + r.param + '</td>' +
       '<td class="num">' + (typeof r.bytes === 'number' ? r.bytes + ' B' : r.bytes) + '</td>' +
