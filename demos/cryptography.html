@@ -439,10 +439,10 @@
         component with suite-wide blast radius, not a firewall between the two legs.
       </div>
       <div class="cx-callout">
-        <strong>The φHash-XOF finding, and the fix.</strong> External review pushed on the φDSA
-        callout's own admission — φHash pegs ~6% of ExpandMask's coefficients at the boundary vs.
-        ~0.02% expected — and asked the right question: is that a routing decision, or a fact about
-        φHash? It's the latter, and it doesn't touch φHash's core diffusion. Past ~196 bytes, φHash
+        <strong>The φHash-XOF finding, and the fix.</strong> The φDSA callout below admits that
+        φHash pegs ~6% of ExpandMask's coefficients at the boundary vs. ~0.02% expected. Our
+        hardening review asked the question that admission raises: is that a routing decision, or
+        a fact about φHash? It's the latter, and it doesn't touch φHash's core diffusion. Past ~196 bytes, φHash
         falls back to a "chain extension" step that applies only the linear Triveni lift/unlift —
         no S-box, no phyllotaxis mixing, no round constants — repeatedly, self-referentially. In
         this suite's own eigenvalue-classification framework
