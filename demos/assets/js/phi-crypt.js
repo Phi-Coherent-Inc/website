@@ -3,7 +3,8 @@
 //
 // Thin wrapper around the phi_crypt WASM module (compiled from
 // phi-crypt-cpp/web, phi-crypt-cpp + phi-lattice-cpp). Exposes φHash,
-// φCipher AEAD, φSign, φKEM, and φDSA as small JS-friendly namespaces.
+// φCipher AEAD, φ-ROMix (passphrase KDF), φSign, φKEM, and φDSA as small
+// JS-friendly namespaces.
 //
 // Usage (in a demo's `<script type="module">`):
 //     import { ready, PhiHash } from './assets/js/phi-crypt.js?v=...';
@@ -73,19 +74,33 @@ export const PhiHash = {
 };
 
 // ── φCipher (AEAD) ───────────────────────────────────────────────────────
+// Takes a KEY directly, matching phi::cipher::aead_encrypt/decrypt's actual
+// signature — this primitive has no notion of a "password". Deriving a key
+// from a human passphrase is PhiKdf's job (below), never a bare hash: see
+// PhiKdf's own doc comment for why.
 export const PhiCipher = {
-  // password is run through φHash to derive an exact-length key (q selects
-  // both the cipher's key width and φHash's tier).
-  encrypt(text, password, q = 0) {
-    const key = _module.hash(enc(password), q | 0);
-    return _module.cipherAeadEncrypt(enc(text), key, q | 0);
-  },
-  // Throws on tamper / wrong password (AEAD auth failure).
-  decrypt(ciphertext, password, q = 0) {
-    const key = _module.hash(enc(password), q | 0);
-    return dec(_module.cipherAeadDecrypt(ciphertext, key, q | 0));
+  encrypt(text, key, q = 0) { return _module.cipherAeadEncrypt(enc(text), key, q | 0); },
+  // Throws on tamper / wrong key (AEAD auth failure).
+  decrypt(ciphertext, key, q = 0) { return dec(_module.cipherAeadDecrypt(ciphertext, key, q | 0)); },
+};
+
+// ── φ-ROMix v2 — memory-hard passphrase KDF (NOT a bare hash) ───────────
+// A single fast hash over a human-chosen passphrase is GPU/ASIC-parallelizable
+// regardless of how good the hash is. φ-ROMix v2 (phi::kdf::derive_key) is a
+// scrypt-style construction: fill + randomly-traverse a large buffer (forcing
+// memory cost per guess), then one φHash call to extract. See
+// phi_crypt/kdf/phi_kdf.hpp's own honest-scope note: "φHash has no published
+// security reduction. Do NOT claim Argon2-equivalent assurance."
+export const PhiKdf = {
+  // nIndex/roundsIndex trade time for memory cost — defaults measured at
+  // ~46ms in this single-threaded WASM build (see web/README.md).
+  deriveKey(password, salt, q = 0, nIndex = 26, roundsIndex = 26) {
+    return _module.kdfDeriveKey(enc(password), salt, nIndex | 0, roundsIndex | 0, q | 0);
   },
 };
+
+// Demo-side CSPRNG (e.g. a per-session salt) — not a φCrypt primitive itself.
+export function randomBytes(n) { return _module.randomBytes(n | 0); }
 
 // ── φSign (hash-based, stateful) — Worker-backed keygen/sign ────────────
 let _signWorker = null;
@@ -174,5 +189,5 @@ export const PhiDsa = {
 
 export function licenseInfo() { return _module.licenseInfo(); }
 
-const api = { ready, isReady, expiresOn, toHex, PhiHash, PhiCipher, PhiSign, PhiKem, PhiDsa, licenseInfo };
+const api = { ready, isReady, expiresOn, toHex, randomBytes, PhiHash, PhiCipher, PhiKdf, PhiSign, PhiKem, PhiDsa, licenseInfo };
 export default api;
