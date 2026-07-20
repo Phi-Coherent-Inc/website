@@ -1185,8 +1185,8 @@ footer {
         </div>
         <div class="stat-card reveal reveal-delay-3">
           <div class="stat-num">φKEM·φDSA</div>
-          <div class="stat-title">Independently certified lattice arm</div>
-          <div class="stat-body">A Module-LWE KEM (φKEM) and a Module-LWE/SIS signature (φDSA), both over the suite's own parameters — judged by a <em>computed</em> lattice-reduction estimate, not test vectors. φ-KEM-304 reaches a quantum core-SVP cost of about 387. φDSA's shared-field rebase (one field across the proof system and the signature) derived a parameter set certified, under the same estimator, to clear ML-DSA-87's own published SIS band on every axis: a ≈255-bit quantum forgery floor. Both well beyond NIST Category 5's 232-bit quantum floor.</div>
+          <div class="stat-title">Lattice arm held to a computed estimate</div>
+          <div class="stat-body">A Module-LWE KEM (φKEM) and a Module-LWE/SIS signature (φDSA), both over the suite's own parameters — judged by a <em>computed</em> lattice-reduction estimate, not test vectors. φ-KEM-304 reaches a quantum core-SVP cost of about 387. φDSA's shared-field rebase (one field across the proof system and the signature) derived a parameter set estimated, under the same estimator, to clear ML-DSA-87's own published SIS band on every axis: a ≈255-bit quantum forgery floor. Both well beyond NIST Category 5's 232-bit quantum floor under the core-SVP model — a deliberately conservative lower-bound model, not a gate-count comparison. External cryptanalysis review is in progress.</div>
         </div>
         <div class="stat-card reveal reveal-delay-4" style="grid-column: 1 / -1;">
           <div class="stat-num" style="font-size:1.2rem; letter-spacing:.04em;">Verify-in-proof</div>
@@ -1214,11 +1214,11 @@ footer {
           <div class="stat-body">φQuic · φNet · φRPC · φSQLVFS · φAGI · React Native. Every layer of the stack implements φCrypt natively, from transport to storage to identity to mobile.</div>
         </div>
         <div class="stat-card reveal reveal-delay-1" style="grid-column: 1 / -1;">
-          <div class="stat-num" style="font-size:1.1rem; letter-spacing:.08em; color: var(--accent, #c8a95a);">Quantum Cryptography Validated</div>
-          <div class="stat-title">Simulation-proven quantum resistance across the attack surface</div>
+          <div class="stat-num" style="font-size:1.1rem; letter-spacing:.08em; color: var(--accent, #c8a95a);">Quantum Cryptography, Probed Live</div>
+          <div class="stat-title">Simulation-probed quantum resistance across the attack surface</div>
           <div class="stat-body">
             Our quantum simulation suite stress-tested φCrypt against the principal known quantum attack vectors.
-            The strongest hash level achieves <strong>304-bit post-Grover security</strong>, NIST Category 5 (equivalent to AES-256 against a quantum adversary). The fastest tier reaches 116-bit post-Grover (NIST Category 3), so Category 5 deployments use the balanced tier or higher.
+            The strongest hash level achieves <strong>304-bit post-Grover preimage security</strong>, past NIST Category 5's quantum floor at the search-exponent level (categories themselves are defined by full gate-count attack costs on AES, so this is an exponent comparison, not a certified category claim). The fastest tier reaches 116-bit post-Grover, the Category 3 level on the same basis, so Category 5 deployments use the balanced tier or higher.
             Simon's algorithm and QFT period-finding, run live in the demo on a small truncation of φHash, find no hidden period, each with a positive control that recovers a planted period so the null result has teeth. This is a design-level, small-instance probe; full-scale resistance is an analytic argument, not a small-qubit experiment.
             A full-scale quantum preimage attack on the strongest tier would require <strong>~1 million physical qubits</strong> and an estimated <strong>10<sup>85</sup> years</strong> on the most capable available hardware.
             The lattice arm (φKEM · φDSA) reduces to Module-LWE; its parameters are held to a <strong>computed core-SVP / BKZ estimate</strong>, not to test vectors.
@@ -1238,7 +1238,7 @@ footer {
         <span class="tag">OpenSSL provider</span>
         <span class="tag">φQuic · φNet · φRPC · φSQLVFS · φAGI · React Native</span>
         <span class="tag">NIST Category 5 (balanced tier+)</span>
-        <span class="tag">Quantum cryptography validated</span>
+        <span class="tag">Quantum cryptography, probed live</span>
         <span class="tag">AGPL + commercial license</span>
       </div>
       <div class="demo-grid" style="margin-top:30px;">
@@ -1308,7 +1308,7 @@ footer {
         <span class="tag">Qudit SU(d) gate synthesis</span>
         <span class="tag">Photonic simulation</span>
         <span class="tag">Structural symmetry guarantee</span>
-        <span class="tag">Quantum cryptography validated</span>
+        <span class="tag">Quantum cryptography, probed live</span>
         <span class="tag">6 hardware noise models</span>
         <span class="tag">No structural attack beats Grover</span>
         <span class="tag">AGPL + commercial license</span>

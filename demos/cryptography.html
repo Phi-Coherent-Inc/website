@@ -139,18 +139,21 @@
   </p>
   <div class="cx-callout" style="margin-bottom:22px;">
     <strong>Pre-production.</strong> These primitives already run in shipped internal infrastructure
-    (phi-sqlvfs, the mobile wallet's JSI bridges) but the suite as a whole has not had independent
-    third-party review. Treat every number on this page as this team's own estimate, not an audited
-    guarantee — see Related packages for exactly what depends on what today.
+    (phi-sqlvfs, the mobile wallet's JSI bridges), and the suite is under external cryptanalysis
+    review that has not yet reported. Until it does, treat every number on this page as this team's
+    own estimate, not an audited guarantee — see Related packages for exactly what depends on what
+    today.
   </div>
   <div class="cx-status" id="status">Loading WebAssembly module…</div>
   <noscript>
     <div class="cx-callout">
       This page computes everything live in WebAssembly, so the interactive panels need
       JavaScript. Without it, here is the static summary: φHash output widths of 29/47/76 bytes
-      give 116/188/304-bit post-quantum (Grover) strength; φKEM-304's Module-LWE parameters are
-      estimated at ≈387-bit post-quantum; φDSA's shared-field parameters are estimated at ≈255-bit
-      post-quantum, both figures from this team's own core-SVP model, not an independent audit.
+      give 116/188/304-bit post-quantum (Grover) preimage strength, with classical collision
+      resistance at half the output width (116/188/304 bits by the birthday bound); φKEM-304's
+      Module-LWE parameters are estimated at ≈387-bit post-quantum; φDSA's shared-field parameters
+      are estimated at ≈255-bit post-quantum, both figures from this team's own core-SVP model.
+      External cryptanalysis review is in progress and has not yet reported.
     </div>
   </noscript>
 
@@ -310,7 +313,8 @@
         what depends on what. φSign's security rests only on φHash preimage/collision resistance
         (no elliptic curves, no algebraic hardness); φDSA's rests on Module-LWE/SIS, a wholly
         separate problem; φKEM's is Module-LWE too, judged by a modeled core-SVP/BKZ
-        lattice-reduction estimate, not test vectors or third-party audit.
+        lattice-reduction estimate. External cryptanalysis review of the suite is in progress
+        and has not yet reported.
       </div>
       <div class="cx-table-scroll">
         <table class="cx-audit">
@@ -325,8 +329,10 @@
         assumptions</em> (hash vs. Module-LWE) and false of the <em>implementation</em>. φSign's
         security is entirely φHash. φCipher's key, above, no longer traces to a bare φHash call —
         but the memory-hard KDF's own last step is still one φHash call. φKEM here is instantiated
-        with φHash as its extendable-output function (the suite's own choice; SHAKE-256 would work
-        identically against the same Module-LWE assumption), so its key-establishment path also
+        with φHash as its extendable-output function (the suite's own choice — the KEM core is
+        hash-agnostic behind an injected XOF, and an in-suite SHAKE-256/FIPS-202 instantiation,
+        validated against the NIST test vectors, works identically against the same Module-LWE
+        assumption), so its key-establishment path also
         depends on φHash <em>behaving as a random oracle</em>, not only on Module-LWE — a stronger
         ask than "produces good avalanche," and the gap between those two turned out to matter (see
         below). The one primitive on this page with <em>zero</em> φHash dependency, assumption or
@@ -370,8 +376,16 @@
         φSign's security specifically needs both (its hypertree commitments lean on preimage
         resistance, its Merkle authentication paths on collision resistance). φCipher's key and
         φSign's public-key commitment are the same φHash output at the same tier, so they inherit
-        the identical bit strength. Tier 0 (116-bit quantum preimage) is NIST Category 3; tier 2
-        (304-bit quantum preimage) exceeds NIST Category 5, whose quantum floor is 232 bits.
+        the identical bit strength. On the quantum side of collisions: the best known quantum
+        collision search (Brassard–Høyer–Tapp) needs about 2<sup>n/3</sup> work in queries but only
+        by assuming enormous cheap memory; cost models that price memory put quantum collision
+        search back near the classical birthday bound, so the classical figure is the operative
+        one. A caution on NIST categories: they are defined by the full gate-level cost of key
+        search on AES or collision search on SHA, not by search exponents alone, so the mapping
+        here is an exponent comparison, not a certified category claim. On that basis tier 0's
+        116-bit quantum preimage sits at the Category 3 level and tier 2's 304-bit exceeds
+        Category 5's 232-bit quantum floor, while tier 0's collision-bound uses should be read
+        against its 116-bit classical birthday figure, not the 232-bit preimage one.
       </div>
       <div class="cx-callout">
         <strong>φKEM (φ-KEM-304).</strong> Module-LWE, ring degree n=512, module rank k=3, q=3329,
@@ -386,8 +400,12 @@
         known to be less reliable, so treat ≈427-bit classical as the headline figure and
         ≈387-bit quantum (the 0.265β constant) as a secondary, deliberately conservative data
         point — even the Kyber team treats that constant as a pessimistic lower bound assuming
-        implausible quantum RAM, not an operative security level. Both clear the suite's own
-        304-bit floor and NIST Category 5's 232-bit quantum bar either way.
+        implausible quantum RAM, not an operative security level. One more caution on the measuring
+        sticks: core-SVP is a deliberately conservative lower-bound model, not a gate-level cost
+        model, while NIST categories are defined by the full cost of attacking AES — so the precise
+        claim is that both figures clear the suite's own 304-bit floor and Category 5's 232-bit
+        quantum bar <em>under the core-SVP model</em>, not that a certified gate-count comparison
+        has been made.
         <strong>On the Reed–Muller reconciliation:</strong> RM(1,3) is the one φ-native load-bearing
         element inside encode/decode, and changing it changes more than hardness — it changes the
         decryption failure rate (DFR) that the FO transform's CCA2 argument depends on directly.
