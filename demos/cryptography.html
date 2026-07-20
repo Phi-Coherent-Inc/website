@@ -616,6 +616,28 @@
         from the monorepo directly.
       </div>
     </section>
+
+    <!-- Disclosure & verification -->
+    <section class="cx-panel span2" id="security">
+      <span class="tag">disclosure · constant-time posture · module verification</span>
+      <h2>Reporting, side channels, and verifying what you ran</h2>
+      <div class="sub">
+        <strong>Disclosure.</strong> Report vulnerabilities or cryptanalysis to
+        <a href="mailto:jbadwal@indinuity.com">jbadwal@indinuity.com</a> (also published at
+        <code>/.well-known/security.txt</code>). A confirmed break of any primitive here is
+        treated as protocol-breaking across the suite.
+        <br><br>
+        <strong>Constant-time posture, stated honestly.</strong> The cipher core is
+        ctgrind-verified branchless in its hardened build; authentication comparisons are always
+        branchless. Not yet covered: the AEAD envelope and signing paths, φHash itself, and
+        φDSA's secret-dependent NTT path, which is not yet constant-time hardened. The demo
+        builds on this page use the portable table-lookup backend, which has the same
+        cache-timing surface as table-based AES.
+        <br><br>
+        <strong>Verify the module you ran.</strong> SHA-256 of the deployed WebAssembly, restated
+        at every redeploy: <span id="wasmHashes">loading…</span>
+      </div>
+    </section>
     </div>
 
   </div>
@@ -678,6 +700,11 @@ const hexBlock = (label, u8, extra) =>
       if (res.ok) {
         const m = await res.json();
         host = m.host;
+        const w = m.wasm || {};
+        $('wasmHashes').innerHTML =
+          '<code>phi_crypt.wasm ' + (w.phi_crypt_wasm_sha256 || 'pending') + '</code><br>' +
+          '<code>phi_verifier.wasm ' + (w.phi_verifier_wasm_sha256 || 'pending deploy') + '</code>' +
+          ' · built with ' + (w.emsdk_version || 'emsdk');
         const s = m.sizes, e2e = m.phisign_end_to_end_native_ms;
         const fmt = (n) => n.toLocaleString('en-US');
         rows = [

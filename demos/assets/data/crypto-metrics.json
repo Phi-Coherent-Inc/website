@@ -50,8 +50,8 @@
   },
   "wasm": {
     "note": "SHA-256 of the deployed modules; republished with every redeploy.",
-    "phi_crypt_wasm_sha256": null,
+    "phi_crypt_wasm_sha256": "4e2d605a5163cab828e75558e5895e65e5da5b7eb2e0d6b168cd1c46c798e615",
     "phi_verifier_wasm_sha256": null,
-    "emsdk_version": null
+    "emsdk_version": "emcc 3.1.61"
   }
 }
