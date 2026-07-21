@@ -210,11 +210,14 @@
         SIS regime the parameter derivation certifies.
         Second: the lattice relation and the norm bound are proof-carried; the challenge equality
         and the NTT consistency of the public signature are recomputed natively by the verifier
-        from public data — the field-native challenge sponge is built and measured
-        (about 1,279 permutations) but not yet folded through the recursive wheel.
+        from public data, which is sound precisely because that data is public.
         Third: this statement attests a <em>public</em> signature's verification; it does not hide
-        the signature. The hidden-authorization statement that ships today is the hash-leg
-        one-time-signature proof, verified beside it below.
+        the signature. We have measured exactly what a hidden version would take: the relation and
+        norm proofs run in zero-knowledge today, and the check tying the two together survives
+        hiding, but the fingerprint step that binds the signature to the message would then have to
+        run inside the proof at roughly 264 times the zero-knowledge size budget — a different
+        proof structure we have not built. So the hidden-authorization statement that ships today
+        is the hash-leg one-time-signature proof, verified beside it below.
         Fourth: the proofs were generated natively (the prover is multi-threaded; this host cannot
         serve the COOP/COEP headers browser threads require). Verification runs live here in the
         thread-free verifier module.
@@ -335,7 +338,9 @@
       <span class="tag">phi::sign · SLH-DSA/XMSS family · stateful</span>
       <h2>φSign — hash-based signature</h2>
       <div class="sub">
-        Hypertree of L(2)=3 layers × height L(4)=7, WOTS width F(7)=13, FORS F(7)=13 trees.
+        Hypertree of L(2)=3 layers × height L(4)=7, WOTS width 8 (revised down from 13 after the
+        width sweep measured 13 as strictly costlier for the same security — see the Security
+        model tab), FORS F(7)=13 trees.
         Security rests only on φHash preimage/collision resistance — no elliptic curves, no
         algebraic hardness. <strong>Genuinely slow here</strong>: this build is single-threaded
         (GitHub Pages can't serve the COOP/COEP headers multi-threaded WASM needs), so the
