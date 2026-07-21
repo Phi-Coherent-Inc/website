@@ -162,9 +162,9 @@
     <div class="cx-callout">
       This page computes everything live in WebAssembly, so the interactive panels need
       JavaScript. Without it, here is the static summary: φHash output widths of 29/47/76 bytes
-      give 116/188/304-bit post-quantum (Grover) second-preimage strength; φSign is SLH-DSA with
-      position-tweaked hashing, so it reduces to target-collision resistance and is not
-      birthday-limited; φKEM-304's
+      give 116/188/304-bit post-quantum (Grover) second-preimage strength; φSign is a stateful
+      XMSS/LMS-family signature (SP 800-208) with position-tweaked hashing, so it reduces to
+      target-collision resistance and is not birthday-limited; φKEM-304's
       Module-LWE parameters are estimated at ≈387-bit post-quantum; φDSA's shared-field parameters
       are estimated at ≈255-bit post-quantum, both figures from this team's own core-SVP model.
       Wire sizes: φKEM pk 3,148 B / ct 4,096 B (ML-KEM-1024: 1,568/1,568); φDSA pk 4,352 B /
@@ -202,13 +202,21 @@
       </div>
       <div class="cx-callout">
         <strong>Exactly what is and is not proven here.</strong>
-        First: the proofs verify a φDSA <em>transcript variant</em> (φDSA-algfs): the Fiat–Shamir
-        challenge is derived with the suite's field-native algebraic sponge instead of SHAKE-256,
-        because SHAKE is not arithmetizable at any size. Production φDSA keeps SHAKE-256 end to
-        end; the variant changes the challenge derivation only, and its Fiat–Shamir soundness
-        rests on the algebraic hash, which is experimental. The demo variant is also hint-free
-        (the commitment w travels uncompressed), placing its forgery bound in the norm-below-q
-        SIS regime the parameter derivation certifies.
+        First, and most important: <strong>the proof does not verify the production signature — it
+        verifies a different one.</strong> Production φDSA runs SHAKE-256 for its entire Fiat–Shamir
+        transcript, and SHAKE is not arithmetizable at any size, so the demo signs a
+        <em>transcript variant</em> (φDSA-algfs) whose challenge is derived with a field-native
+        algebraic hash instead. That hash is named and specified: a <strong>Poseidon-class x⁷
+        sponge</strong>, state width 3 (rate 2, capacity 1), a 3×3 Cauchy MDS layer, and
+        <strong>52 all-full rounds</strong> — the round count is ⌈128/log₂7⌉ ≈ 46 plus a
+        statistical margin, i.e. a ~128-bit target against Gröbner-basis / algebraic-degree
+        attacks. It is <strong>experimental</strong>: the arithmetization-friendly hash family
+        (Poseidon, Rescue, Griffin, Anemoi) has a genuinely active cryptanalytic record, and this
+        instance has had no external review. So this leg's Fiat–Shamir soundness rests on an
+        unproven hash, and it verifies the algebraic-FS signature, not the SHAKE one a production
+        φDSA holder would issue. The demo variant is also hint-free (the commitment w travels
+        uncompressed), placing its forgery bound in the norm-below-q SIS regime the parameter
+        derivation certifies.
         Second: the lattice relation and the norm bound are proof-carried; the challenge equality
         and the NTT consistency of the public signature are recomputed natively by the verifier
         from public data, which is sound precisely because that data is public.
@@ -336,14 +344,14 @@
 
     <!-- φSign -->
     <section class="cx-panel span2">
-      <span class="tag">phi::sign · SLH-DSA/XMSS family · stateful</span>
+      <span class="tag">phi::sign · XMSS/LMS family (SP 800-208) · stateful</span>
       <h2>φSign — hash-based signature</h2>
       <div class="sub">
         Hypertree of L(2)=3 layers × height L(4)=7, WOTS width 8 (revised down from 13 after the
         width sweep measured 13 as strictly costlier for the same security — see the Security
         model tab), FORS F(7)=13 trees.
         Security rests only on φHash (second-)preimage / target-collision resistance — the
-        position-tweaked SLH-DSA reduction, no elliptic curves, no
+        position-tweaked XMSS/LMS reduction, no elliptic curves, no
         algebraic hardness. <strong>Genuinely slow here</strong>: this build is single-threaded
         (GitHub Pages can't serve the COOP/COEP headers multi-threaded WASM needs), so the
         hypertree's one-time-key fan-out runs serially — keygen ≈13s, sign ≈40s. A
@@ -417,7 +425,7 @@
       <div class="sub">
         Two independent hardness assumptions — read "Independence, precisely" below for exactly
         what depends on what. φSign's security rests only on φHash (second-)preimage /
-        target-collision resistance (the position-tweaked SLH-DSA reduction, not the birthday
+        target-collision resistance (the position-tweaked XMSS/LMS reduction, not the birthday
         bound — see "Reading the hash-based rows"; no elliptic curves, no algebraic hardness);
         φDSA's rests on Module-LWE/SIS, a wholly
         separate problem; φKEM's is Module-LWE too, judged by a modeled core-SVP/BKZ
@@ -448,31 +456,30 @@
         component with suite-wide blast radius, not a firewall between the two legs.
       </div>
       <div class="cx-callout">
-        <strong>The φHash-XOF finding, and the fix.</strong> The φDSA callout below admits that
-        φHash pegs ~6% of ExpandMask's coefficients at the boundary vs. ~0.02% expected. Our
-        hardening review asked the question that admission raises: is that a routing decision, or
-        a fact about φHash? It's the latter, and it doesn't touch φHash's core diffusion. Past ~196 bytes, φHash
-        falls back to a "chain extension" step that applies only the linear Triveni lift/unlift —
-        no S-box, no phyllotaxis mixing, no round constants — repeatedly, self-referentially. In
-        this suite's own eigenvalue-classification framework
-        (<code>phi_types/identity_classification.hpp</code>): a Fibonacci-weighted lifting
-        predictor is built to be near-identity — its natural home is the marginal Floor gate (γ,
-        λ≈+1), not the contracting Entropy gate (e, |λ|&lt;1) a mixing function needs. Iterating a
-        Floor-class map where an Entropy-class one belongs doesn't erase structure; it preserves
-        it. Measured directly: at chandas=8 (φKEM's XOF request size, chosen to amortize φHash's
-        per-call cost), the first 196 bytes are statistically clean — mean 127.59, variance 5459.8
-        against an ideal 127.5 / 5461.25 — and the remaining bytes show a byte position frozen
-        constant across 4,000 independent seeds. <strong>Fix:</strong> capped the XOF's request
-        size at chandas=3 (123 bytes) — the largest chandas that provably never reaches the
-        extension path for any input, since one block's full pipeline always yields exactly 196
-        detail bytes regardless of message length. Costs ~11× more φHash calls per XOF request;
-        correctness over a microbenchmark. Re-measured clean at the new tier (mean 127.60, variance
-        5458.6, saturation back to the expected 6.23%), and verified across phi-lattice-cpp's full
-        test suite (KAT anchors re-pinned, decode-failure bound unchanged at δ=2⁻²⁸⁴·⁷) and
-        phi-crypt-cpp's φPQC/adversarial/AKE suites — all green. φHash's core algorithm is
-        unmodified; every chandas 0-2 consumer (φSign, φCipher, φDSA's internals,
-        addresses/commitments) and phi-currency's independent mining-difficulty use of chandas were
-        both out of scope and are both untouched.
+        <strong>The φHash-XOF finding, the fix, and the process gap behind it.</strong> φHash pegs
+        ~6% of ExpandMask's coefficients at the boundary vs. ~0.02% expected. The cause is not a
+        routing choice, it is a fact about φHash: past its 196-byte fully-mixed block, φHash's
+        "chain extension" step applies <strong>only the linear Triveni lift/unlift</strong> — no
+        S-box, no phyllotaxis mixing, no round constants. The explanation needs no framework: a
+        linear map iterated on itself cannot add entropy, so output past 196 bytes is an affine
+        function of internal state. That is worse than "biased" — it is potentially
+        <strong>state-recovering</strong>, and the frozen byte we measured (constant across 4,000
+        seeds at the old chandas=8 request size) is a symptom, not a bound on what is extractable.
+        <strong>Fix:</strong> the cryptographic XOF is now hard-capped at chandas=3 (123 bytes), the
+        largest request that provably never reaches the extension path, enforced by a compile-time
+        assertion so a future caller cannot silently exceed it. <strong>Call-site audit:</strong>
+        every secret-material caller already stays below the boundary — the KEM XOF at ≤123 bytes,
+        φSign at ≤76, φDSA on SHAKE-256 — so no key-bearing path ever ran through the linear
+        extension. The one caller that does request past 196 bytes is phi-currency's
+        proof-of-work grinding, which is public and keyless (no secret to recover), so the linear
+        extension there is not a cryptographic surface; it is not "out of scope," it is
+        out-of-attack-surface, and the extension path stays reachable only from that non-secret
+        context. <strong>The honest finding is the process one:</strong> a frozen output byte is
+        exactly what a statistical battery catches instantly, and φHash had none gating its
+        releases. It does now — a monobit/frequency/frozen-position battery over many seeds
+        (<code>tests/test_hash_battery.cpp</code>) that fails the build on a stuck byte or an
+        out-of-band frequency deviation. Re-measured clean at chandas=3 (saturation back to the
+        expected 6.23%), KAT anchors re-pinned, decode-failure bound δ=2⁻²⁸⁴·⁷, full suites green.
       </div>
       <div class="cx-callout">
         <strong>Reading the hash-based rows, and why they are not birthday-limited.</strong>
@@ -481,15 +488,20 @@
         the actual digest length above. These are <strong>(second-)preimage</strong> numbers:
         classical <em>n</em>, quantum <em>n</em>/2. The obvious objection is the birthday bound —
         plain collision resistance is only <em>n</em>/2 classical, so shouldn't that be the real
-        limit? For φSign it is not, and this is by construction. φSign is SLH-DSA / SPHINCS+
-        (FIPS 205): every hash call is <strong>tweaked by its position</strong> (layer, chain
-        index, step) and the message digest is <strong>randomized</strong> by a per-signature R,
-        so an attacker never gets to run an offline, un-targeted birthday search. The relevant
-        property is <strong>target-collision resistance</strong> (equivalently second-preimage):
-        find a collision for a target fixed <em>after</em> the tweak, which costs <em>n</em>
-        classical and <em>n</em>/2 quantum, not <em>n</em>/2 and <em>n</em>/3. Avoiding the
-        birthday penalty is the entire reason SPHINCS+ hashes this way. So the table's figures are
-        the operative ones for φSign: tier 0 is 232 classical / 116 quantum, tier 2 is 608 / 304.
+        limit? For φSign it is not, and this is by construction. φSign is a <strong>stateful</strong>
+        hash-based signature — the XMSS/LMS family (NIST SP 800-208), built on SLH-DSA/SPHINCS+
+        machinery (WOTS+, FORS, Merkle trees) but selecting its one-time key from a monotonic
+        <strong>counter</strong>, not at random. Two things follow. First, every hash call is
+        <strong>tweaked by its position</strong> (layer, chain index, step), so an attacker never
+        gets to run an offline, un-targeted birthday search — the relevant property is
+        <strong>target-collision resistance</strong> (equivalently second-preimage): find a
+        collision for a target fixed <em>after</em> the tweak, which costs <em>n</em> classical and
+        <em>n</em>/2 quantum, not <em>n</em>/2 and <em>n</em>/3. Avoiding the birthday penalty is
+        exactly why WOTS/XMSS/SPHINCS+ tweak their hashes. Second, because the counter picks the
+        leaf, no one-time key is ever reused (the counter must be persisted; reuse is catastrophic,
+        and FORS sits underneath as a defence-in-depth few-time net if it ever desyncs). So the
+        table's figures are the operative ones for φSign: tier 0 is 232 classical / 116 quantum,
+        tier 2 is 608 / 304.
         (Plain, un-tweaked collision resistance would matter to a bare hash used as a raw digest —
         there tier 0's 232-bit output is a 116-bit birthday target — but φSign is not used that
         way.) One caution on NIST categories: they are defined by the full gate-level cost of key
@@ -499,23 +511,32 @@
       </div>
       <div class="cx-callout">
         <strong>φKEM (φ-KEM-304).</strong> Module-LWE, ring degree n=512, module rank k=3, q=3329,
-        η=3 (CBD noise). <strong>On n=512 vs. q=3329:</strong> q−1=3328=2⁸·13 gives only a
-        primitive-256th root of unity, so a full NTT (as Kyber runs at its own n=256) isn't
-        available at double that degree. The actual transform is a hybrid/incomplete NTT — 128
-        residue rings of degree 4, one split-level less than Kyber's own 128-degree-2 leaves, for
-        the same structural reason Kyber's NTT is itself incomplete at n=256. Not a discrepancy;
-        one documented consequence of doubling the ring degree at a fixed q.
+        η=3 (CBD noise). <strong>Why n=512, k=3 and not n=256, k=6 (same 1,536 dimension, Kyber's
+        proven geometry)?</strong> Because the RM(1,3) reconciliation forces it. RM(1,3) runs at
+        rate 0.5 bits per coefficient (it spends 8 coefficients to carry 4 message bits), so a
+        256-bit shared secret needs 512 coefficients, and the ciphertext's single message
+        polynomial must therefore be degree 512 → n=512. At n=256 that polynomial would carry only
+        128 bits, forcing a second message polynomial and a different ciphertext shape. So n=512 is
+        downstream of the reconciliation code (chosen for CCA-soundness, below), not an arbitrary
+        "make it bigger." <strong>The NTT cost of that choice is real and stated:</strong>
+        q−1=3328=2⁸·13 gives only a primitive-256th root of unity, so at n=512 a full negacyclic
+        NTT is impossible; the transform is hybrid/incomplete — 128 residue rings of degree 4, one
+        split-level shallower than Kyber's 128 degree-2 leaves. n=512 is strictly worse for the NTT
+        than n=256 would be; it is the price of carrying the whole secret in one RM(1,3)-coded
+        polynomial.
         <strong>On the estimate:</strong> classical core-SVP β≈1462 against a lattice dimension of
-        ≈1536 — β this close to the full dimension is a regime where the core-SVP heuristic is
-        known to be less reliable, so treat ≈427-bit classical as the headline figure and
-        ≈387-bit quantum (the 0.265β constant) as a secondary, deliberately conservative data
-        point — even the Kyber team treats that constant as a pessimistic lower bound assuming
-        implausible quantum RAM, not an operative security level. One more caution on the measuring
-        sticks: core-SVP is a deliberately conservative lower-bound model, not a gate-level cost
-        model, while NIST categories are defined by the full cost of attacking AES — so the precise
-        claim is that both figures clear the suite's own 304-bit floor and Category 5's 232-bit
-        quantum bar <em>under the core-SVP model</em>, not that a certified gate-count comparison
-        has been made.
+        ≈1536. This is worth stating sharply: when β approaches the full dimension, BKZ-β is
+        essentially a single near-full-dimension SVP call, and you have left the regime the
+        core-SVP heuristic was fit in — so ≈427-bit classical and ≈387-bit quantum (the 0.265β
+        constant) are best read as order-of-magnitude lower bounds, not tight levels. Even the
+        Kyber team treats 0.265β as pessimistic (it assumes implausible quantum RAM). And core-SVP
+        is a conservative lower-bound model, not a gate-level cost model, while NIST categories are
+        defined by the full cost of attacking AES — so the precise claim is that both figures clear
+        the suite's 304-bit floor and Category 5's 232-bit quantum bar <em>under the core-SVP
+        model</em>, not that a certified gate-count comparison has been made. Read together, the
+        numbers point one way: 157 bits of DFR margin, 2× ML-KEM-1024's wire size, β near full
+        dimension — the parameters are conservative rather than tightly optimized, and there is no
+        published cost function trading DFR against size against security the way Kyber's are.
         <strong>On the Reed–Muller reconciliation:</strong> RM(1,3) is the one φ-native load-bearing
         element inside encode/decode, and changing it changes more than hardness — it changes the
         decryption failure rate (DFR) that the FO transform's CCA2 argument depends on directly.
@@ -540,24 +561,33 @@
         ~0.02% expected under a uniform XOF; see "The φHash-XOF finding, and the fix" above — the
         same defect, now fixed for φKEM's own use of φHash, but φDSA's rejection sampling has zero
         tolerance for any bias, so SHAKE-256 remains the correct choice regardless), so φDSA's
-        hardness has zero φHash dependency, unlike every other primitive on this page. The
-        parameter set is derived from first principles and
-        modeled, under the same conservative estimator, to dominate ML-DSA-87 — NIST FIPS-204's own
-        Category 5 set — on every axis (an estimated ≈255-bit quantum forgery floor, clearing
-        Category 5's 232-bit bar), with that estimate in the regime where the conservative bound is
-        provably valid rather than merely asserted. Not byte-conformant FIPS-204 (own encodings,
-        self-consistent against its own KATs — this proves the implementation matches this team's
-        own spec, not that the spec itself has been independently reviewed; it is not ACVP
-        validation) — the estimated margin is above the standards one; the wire format is the
-        suite's own.
+        hardness has zero φHash dependency, unlike every other primitive on this page.
+        <strong>Both lattice problems, not just forgery.</strong> The estimator computes two
+        attacks and the design balances them: MLWE key-recovery at 282.4 classical / 256.3 quantum,
+        and SIS strong-unforgeability at 280.6 / 254.7. η=7 was chosen as the smallest noise that
+        lifts MLWE key-recovery <em>above</em> the SIS ceiling, so forgery (≈255 quantum) is the
+        binding constraint by design, not an unexamined one — the concern that a large modulus
+        (Q≈2³⁰) makes key-recovery the weak axis is exactly what η=7 answers. Both clear ML-DSA-87
+        on the same model. That means dominance on every <em>security</em> axis, not size: φDSA's
+        keys and signatures are larger (4,352 / 6,206 B vs 2,592 / 4,627 B — see the sizes table),
+        a deliberate cost of the shared proof-system field. <strong>The estimator is checkable:</strong>
+        it is the in-repo core-SVP/BKZ script (`test_dsa_derivation.cpp`), anchored by reproducing
+        the published ML-DSA-2/5 MLWE core-SVP figures (123 / 252) before it is trusted on φDSA;
+        the forgery collision sits in the norm-below-q regime where the conservative SIS bound is
+        provable rather than asserted. Not byte-conformant FIPS-204 (own encodings, self-consistent
+        against its own KATs — this proves the implementation matches this team's own spec, not that
+        the spec itself has been independently reviewed; it is not ACVP validation).
       </div>
       <div class="cx-callout">
         <strong>Verify-in-proof.</strong> The shared field lets signature verification run inside
         recursive proofs — that is this page's first tab, where the proofs are verified live. The
-        design detail worth keeping in the security picture: the naïve "run the verifier in a
-        circuit" approach was measured and rejected (SHAKE-based Fiat–Shamir is not arithmetizable
-        at any size), so the in-circuit path derives its challenge with the field-native algebraic
-        hash while ordinary signing keeps SHAKE-256.
+        security-relevant detail: SHAKE-based Fiat–Shamir is not arithmetizable at any size, so the
+        in-circuit path derives its challenge with a field-native <strong>Poseidon-class x⁷ sponge
+        (width 3, 3×3 Cauchy MDS, 52 rounds ≈ ⌈128/log₂7⌉ + margin)</strong> while ordinary signing
+        keeps SHAKE-256. That means the in-circuit statement verifies a <em>different</em> signature
+        — the algebraic-FS variant — resting on an experimental, unreviewed hash from a family
+        (Poseidon/Rescue/Griffin/Anemoi) with an active cryptanalytic record. It is the least
+        battle-tested element on this page and is scoped as such in the first tab.
       </div>
     </section>
 
@@ -571,7 +601,14 @@
         (<span id="metricsHost">—</span>). The φ-native instantiation has a real, measured price:
         φHash costs about <strong>0.35 µs/byte</strong> against SHAKE-256's 0.009 µs/byte
         (≈38× on 176-byte inputs), and on the full KEM task the φHash path runs 3992/2468/1997 µs
-        (keygen/encaps/decaps) against 356/401/479 µs for the same lattice core over SHAKE.
+        (keygen/encaps/decaps) against 356/401/479 µs for the same lattice core over SHAKE. These
+        φHash figures are <strong>post-cap</strong> — the XOF-bias fix reduced the block to
+        chandas=3, which costs ~11× more φHash calls per request (keygen went from ~355 µs to
+        ~3992 µs), so this is the current, slower reality, not a pre-fix number. And note the
+        direction this points: the KEM core is hash-agnostic, a NIST-validated SHAKE-256
+        instantiation exists and is 4–11× faster, and the one φHash defect found so far was found
+        in exactly this path — so the honest reading is that <strong>SHAKE-256 is the lower-risk
+        default and φHash the φ-native opt-in</strong>, a call the suite still has open.
         That cost buys the suite's own hash leg, not extra lattice security — stated here so
         nobody has to reverse-engineer it from the demo's speed.
       </div>
@@ -684,6 +721,7 @@ const hexBlock = (label, u8, extra) =>
         ['ML-DSA-87 (FIPS 204)', '2,592 B', 'sig 4,627 B', 'published parameter set, for size comparison'],
         ['φSign (tier 0/1/2)', '29/47/76 B', 'sig 11,718 / 25,542 / 58,640 B', 'tier 2: keygen 1.4 s · sign 4.3 s · verify 0.18 s'],
         ['SLH-DSA-256s (FIPS 205)', '64 B', 'sig 29,792 B', 'published parameter set, for size comparison'],
+        ['φCipher AEAD', 'key 29–76 B', '+MAC tag', 'throughput ≈1.8 MB/s (MAC-bound by φHash; ~100× under AES-GCM/ChaCha20-Poly1305)'],
       ],
     },
   };
@@ -696,7 +734,7 @@ const hexBlock = (label, u8, extra) =>
     rows.push({ name: 'φKEM (φ-KEM-304)', param: 'Module-LWE, n=512 k=3 q=3329',
                 bytes: kemPkBytes, classicalBits: '~427 (core-SVP est.)', quantumBits: '~387 (core-SVP est.)' });
     rows.push({ name: 'φDSA', param: 'shared-field q=1342832641, k=l=9 η=7',
-                bytes: dsaPkBytes, classicalBits: '≈280.6 (SIS floor)', quantumBits: '≈255 (SIS floor)' });
+                bytes: dsaPkBytes, classicalBits: '≈280.6 SIS / 282.4 MLWE', quantumBits: '≈254.7 SIS / 256.3 MLWE' });
     $('secBody').innerHTML = rows.map((r) =>
       '<tr><td>' + r.name + '</td><td class="num">' + r.param + '</td>' +
       '<td class="num">' + (typeof r.bytes === 'number' ? r.bytes + ' B' : r.bytes) + '</td>' +
@@ -737,6 +775,9 @@ const hexBlock = (label, u8, extra) =>
            ' s · verify ' + (e2e[2].verify / 1000).toFixed(2) + ' s'],
           ['SLH-DSA-256s (FIPS 205)', fmt(s.slhdsa_sha2_256s.pk) + ' B', 'sig ' + fmt(s.slhdsa_sha2_256s.sig) + ' B',
            'published parameter set, for size comparison'],
+          ['φCipher AEAD', 'key 29–76 B', '+MAC tag',
+           (m.cipher_aead_mb_s ? m.cipher_aead_mb_s.toFixed(1) : '1.8') +
+           ' MB/s throughput (MAC-bound by φHash; ~100× under AES-GCM/ChaCha20-Poly1305)'],
         ];
       }
     } catch (e) { /* inline fallback stands */ }
