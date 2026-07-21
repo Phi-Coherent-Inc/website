@@ -162,8 +162,9 @@
     <div class="cx-callout">
       This page computes everything live in WebAssembly, so the interactive panels need
       JavaScript. Without it, here is the static summary: φHash output widths of 29/47/76 bytes
-      give 116/188/304-bit post-quantum (Grover) preimage strength, with classical collision
-      resistance at half the output width (116/188/304 bits by the birthday bound); φKEM-304's
+      give 116/188/304-bit post-quantum (Grover) second-preimage strength; φSign is SLH-DSA with
+      position-tweaked hashing, so it reduces to target-collision resistance and is not
+      birthday-limited; φKEM-304's
       Module-LWE parameters are estimated at ≈387-bit post-quantum; φDSA's shared-field parameters
       are estimated at ≈255-bit post-quantum, both figures from this team's own core-SVP model.
       Wire sizes: φKEM pk 3,148 B / ct 4,096 B (ML-KEM-1024: 1,568/1,568); φDSA pk 4,352 B /
@@ -341,7 +342,8 @@
         Hypertree of L(2)=3 layers × height L(4)=7, WOTS width 8 (revised down from 13 after the
         width sweep measured 13 as strictly costlier for the same security — see the Security
         model tab), FORS F(7)=13 trees.
-        Security rests only on φHash preimage/collision resistance — no elliptic curves, no
+        Security rests only on φHash (second-)preimage / target-collision resistance — the
+        position-tweaked SLH-DSA reduction, no elliptic curves, no
         algebraic hardness. <strong>Genuinely slow here</strong>: this build is single-threaded
         (GitHub Pages can't serve the COOP/COEP headers multi-threaded WASM needs), so the
         hypertree's one-time-key fan-out runs serially — keygen ≈13s, sign ≈40s. A
@@ -414,8 +416,10 @@
       <h2>Security details</h2>
       <div class="sub">
         Two independent hardness assumptions — read "Independence, precisely" below for exactly
-        what depends on what. φSign's security rests only on φHash preimage/collision resistance
-        (no elliptic curves, no algebraic hardness); φDSA's rests on Module-LWE/SIS, a wholly
+        what depends on what. φSign's security rests only on φHash (second-)preimage /
+        target-collision resistance (the position-tweaked SLH-DSA reduction, not the birthday
+        bound — see "Reading the hash-based rows"; no elliptic curves, no algebraic hardness);
+        φDSA's rests on Module-LWE/SIS, a wholly
         separate problem; φKEM's is Module-LWE too, judged by a modeled core-SVP/BKZ
         lattice-reduction estimate. External cryptanalysis review of the suite is in progress
         and has not yet reported.
@@ -471,25 +475,27 @@
         both out of scope and are both untouched.
       </div>
       <div class="cx-callout">
-        <strong>Reading the hash-based rows.</strong> φHash's output width sets the classical
-        search space directly; the post-Grover (quantum) figure is half the classical bit count
-        — the standard quadratic Grover speedup, computed live from the actual digest length
-        above, not a hardcoded table. <strong>That's the preimage figure.</strong> Collision
-        resistance is half the output width classically (birthday bound) — tier 0's 232-bit output
-        gives 232-bit preimage strength but 116-bit collision strength, not 232 read as one number;
-        φSign's security specifically needs both (its hypertree commitments lean on preimage
-        resistance, its Merkle authentication paths on collision resistance). φCipher's key and
-        φSign's public-key commitment are the same φHash output at the same tier, so they inherit
-        the identical bit strength. On the quantum side of collisions: the best known quantum
-        collision search (Brassard–Høyer–Tapp) needs about 2<sup>n/3</sup> work in queries but only
-        by assuming enormous cheap memory; cost models that price memory put quantum collision
-        search back near the classical birthday bound, so the classical figure is the operative
-        one. A caution on NIST categories: they are defined by the full gate-level cost of key
-        search on AES or collision search on SHA, not by search exponents alone, so the mapping
-        here is an exponent comparison, not a certified category claim. On that basis tier 0's
-        116-bit quantum preimage sits at the Category 3 level and tier 2's 304-bit exceeds
-        Category 5's 232-bit quantum floor, while tier 0's collision-bound uses should be read
-        against its 116-bit classical birthday figure, not the 232-bit preimage one.
+        <strong>Reading the hash-based rows, and why they are not birthday-limited.</strong>
+        φHash's output width sets the classical search space; the post-Grover (quantum) figure is
+        half the classical bit count, the standard quadratic Grover speedup, computed live from
+        the actual digest length above. These are <strong>(second-)preimage</strong> numbers:
+        classical <em>n</em>, quantum <em>n</em>/2. The obvious objection is the birthday bound —
+        plain collision resistance is only <em>n</em>/2 classical, so shouldn't that be the real
+        limit? For φSign it is not, and this is by construction. φSign is SLH-DSA / SPHINCS+
+        (FIPS 205): every hash call is <strong>tweaked by its position</strong> (layer, chain
+        index, step) and the message digest is <strong>randomized</strong> by a per-signature R,
+        so an attacker never gets to run an offline, un-targeted birthday search. The relevant
+        property is <strong>target-collision resistance</strong> (equivalently second-preimage):
+        find a collision for a target fixed <em>after</em> the tweak, which costs <em>n</em>
+        classical and <em>n</em>/2 quantum, not <em>n</em>/2 and <em>n</em>/3. Avoiding the
+        birthday penalty is the entire reason SPHINCS+ hashes this way. So the table's figures are
+        the operative ones for φSign: tier 0 is 232 classical / 116 quantum, tier 2 is 608 / 304.
+        (Plain, un-tweaked collision resistance would matter to a bare hash used as a raw digest —
+        there tier 0's 232-bit output is a 116-bit birthday target — but φSign is not used that
+        way.) One caution on NIST categories: they are defined by the full gate-level cost of key
+        search on AES or collision search on SHA, not by search exponents alone, so placing tier 0
+        at Category 3 and tier 2 past Category 5's 232-bit quantum floor is an exponent comparison,
+        not a certified category claim.
       </div>
       <div class="cx-callout">
         <strong>φKEM (φ-KEM-304).</strong> Module-LWE, ring degree n=512, module rank k=3, q=3329,
