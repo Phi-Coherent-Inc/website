@@ -143,7 +143,8 @@
     numbers. The suite is built around one design decision: the signature, the proof system, and
     the recursion all share a single prime field, so a signature's verification arithmetic is
     native to the circuits that prove statements about it. That is what the first tab shows — a
-    zero-knowledge proof system checking signature verification work, verified live on this page.
+    mechanism demonstration of a zero-knowledge proof system carrying signature-verification
+    work, verified live on this page and scoped precisely inside the tab.
     Around that core sit two independent hardness assumptions: hash-based (φHash: φSign, φCipher)
     and lattice-based (Module-LWE/SIS: φKEM, φDSA). The independence is at the <em>assumption</em>
     level, not the implementation — φHash is a shared component across the hash leg and φKEM's
@@ -163,7 +164,8 @@
       This page computes everything live in WebAssembly, so the interactive panels need
       JavaScript. Without it, here is the static summary: φHash output widths of 29/47/76 bytes
       give 116/188/304-bit post-quantum (Grover) second-preimage strength; φSign is a stateful
-      XMSS/LMS-family signature (SP 800-208) with position-tweaked hashing, so it reduces to
+      hash-based hypertree signature (SPHINCS+-style with a FORS layer; its own construction, not
+      an SP 800-208 parameter set) with position-tweaked hashing, so it reduces to
       target-collision resistance and is not birthday-limited; φKEM-304's
       Module-LWE parameters are estimated at ≈387-bit post-quantum; φDSA's shared-field parameters
       are estimated at ≈255-bit post-quantum, both figures from this team's own core-SVP model.
@@ -198,7 +200,9 @@
         by that machinery: the heavy legs of a signature verification — the lattice relation
         A·z − c·t = w checked pointwise across all 256 evaluation points, and the response-norm
         bound — each carried by a recursive proof whose every input cell is pinned to the public
-        signature. Flip a byte and watch it reject.
+        signature. Flip a byte and watch it reject. This is a mechanism demonstration: the
+        callout below states the current capacity limit of the algebraic hash it relies on, and
+        why that limit makes the demo illustrative rather than security-bearing today.
       </div>
       <div class="cx-callout">
         <strong>Exactly what is and is not proven here.</strong>
@@ -208,13 +212,19 @@
         <em>transcript variant</em> (φDSA-algfs) whose challenge is derived with a field-native
         algebraic hash instead. That hash is named and specified: a <strong>Poseidon-class x⁷
         sponge</strong>, state width 3 (rate 2, capacity 1), a 3×3 Cauchy MDS layer, and
-        <strong>52 all-full rounds</strong> — the round count is ⌈128/log₂7⌉ ≈ 46 plus a
-        statistical margin, i.e. a ~128-bit target against Gröbner-basis / algebraic-degree
-        attacks. It is <strong>experimental</strong>: the arithmetization-friendly hash family
+        <strong>52 all-full rounds</strong>. The round count is an algebraic-degree figure
+        (⌈128/log₂7⌉ ≈ 46 plus a statistical margin, addressing Gröbner-basis and interpolation
+        attacks) and says nothing about generic attacks. With a single capacity element over a
+        ~2³⁰ field, <strong>generic security is capacity-limited: roughly 2¹⁵ collision and 2³⁰
+        preimage work, regardless of round count</strong>, and the challenge this leg derives is a
+        single field element (~2³⁰ challenge space). A parameter revision that derives the
+        sponge's capacity and output width from the 128-bit target (a wider state) is in
+        progress. Until it lands, what runs below is a <strong>mechanism demonstration</strong> of
+        proof-carried verification, not a security-bearing signature verification. The hash is
+        <strong>experimental</strong>: the arithmetization-friendly hash family
         (Poseidon, Rescue, Griffin, Anemoi) has a genuinely active cryptanalytic record, and this
-        instance has had no external review. So this leg's Fiat–Shamir soundness rests on an
-        unproven hash, and it verifies the algebraic-FS signature, not the SHAKE one a production
-        φDSA holder would issue. The demo variant is also hint-free (the commitment w travels
+        instance has had no external review. It verifies the algebraic-FS signature, not the
+        SHAKE one a production φDSA holder would issue. The demo variant is also hint-free (the commitment w travels
         uncompressed), placing its forgery bound in the norm-below-q SIS regime the parameter
         derivation certifies.
         Second: the lattice relation and the norm bound are proof-carried; the challenge equality
@@ -233,7 +243,7 @@
       </div>
       <div class="cx-status" id="zkStatus">Loading verifier module…</div>
       <div class="cx-row">
-        <button class="cx-run" id="zkVerifyK10Btn" disabled>Verify: signature relation + norm (Kind 10)</button>
+        <button class="cx-run" id="zkVerifyK10Btn" disabled>Verify: signature relation + norm (Kind 10, mechanism demo)</button>
         <button class="cx-run secondary" id="zkVerifyK9Btn" disabled>Verify: hidden hash-leg authorization (Kind 9)</button>
         <button class="cx-run secondary" id="zkTamperBtn" disabled>Flip one byte &amp; verify</button>
       </div>
@@ -344,14 +354,16 @@
 
     <!-- φSign -->
     <section class="cx-panel span2">
-      <span class="tag">phi::sign · XMSS/LMS family (SP 800-208) · stateful</span>
+      <span class="tag">phi::sign · stateful hypertree + FORS (SPHINCS+-style)</span>
       <h2>φSign — hash-based signature</h2>
       <div class="sub">
-        Hypertree of L(2)=3 layers × height L(4)=7, WOTS width 8 (revised down from 13 after the
-        width sweep measured 13 as strictly costlier for the same security — see the Security
-        model tab), FORS F(7)=13 trees.
-        Security rests only on φHash (second-)preimage / target-collision resistance — the
-        position-tweaked XMSS/LMS reduction, no elliptic curves, no
+        Hypertree of L(2)=3 layers × height L(4)=7, WOTS width 8 — 8 <em>values</em> per digit,
+        i.e. 3 bits, distinct from LMS notation where w counts bits per digit (revised down from
+        13 after the width sweep measured 13 as strictly costlier for the same security — see the
+        Security model tab), FORS F(7)=13 trees.
+        Security rests only on φHash (second-)preimage / target-collision resistance — a
+        position-tweaked reduction in the XMSS/SPHINCS+ style, its own construction rather than
+        an SP 800-208 parameter set; no elliptic curves, no
         algebraic hardness. <strong>Genuinely slow here</strong>: this build is single-threaded
         (GitHub Pages can't serve the COOP/COEP headers multi-threaded WASM needs), so the
         hypertree's one-time-key fan-out runs serially — keygen ≈13s, sign ≈40s. A
@@ -489,9 +501,9 @@
         classical <em>n</em>, quantum <em>n</em>/2. The obvious objection is the birthday bound —
         plain collision resistance is only <em>n</em>/2 classical, so shouldn't that be the real
         limit? For φSign it is not, and this is by construction. φSign is a <strong>stateful</strong>
-        hash-based signature — the XMSS/LMS family (NIST SP 800-208), built on SLH-DSA/SPHINCS+
-        machinery (WOTS+, FORS, Merkle trees) but selecting its one-time key from a monotonic
-        <strong>counter</strong>, not at random. Two things follow. First, every hash call is
+        hash-based signature — a hypertree in the SPHINCS+ style (WOTS-type chains, FORS, Merkle
+        trees; its own construction, not an SP 800-208 parameter set) that selects its one-time
+        key from a monotonic <strong>counter</strong>, not at random. Two things follow. First, every hash call is
         <strong>tweaked by its position</strong> (layer, chain index, step), so an attacker never
         gets to run an offline, un-targeted birthday search — the relevant property is
         <strong>target-collision resistance</strong> (equivalently second-preimage): find a
@@ -583,11 +595,15 @@
         recursive proofs — that is this page's first tab, where the proofs are verified live. The
         security-relevant detail: SHAKE-based Fiat–Shamir is not arithmetizable at any size, so the
         in-circuit path derives its challenge with a field-native <strong>Poseidon-class x⁷ sponge
-        (width 3, 3×3 Cauchy MDS, 52 rounds ≈ ⌈128/log₂7⌉ + margin)</strong> while ordinary signing
-        keeps SHAKE-256. That means the in-circuit statement verifies a <em>different</em> signature
-        — the algebraic-FS variant — resting on an experimental, unreviewed hash from a family
-        (Poseidon/Rescue/Griffin/Anemoi) with an active cryptanalytic record. It is the least
-        battle-tested element on this page and is scoped as such in the first tab.
+        (width 3, 3×3 Cauchy MDS, 52 rounds — an algebraic-degree figure only)</strong> while
+        ordinary signing keeps SHAKE-256. With a single capacity element over a ~2³⁰ field that
+        sponge's generic security is capacity-limited (~2¹⁵ collision, ~2³⁰ preimage), so the
+        first tab is scoped as a mechanism demonstration; a parameter revision deriving the
+        capacity from the 128-bit target is in progress. The in-circuit statement verifies a
+        <em>different</em> signature — the algebraic-FS variant — resting on an experimental,
+        unreviewed hash from a family (Poseidon/Rescue/Griffin/Anemoi) with an active
+        cryptanalytic record. It is the least battle-tested element on this page and is scoped as
+        such in the first tab.
       </div>
     </section>
 
@@ -812,7 +828,7 @@ const hexBlock = (label, u8, extra) =>
   if (initTabsAndZk.done) return;
   initTabsAndZk.done = true;
   const TAB_INTROS = {
-    proof: 'The suite’s core claim, running: recursive proofs carrying signature-verification work, checked live in a thread-free verifier module. Every proof byte here was produced by the same machinery the currency stack ships.',
+    proof: 'A mechanism demonstration, running: recursive proofs carrying signature-verification work, checked live in a thread-free verifier module and scoped by the callout inside (the algebraic hash it relies on is capacity-limited today). Every proof byte here was produced by the same machinery the currency stack ships.',
     hash: 'φHash, computed live at all three output tiers. The avalanche view is a sanity check, not evidence — the real batteries (SAC, BIC, S-box uniformity) are described below it.',
     sign: 'Two signatures on independent assumptions: φSign (hash-based, stateful, slow here because this build is single-threaded) and φDSA (lattice, stateless, on the shared proof-system field). The hybrid binds both.',
     encrypt: 'φCipher (AEAD keyed through a memory-hard KDF, never a bare hash) and φKEM (Module-LWE key encapsulation with FO-CCA2), including a full two-party exchange.',
@@ -850,7 +866,7 @@ const hexBlock = (label, u8, extra) =>
       zk.api = modReady;
       zk.k10 = new Uint8Array(await k10Res.arrayBuffer());
       zk.k9 = new Uint8Array(await k9Res.arrayBuffer());
-      zkStatus.textContent = 'Verifier ready. Kind-10 proof: ' + (zk.k10.length / 1024).toFixed(1) +
+      zkStatus.textContent = 'Verifier ready. Kind-10 proof (mechanism demo): ' + (zk.k10.length / 1024).toFixed(1) +
         ' KB · Kind-9 proof: ' + (zk.k9.length / 1024).toFixed(1) + ' KB, generated natively, verified here. ' +
         'Expect roughly 13 s for the Kind-10 verification and 3 s for Kind-9 in this single-threaded module.';
       $('zkVerifyK10Btn').disabled = false;
@@ -878,7 +894,7 @@ const hexBlock = (label, u8, extra) =>
         : '<span class="cx-badge fail">Rejected</span>' + (res.error ? ' — ' + res.error : '')) +
         ' <span class="k">' + (res.kindName || label) + ' · ' + bytes.length + ' bytes · ' + ms + ' ms in-browser</span>';
     }
-    $('zkVerifyK10Btn').addEventListener('click', () => runVerify(zk.k10, 'Kind 10 (signature relation + norm)'));
+    $('zkVerifyK10Btn').addEventListener('click', () => runVerify(zk.k10, 'Kind 10 (signature relation + norm, mechanism demo)'));
     $('zkVerifyK9Btn').addEventListener('click', () => runVerify(zk.k9, 'Kind 9 (hash-leg authorization)'));
     $('zkTamperBtn').addEventListener('click', () => {
       const t = zk.k10.slice();
