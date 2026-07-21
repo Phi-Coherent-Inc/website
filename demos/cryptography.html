@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/demo.css?v=20260720">
+<link rel="stylesheet" href="assets/demo.css?v=20260721">
 <style>
   .cx-main {
     max-width: 1180px; margin: 0 auto;
@@ -143,8 +143,8 @@
     numbers. The suite is built around one design decision: the signature, the proof system, and
     the recursion all share a single prime field, so a signature's verification arithmetic is
     native to the circuits that prove statements about it. That is what the first tab shows — a
-    mechanism demonstration of a zero-knowledge proof system carrying signature-verification
-    work, verified live on this page and scoped precisely inside the tab.
+    zero-knowledge proof system carrying signature-verification work, verified live on this
+    page and scoped precisely inside the tab.
     Around that core sit two independent hardness assumptions: hash-based (φHash: φSign, φCipher)
     and lattice-based (Module-LWE/SIS: φKEM, φDSA). The independence is at the <em>assumption</em>
     level, not the implementation — φHash is a shared component across the hash leg and φKEM's
@@ -200,9 +200,8 @@
         by that machinery: the heavy legs of a signature verification — the lattice relation
         A·z − c·t = w checked pointwise across all 256 evaluation points, and the response-norm
         bound — each carried by a recursive proof whose every input cell is pinned to the public
-        signature. Flip a byte and watch it reject. This is a mechanism demonstration: the
-        callout below states the current capacity limit of the algebraic hash it relies on, and
-        why that limit makes the demo illustrative rather than security-bearing today.
+        signature. Flip a byte and watch it reject. The callout below states exactly what is and
+        is not proven, and the derivation behind the algebraic hash this leg relies on.
       </div>
       <div class="cx-callout">
         <strong>Exactly what is and is not proven here.</strong>
@@ -210,21 +209,23 @@
         verifies a different one.</strong> Production φDSA runs SHAKE-256 for its entire Fiat–Shamir
         transcript, and SHAKE is not arithmetizable at any size, so the demo signs a
         <em>transcript variant</em> (φDSA-algfs) whose challenge is derived with a field-native
-        algebraic hash instead. That hash is named and specified: a <strong>Poseidon-class x⁷
-        sponge</strong>, state width 3 (rate 2, capacity 1), a 3×3 Cauchy MDS layer, and
-        <strong>52 all-full rounds</strong>. The round count is an algebraic-degree figure
+        algebraic hash instead. That hash is named and specified, and every parameter is
+        <strong>derived from a stated 128-bit collision target</strong> rather than chosen: a
+        <strong>Poseidon-class x⁷ sponge</strong> whose capacity and digest are each
+        ⌈256/⌊log₂q⌋⌉ = 9 field elements (≈270 bits — a sponge's generic collision resistance
+        is half its capacity, so the capacity must carry 2×128 bits), rate 2×9 = 18 so a 2-to-1
+        Merkle node costs one permutation, state width 27, a 27×27 Cauchy MDS layer, and
+        <strong>52 all-full rounds</strong> — the round count is an algebraic-degree figure
         (⌈128/log₂7⌉ ≈ 46 plus a statistical margin, addressing Gröbner-basis and interpolation
-        attacks) and says nothing about generic attacks. With a single capacity element over a
-        ~2³⁰ field, <strong>generic security is capacity-limited: roughly 2¹⁵ collision and 2³⁰
-        preimage work, regardless of round count</strong>, and the challenge this leg derives is a
-        single field element (~2³⁰ challenge space). A parameter revision that derives the
-        sponge's capacity and output width from the 128-bit target (a wider state) is in
-        progress. Until it lands, what runs below is a <strong>mechanism demonstration</strong> of
-        proof-carried verification, not a security-bearing signature verification. The hash is
-        <strong>experimental</strong>: the arithmetization-friendly hash family
-        (Poseidon, Rescue, Griffin, Anemoi) has a genuinely active cryptanalytic record, and this
-        instance has had no external review. It verifies the algebraic-FS signature, not the
-        SHAKE one a production φDSA holder would issue. The demo variant is also hint-free (the commitment w travels
+        attacks); the generic collision/preimage bound is carried by the capacity, never by the
+        round count. Digests are 9 elements (36 bytes); the signature challenge below is seeded
+        by ⌈128/30⌉ = 5 squeezed elements (≈150-bit challenge space). The build fails if any of
+        those derivations regresses (static capacity gates in the source). The hash remains
+        <strong>experimental</strong>: the arithmetization-friendly family (Poseidon, Rescue,
+        Griffin, Anemoi) has a genuinely active cryptanalytic record, and this instance is in
+        external review that has not yet reported — treat its resistance as unproven until it
+        does. It verifies the algebraic-FS signature, not the SHAKE one a production φDSA
+        holder would issue. The demo variant is also hint-free (the commitment w travels
         uncompressed), placing its forgery bound in the norm-below-q SIS regime the parameter
         derivation certifies.
         Second: the lattice relation and the norm bound are proof-carried; the challenge equality
@@ -234,7 +235,7 @@
         the signature. We have measured exactly what a hidden version would take: the relation and
         norm proofs run in zero-knowledge today, and the check tying the two together survives
         hiding, but the fingerprint step that binds the signature to the message would then have to
-        run inside the proof at roughly 264 times the zero-knowledge size budget — a different
+        run inside the proof at roughly 29 times the zero-knowledge size budget — a different
         proof structure we have not built. So the hidden-authorization statement that ships today
         is the hash-leg one-time-signature proof, verified beside it below.
         Fourth: the proofs were generated natively (the prover is multi-threaded; this host cannot
@@ -243,7 +244,7 @@
       </div>
       <div class="cx-status" id="zkStatus">Loading verifier module…</div>
       <div class="cx-row">
-        <button class="cx-run" id="zkVerifyK10Btn" disabled>Verify: signature relation + norm (Kind 10, mechanism demo)</button>
+        <button class="cx-run" id="zkVerifyK10Btn" disabled>Verify: signature relation + norm (Kind 10)</button>
         <button class="cx-run secondary" id="zkVerifyK9Btn" disabled>Verify: hidden hash-leg authorization (Kind 9)</button>
         <button class="cx-run secondary" id="zkTamperBtn" disabled>Flip one byte &amp; verify</button>
       </div>
@@ -595,15 +596,14 @@
         recursive proofs — that is this page's first tab, where the proofs are verified live. The
         security-relevant detail: SHAKE-based Fiat–Shamir is not arithmetizable at any size, so the
         in-circuit path derives its challenge with a field-native <strong>Poseidon-class x⁷ sponge
-        (width 3, 3×3 Cauchy MDS, 52 rounds — an algebraic-degree figure only)</strong> while
-        ordinary signing keeps SHAKE-256. With a single capacity element over a ~2³⁰ field that
-        sponge's generic security is capacity-limited (~2¹⁵ collision, ~2³⁰ preimage), so the
-        first tab is scoped as a mechanism demonstration; a parameter revision deriving the
-        capacity from the 128-bit target is in progress. The in-circuit statement verifies a
-        <em>different</em> signature — the algebraic-FS variant — resting on an experimental,
-        unreviewed hash from a family (Poseidon/Rescue/Griffin/Anemoi) with an active
-        cryptanalytic record. It is the least battle-tested element on this page and is scoped as
-        such in the first tab.
+        (width 27: capacity and digest each 9 elements ≈ 270 bits, derived from the 128-bit
+        collision target; 27×27 Cauchy MDS; 52 rounds — an algebraic-degree figure only)</strong>
+        while ordinary signing keeps SHAKE-256. The challenge seed is 5 squeezed elements
+        (≈150-bit challenge space). The in-circuit statement verifies a <em>different</em>
+        signature — the algebraic-FS variant — resting on an experimental hash from a family
+        (Poseidon/Rescue/Griffin/Anemoi) with an active cryptanalytic record, under external
+        review that has not yet reported. It is the least battle-tested element on this page and
+        is scoped as such in the first tab.
       </div>
     </section>
 
@@ -657,20 +657,23 @@
       <h2>Related packages</h2>
       <div class="sub">
         Where these primitives run beyond this demo. All pre-production — each repo documents
-        its own status.
+        its own status. The viability column is throughput honesty: φCipher measures ~1.8 MB/s
+        single-threaded (its MAC is φHash-bound, roughly 100× under AES-GCM/ChaCha20-Poly1305),
+        which is ample for pages, records, and messages, and disqualifying for line-rate bulk
+        transport until a faster MAC exists.
       </div>
       <div class="cx-table-scroll">
         <table class="cx-audit">
           <thead>
-            <tr><th>Package</th><th>What it is</th><th>φCrypt primitives</th></tr>
+            <tr><th>Package</th><th>What it is</th><th>φCrypt primitives</th><th>Viability today</th></tr>
           </thead>
           <tbody>
-            <tr><td>phi-quic</td><td>QUIC / TLS 1.3 transport</td><td>φHash + φCipher, as a native TLS cipher suite</td></tr>
-            <tr><td>phi-ossl-provider</td><td>OpenSSL 3 provider</td><td>φHash + φCipher, exposed to any OpenSSL app by algorithm name</td></tr>
-            <tr><td>phi-sqlvfs</td><td>Encrypted SQLite VFS</td><td>φHash (key derivation) + φCipher (page encryption)</td></tr>
-            <tr><td>phi-net-cpp</td><td>P2P network layer — DHT, gossip, routing</td><td>φHash (DHT placement) + φSign (peer-record authentication)</td></tr>
-            <tr><td>phi-zk-php</td><td>Server-side verifier for the φ zero-knowledge proof stack</td><td>φDSA (billing-ticket signing) + φHash</td></tr>
-            <tr><td>phi-rpc-cpp</td><td>Transport-agnostic JSON-RPC engine</td><td>φCrypt's CSPRNG only — channel security is delegated to phi-ossl-provider / phi-quic</td></tr>
+            <tr><td>phi-quic</td><td>QUIC / TLS 1.3 transport</td><td>φHash + φCipher, as a native TLS cipher suite</td><td>research only — ~14 Mbit/s cipher throughput cannot serve line-rate transport; needs a faster MAC</td></tr>
+            <tr><td>phi-ossl-provider</td><td>OpenSSL 3 provider</td><td>φHash + φCipher, exposed to any OpenSSL app by algorithm name</td><td>works today for hashing and small-payload AEAD; bulk-stream use inherits the cipher's rate</td></tr>
+            <tr><td>phi-sqlvfs</td><td>Encrypted SQLite VFS</td><td>φHash (key derivation) + φCipher (page encryption)</td><td>works today — page-sized writes sit well inside the measured rate; until external review reports, a hybrid mode (φCipher under a SHAKE/HKDF-derived key) is the recommended deployment</td></tr>
+            <tr><td>phi-net-cpp</td><td>P2P network layer — DHT, gossip, routing</td><td>φHash (DHT placement) + φSign (peer-record authentication)</td><td>works today for single-instance nodes; multi-instance peer-record signing awaits the stateful-counter contract (or φDSA) — see the Signatures tab</td></tr>
+            <tr><td>phi-zk-php</td><td>Server-side verifier for the φ zero-knowledge proof stack</td><td>φDSA (billing-ticket signing) + φHash</td><td>works today — verify-side only, no throughput constraint</td></tr>
+            <tr><td>phi-rpc-cpp</td><td>Transport-agnostic JSON-RPC engine</td><td>φCrypt's CSPRNG only — channel security is delegated to phi-ossl-provider / phi-quic</td><td>works today</td></tr>
           </tbody>
         </table>
       </div>
@@ -711,10 +714,10 @@
   <div class="cx-footer-note" id="footerNote"></div>
 </main>
 
-<script src="assets/demo-header.js?v=20260720"></script>
+<script src="assets/demo-header.js?v=20260721"></script>
 <script type="module">
 import { ready, toHex, randomBytes, PhiHash, PhiCipher, PhiKdf, PhiSign, PhiKem, PhiDsa, licenseInfo }
-  from './assets/js/phi-crypt.js?v=20260720';
+  from './assets/js/phi-crypt.js?v=20260721';
 
 const $ = (id) => document.getElementById(id);
 const enc = (s) => new TextEncoder().encode(s);
@@ -828,7 +831,7 @@ const hexBlock = (label, u8, extra) =>
   if (initTabsAndZk.done) return;
   initTabsAndZk.done = true;
   const TAB_INTROS = {
-    proof: 'A mechanism demonstration, running: recursive proofs carrying signature-verification work, checked live in a thread-free verifier module and scoped by the callout inside (the algebraic hash it relies on is capacity-limited today). Every proof byte here was produced by the same machinery the currency stack ships.',
+    proof: 'Recursive proofs carrying signature-verification work, checked live in a thread-free verifier module and scoped by the callout inside (the algebraic hash it relies on is derived to a 128-bit target and still under external review). Every proof byte here was produced by the same machinery the currency stack ships.',
     hash: 'φHash, computed live at all three output tiers. The avalanche view is a sanity check, not evidence — the real batteries (SAC, BIC, S-box uniformity) are described below it.',
     sign: 'Two signatures on independent assumptions: φSign (hash-based, stateful, slow here because this build is single-threaded) and φDSA (lattice, stateless, on the shared proof-system field). The hybrid binds both.',
     encrypt: 'φCipher (AEAD keyed through a memory-hard KDF, never a bare hash) and φKEM (Module-LWE key encapsulation with FO-CCA2), including a full two-party exchange.',
@@ -858,7 +861,7 @@ const hexBlock = (label, u8, extra) =>
     const zkStatus = $('zkStatus');
     try {
       const [modReady, k10Res, k9Res] = await Promise.all([
-        import('./assets/wasm/phi_verifier.js?v=20260720').then((m) => m.default()),
+        import('./assets/wasm/phi_verifier.js?v=20260721').then((m) => m.default()),
         fetch('assets/data/zk/phidsa_verify.k10.bin'),
         fetch('assets/data/zk/phiauth_chain.k9.bin'),
       ]);
@@ -866,7 +869,7 @@ const hexBlock = (label, u8, extra) =>
       zk.api = modReady;
       zk.k10 = new Uint8Array(await k10Res.arrayBuffer());
       zk.k9 = new Uint8Array(await k9Res.arrayBuffer());
-      zkStatus.textContent = 'Verifier ready. Kind-10 proof (mechanism demo): ' + (zk.k10.length / 1024).toFixed(1) +
+      zkStatus.textContent = 'Verifier ready. Kind-10 proof: ' + (zk.k10.length / 1024).toFixed(1) +
         ' KB · Kind-9 proof: ' + (zk.k9.length / 1024).toFixed(1) + ' KB, generated natively, verified here. ' +
         'Expect roughly 13 s for the Kind-10 verification and 3 s for Kind-9 in this single-threaded module.';
       $('zkVerifyK10Btn').disabled = false;

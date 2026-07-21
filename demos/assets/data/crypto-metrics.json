@@ -203,7 +203,7 @@
   "wasm": {
     "note": "SHA-256 of the deployed modules; republished with every redeploy.",
     "phi_crypt_wasm_sha256": "ae8d2b62d687496a85d06539adb2a9d5f32dfb4aeeed22d18a9e4ba2e50f563d",
-    "phi_verifier_wasm_sha256": "1dadcd4536809d3aba178756aadf6d33af96f7dcf03d88e7dbccb4ab51aa8e9c",
+    "phi_verifier_wasm_sha256": "8da0a81eeeaab8fdbbb5706b232dddda6cb7bde1fe70a52e06ecbd0b459750b1",
     "emsdk_version": "emcc 3.1.61"
   },
   "cipher_aead_mb_s": 1.8
